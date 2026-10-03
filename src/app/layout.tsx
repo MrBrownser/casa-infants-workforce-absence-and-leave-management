@@ -1,9 +1,18 @@
-/* eslint-disable @next/next/no-page-custom-font -- root layout intentionally loads global fonts (Adobe Typekit + Google) per DESIGN.md */
 import type { Metadata } from 'next';
+import { Figtree, Fraunces } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { caES } from '@clerk/localizations';
 import { shadcn } from '@clerk/ui/themes';
 import './globals.css';
+
+// Self-hosted by next/font: no request to Google from the browser.
+// Fraunces keeps its SOFT/WONK/opsz axes for the soft "clay" headings (see DESIGN.md).
+const figtree = Figtree({ subsets: ['latin'], variable: '--font-figtree' });
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  axes: ['SOFT', 'WONK', 'opsz'],
+  variable: '--font-fraunces',
+});
 
 // Clerk's Catalan pack leaves a few strings untranslated (they fall back to
 // English). Fill the gaps here as they show up.
@@ -21,32 +30,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ca">
+    <html lang="ca" className={`${figtree.variable} ${fraunces.variable}`}>
       <body>
         <ClerkProvider localization={localization} appearance={{ theme: shadcn }}>
-          {/*
-            TODO(before launch): replace Proxima Nova. The Typekit kit `pun6hlu`
-            belongs to Videocation and must not ship with this app. Pick the
-            Casa d'Infants typeface via /design-consultation, then update this
-            link, `--font-sans` in globals.css and DESIGN.md.
-          */}
-          <link
-            rel="stylesheet"
-            href="https://use.typekit.net/pun6hlu.css"
-            precedence="default"
-          />
-          {/* IBM Plex Mono for data, see DESIGN.md */}
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link
-            rel="preconnect"
-            href="https://fonts.gstatic.com"
-            crossOrigin="anonymous"
-          />
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
-            precedence="default"
-          />
           {children}
         </ClerkProvider>
       </body>

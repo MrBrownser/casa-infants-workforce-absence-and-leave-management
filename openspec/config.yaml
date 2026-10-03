@@ -10,7 +10,7 @@ context: |
 
   Language: UI copy in Catalan; all code, identifiers and docs in English.
   Conventions: conventional commits; no em-dashes in code/commits/logs; npm.
-  Design system: see DESIGN.md (provisional, inherited; Proxima Nova must be replaced before launch). Setup: README.md.
+  Design system: see DESIGN.md (clay-house palette, Fraunces + Figtree, honey = needs a decision). Setup: README.md.
   GDPR: employee data stays in EU infrastructure; sick-leave/absence reasons can be
   health data (Art. 9 special category): data minimisation, restricted access,
   defined retention and erasure.

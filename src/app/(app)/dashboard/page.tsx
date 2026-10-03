@@ -10,7 +10,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto flex max-w-[1280px] flex-col gap-3 px-8 py-16">
-      <h1 className="text-[1.75rem] font-bold leading-[1.2] tracking-[-0.02em] text-foreground">
+      <h1 className="text-[1.875rem] tracking-[-0.015em]">
         {name ? `Hola, ${name}` : 'Hola!'}
       </h1>
       <p className="max-w-xl text-[0.9375rem] leading-[1.65] text-muted-foreground">

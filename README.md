@@ -5,17 +5,12 @@ A web app to manage time off, absences and leave for the Casa d'Infants team.
 > Status: skeleton. Auth, a landing page and a protected `/dashboard` placeholder
 > are in place; no time and leave features yet. The UI is in Catalan; code is in English.
 
-> **⚠️ Before launch: replace the Proxima Nova font.** It is loaded from Videocation's
-> Adobe Typekit kit and must not ship with this app. Define the Casa d'Infants
-> identity with `/design-consultation` and update `DESIGN.md`, `src/app/layout.tsx`
-> and `src/app/globals.css`.
-
 ## Stack
 
 | Concern | Choice |
 |---|---|
 | Framework | Next.js 16 (App Router) + React 19 + TypeScript, on Vercel (EU region) |
-| Styling | Tailwind v4 + shadcn/ui, design system in `DESIGN.md` (provisional) |
+| Styling | Tailwind v4 + shadcn/ui; design system in `DESIGN.md` (Fraunces + Figtree, clay-house palette) |
 | Database | Prisma 7 + Supabase Postgres (EU) |
 | Auth | Clerk (Catalan UI via `@clerk/localizations`) |
 | Forms | react-hook-form + zod |

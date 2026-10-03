@@ -31,28 +31,33 @@ See `README.md` for setup.
 
 - `src/app/page.tsx`: public landing page.
 - `src/app/(app)/`: signed-in area (layout runs `requireUser()`). Add product routes here.
-- `src/components/top-bar.tsx`: shared contextual top bar. `src/components/ui/`: shadcn primitives.
+- `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: provisional clay-house mark. `src/components/ui/`: shadcn primitives.
 
 ## Design system
 
-Always read `DESIGN.md` before any visual or UI work. It is inherited from a
-previous project and is provisional until the Casa d'Infants identity is defined.
-Until then, keep following its rules.
+Always read `DESIGN.md` before any visual or UI work and do not deviate from it
+without explicit user approval. Tokens live in `src/app/globals.css` (light on
+`@theme`, dark under `html[data-theme="dark"]`; nothing toggles dark yet). Key
+rules enforced without asking:
 
-> **TODO before launch: replace Proxima Nova.** It comes from Videocation's Typekit
-> kit and must not ship with this app. Plan: run `/design-consultation` to define
-> the Casa d'Infants identity (see the note at the top of `DESIGN.md`).
+- Fonts: **Fraunces** (soft serif, SOFT 100) for headings at 20px and above only
+  (`h1`, `h2`, `.font-display`); **Figtree** for everything else. Use `tabular-nums`
+  for dates, day counts and balances. Both are self-hosted via `next/font`.
+- Palette from the clay house: Crema background, Terracota primary, Salvia secondary,
+  Espresso text. Leave types use the `leave-*` tokens.
+- **Honey (`accent`, `#E9B44C`) means only "waiting for the coordinator's decision"**
+  (pending requests, coverage conflicts). Never decoration, success or active states.
+- Status via texture, not badges: solid = approved, dashed honey = pending.
+- Sick leave is shown only as "Baixa", never with a reason (GDPR Art. 9).
+- Errors always carry an icon and text (crimson is close to terracotta).
+- No sidebar: top bar on desktop, bottom tab bar on mobile.
+- Soft radii: `rounded-2xl` panels, `rounded-xl` cards, `rounded-lg` buttons/inputs,
+  `rounded-md` in dense contexts. Cards use `shadow-clay`.
+- 150–200ms transitions, purposeful only; filled buttons "press in" on click.
 
-Light and dark color tokens live in `src/app/globals.css` (dark applies under
-`html[data-theme="dark"]`; nothing toggles it yet).
-
-
-- Proxima Nova for all UI text; IBM Plex Mono for data/metrics only.
-- `#FFE880` accent yellow is reserved exclusively for "needs attention" states.
-- Status via card texture (dashed border, desaturation, yellow left-border), not badges.
-- No sidebar: contextual top bar + breadcrumb only.
-- `rounded-xl` on primary interactive elements; smaller radii inside dense contexts.
-- 150–200ms transitions, purposeful only.
+> **TODO before launch: replace the provisional clay-house SVG**
+> (`src/components/house-mark.tsx`) with the final illustration (FASI's image with
+> their permission, or a commissioned one). See `DESIGN.md` → Illustration.
 
 ## Conventions
 

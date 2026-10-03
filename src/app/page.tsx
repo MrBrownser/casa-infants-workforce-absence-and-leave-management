@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { TopBar } from '@/components/top-bar';
+import { HouseMark } from '@/components/house-mark';
 
 export default function HomePage() {
   return (
@@ -9,7 +10,7 @@ export default function HomePage() {
       <TopBar breadcrumb={<span className="whitespace-nowrap text-foreground">Temps i absències</span>}>
         <Show when="signed-out">
           <SignInButton>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
               Inicia la sessió
             </Button>
           </SignInButton>
@@ -22,27 +23,32 @@ export default function HomePage() {
         </Show>
       </TopBar>
 
-      <section className="mx-auto flex max-w-[1280px] flex-col items-start gap-6 px-8 py-24">
-        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-          Temps i absències
-        </p>
-        <h1 className="max-w-2xl text-[2.25rem] font-bold leading-[1.1] tracking-[-0.02em] text-foreground">
-          Casa d&apos;Infants
-        </h1>
-        <p className="max-w-xl text-[0.9375rem] leading-[1.65] text-muted-foreground">
-          Vacances, absències i permisos de l&apos;equip de Casa d&apos;Infants, tot en un sol lloc.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2.5">
-          <Show when="signed-out">
-            <SignInButton>
-              <Button>Inicia la sessió</Button>
-            </SignInButton>
-          </Show>
-          <Show when="signed-in">
-            <Button asChild>
-              <Link href="/dashboard">Obre l&apos;aplicació</Link>
-            </Button>
-          </Show>
+      <section className="mx-auto grid max-w-[1280px] items-center gap-12 px-8 py-16 md:grid-cols-[1.2fr_1fr] md:py-24">
+        <div className="flex flex-col items-start gap-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Temps i absències
+          </p>
+          <h1 className="text-[clamp(2.75rem,6vw,4.5rem)] leading-[0.98] tracking-[-0.025em]">
+            Casa d&apos;Infants
+          </h1>
+          <p className="max-w-xl text-[1.0625rem] leading-[1.65] text-muted-foreground">
+            Vacances, absències i permisos de l&apos;equip de Casa d&apos;Infants, tot en un sol lloc.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2.5">
+            <Show when="signed-out">
+              <SignInButton>
+                <Button>Inicia la sessió</Button>
+              </SignInButton>
+            </Show>
+            <Show when="signed-in">
+              <Button asChild>
+                <Link href="/dashboard">Obre l&apos;aplicació</Link>
+              </Button>
+            </Show>
+          </div>
+        </div>
+        <div className="grid aspect-square place-items-center rounded-2xl bg-sage shadow-clay">
+          <HouseMark className="w-[70%] drop-shadow-[18px_22px_18px_rgb(80_34_18/0.28)]" />
         </div>
       </section>
     </main>
