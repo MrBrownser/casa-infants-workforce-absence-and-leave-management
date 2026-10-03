@@ -1,0 +1,16 @@
+// Prisma schema. The connection URL is configured in `prisma.config.ts`
+// (Prisma 7 reads it there for CLI commands); the runtime client passes the
+// pooled URL explicitly in `src/lib/prisma.ts`.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Data model ───────────────────────────────────────────────────────────────
+// No models yet. Add them through the OpenSpec workflow (/opsx:propose), then
+// run `npm run db:migrate` to create the first migration.

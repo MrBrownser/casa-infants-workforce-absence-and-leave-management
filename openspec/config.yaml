@@ -1,0 +1,21 @@
+schema: superpowers-bridge
+
+context: |
+  Project: casa-infants - a time and leave (absence) management web app for the
+  Casa d'Infants team: time-off requests, absences, approvals and balances.
+
+  Tech stack: Next.js 16 (App Router) + React 19 + TypeScript; Tailwind v4 + shadcn/ui;
+  Prisma 7 + Supabase Postgres (EU); Clerk auth; react-hook-form + zod; Vitest.
+  Deployed on Vercel (EU).
+
+  Language: UI copy in Catalan; all code, identifiers and docs in English.
+  Conventions: conventional commits; no em-dashes in code/commits/logs; npm.
+  Design system: see DESIGN.md (provisional, inherited; Proxima Nova must be replaced before launch). Setup: README.md.
+  GDPR: employee data stays in EU infrastructure; sick-leave/absence reasons can be
+  health data (Art. 9 special category): data minimisation, restricted access,
+  defined retention and erasure.
+
+rules:
+  proposal:
+    - Always include a "Non-goals" section.
+    - Call out any new personal data (especially health-related absence data) and its GDPR handling (residency, access, retention).

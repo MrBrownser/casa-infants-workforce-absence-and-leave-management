@@ -1,0 +1,106 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  /* ── Surfaces ── */
+  --color-background: #F7F7F7;
+  --color-background-mid: #EDEDED;
+  --color-background-grey: #C2C2C2;
+
+  /* ── Text ── */
+  --color-foreground: #333333;
+  --color-muted-foreground: #6E6E6E;
+
+  /* ── Card / Popover ── */
+  --color-card: #FFFFFF;
+  --color-card-foreground: #333333;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #333333;
+
+  /* ── Primary (dark purple-grey) ── */
+  --color-primary: #4D4554;
+  --color-primary-foreground: #FFFFFF;
+
+  /* ── Secondary (light surface) ── */
+  --color-secondary: #EDEDED;
+  --color-secondary-foreground: #333333;
+
+  /* ── Muted ── */
+  --color-muted: #EDEDED;
+
+  /* ── Accent yellow — "needs attention" states ONLY ── */
+  --color-accent: #FFE880;
+  --color-accent-foreground: #333333;
+
+  /* ── Semantic product layer ── */
+  --color-hover: #F0EFF2;
+  --color-selected: #EAE8ED;
+  --color-surface-2: #F2F1F4;
+  --color-success: #6B9E7E;
+  --color-success-bg: #EEF5F1;
+  --color-warning: #F5A623;
+  --color-warning-bg: #FEF5E7;
+  --color-error: #E53E3E;
+  --color-error-bg: #FEF0F0;
+
+
+  /* ── Borders & inputs ── */
+  --color-border: #EDEDED;
+  --color-input: #EDEDED;
+  --color-ring: #4D4554;
+
+  /* ── Border radius — hierarchical per DESIGN.md ── */
+  --radius-sm:  0.375rem;  /* small controls, icon buttons */
+  --radius-md:  0.5rem;    /* data cells, inline fields, chips */
+  --radius-lg:  0.75rem;   /* builder step cards, form inputs */
+  --radius-xl:  1.25rem;   /* primary buttons, cards, modals */
+  --radius-2xl: 1.5rem;
+
+  /* ── Typography ── */
+  /* TODO(before launch): replace proxima-nova (Videocation's Typekit kit), see DESIGN.md */
+  --font-sans: 'proxima-nova', -apple-system, 'Helvetica Neue', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+}
+
+/* ── Dark mode — html[…] has specificity (0,1,1) > :root (0,1,0) ── */
+html[data-theme="dark"] {
+  --color-background: #1A1820;
+  --color-card: #241F2E;
+  --color-primary: #7B72A0;
+  --color-hover: #2A2535;
+  --color-selected: #312C3D;
+  --color-surface-2: #201B2A;
+  --color-border: #2E2938;
+  --color-foreground: #E8E7EC;
+  --color-muted-foreground: #969696;
+  --color-muted: #2E2938;
+  --color-background-mid: #2E2938;
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 150ms ease-out, color 150ms ease-out;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--color-foreground);
+  }
+}
