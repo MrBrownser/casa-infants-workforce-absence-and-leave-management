@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@clerk/ui/themes/shadcn.css";
 
 @theme {
   /* ── Surfaces ── */
@@ -60,6 +61,23 @@
   /* TODO(before launch): replace proxima-nova (Videocation's Typekit kit), see DESIGN.md */
   --font-sans: 'proxima-nova', -apple-system, 'Helvetica Neue', sans-serif;
   --font-mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+}
+
+/* ── shadcn-style aliases read by Clerk's shadcn theme (@clerk/ui/themes) ──
+   They point at the --color-* tokens, so they follow dark mode too. */
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --input: var(--color-input);
+  --ring: var(--color-ring);
+  --destructive: var(--color-error);
+  --border: var(--color-border);
 }
 
 /* ── Dark mode — html[…] has specificity (0,1,1) > :root (0,1,0) ── */

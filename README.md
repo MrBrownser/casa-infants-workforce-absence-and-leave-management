@@ -71,11 +71,11 @@ the Setup script above is configured. `claude plugin list` should show
 ```bash
 nvm use                # Node 24
 npm install            # also generates the Prisma client (postinstall)
-cp .env.example .env   # then fill in real values (see below)
+cp .env.example .env.local   # then fill in real values (see below)
 npm run dev            # http://localhost:3000
 ```
 
-Routes: `/` landing page, `/sign-in`, `/dashboard` (signed-in only).
+Routes: `/` landing page, `/sign-in`, `/sign-up`, `/dashboard` (signed-in only).
 
 If you edit `prisma/schema.prisma`, re-run `npm run db:generate` to refresh the
 generated client (`src/generated/prisma`, gitignored) before `npm run typecheck`
@@ -83,20 +83,22 @@ or `npm run build`.
 
 ### Environment variables
 
-Copy `.env.example` to `.env` and fill in:
+Copy `.env.example` to `.env.local` and fill in:
 
-- **Supabase** (create a project in an **EU region**; region is irreversible):
+- **Supabase** (create a project in an **EU region**; region is irreversible).
+  The current project (`eu-west-1`) is the **dev** database:
   - `DATABASE_URL`: pooled connection (Supavisor, port `6543`, `pgbouncer=true`) for runtime.
   - `DIRECT_URL`: direct connection (port `5432`) for migrations.
-- **Clerk**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (from the Clerk
-  dashboard), `NEXT_PUBLIC_CLERK_SIGN_IN_URL` (path to the sign-in page).
+- **Clerk**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, plus the
+  sign-in/sign-up route and redirect variables. `clerk init --app <app-id>` (Clerk
+  CLI) writes these to `.env.local` for you.
 
 > Clerk keys are required for `npm run build` and `npm run dev` to run, since the
 > root layout is wrapped in `<ClerkProvider>`.
 
 ## Database
 
-Prisma reads `.env`. After editing `prisma/schema.prisma`:
+Prisma reads `.env.local` (then `.env`) via `prisma.config.ts`. After editing `prisma/schema.prisma`:
 
 ```bash
 npm run db:push       # prototype: push schema without a migration
@@ -115,8 +117,11 @@ This repo is configured for OpenSpec with the **superpowers-bridge** schema
 
 ## Deployment (Vercel)
 
-- Import the repo in Vercel; pin the **Function region to an EU region** (e.g. `fra1`) to match Supabase.
-- Add all environment variables from `.env.example` in the Vercel project settings.
+- Import the repo in Vercel; pin the **Function region to the same EU region as
+  Supabase** (`dub1`, Dublin, for `eu-west-1`).
+- Production uses **separate** credentials: a new Supabase project for prod and the
+  Clerk production instance. Set them only in the Vercel project settings; never
+  point a local `.env.local` at the prod database.
 - Pushes to the default branch deploy automatically.
 
 ## GDPR

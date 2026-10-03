@@ -19,8 +19,10 @@ See `README.md` for setup.
 - **Tailwind v4 + shadcn/ui**, styling. `src/app/globals.css` holds the design tokens.
 - **Prisma 7 + Supabase Postgres (EU)**, data. Pooled connection (`:6543`,
   `pgbouncer=true`) at runtime via `DATABASE_URL`; direct connection (`:5432`) for
-  migrations via `DIRECT_URL`. The schema has no models yet.
-- **Clerk**, auth, with the Catalan localization (`caES` from `@clerk/localizations`).
+  migrations via `DIRECT_URL`. The schema has no models yet. The current Supabase
+  project (`eu-west-1`) is the **dev** database; production will get its own project.
+- **Clerk**, auth, with the Catalan localization (`caES` from `@clerk/localizations`)
+  and the shadcn theme (`@clerk/ui/themes`, mapped to our tokens in `globals.css`).
   `src/lib/auth.ts` exposes `requireUser()`; roles are not modelled yet.
 - **react-hook-form + zod**, forms and validation (one schema, both ends).
 - **Vitest + Testing Library**, tests (`npm test`).
@@ -58,7 +60,7 @@ Light and dark color tokens live in `src/app/globals.css` (dark applies under
   All code (identifiers, routes, comments, commit messages, docs) is in **English**.
 - Package manager: **npm**. Node 24 (`.nvmrc` if present).
 - Conventional commits. Do not use em-dashes in code comments, commit messages, or logs.
-- Never commit secrets. Config lives in `.env` (gitignored); `.env.example` is the template.
+- Never commit secrets. Local config lives in `.env.local` (gitignored, read by Next.js and `prisma.config.ts`); `.env.example` is the template.
 - GDPR: employee personal data stays in EU infrastructure (Supabase EU). Absence
   data can include health information (sick leave), a special category under
   GDPR Art. 9: store the minimum needed, restrict who can see it, and plan

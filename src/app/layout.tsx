@@ -2,7 +2,15 @@
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import { caES } from '@clerk/localizations';
+import { shadcn } from '@clerk/ui/themes';
 import './globals.css';
+
+// Clerk's Catalan pack leaves a few strings untranslated (they fall back to
+// English). Fill the gaps here as they show up.
+const localization = {
+  ...caES,
+  formFieldInputPlaceholder__signUpPassword: 'Crea una contrasenya',
+};
 
 export const metadata: Metadata = {
   title: "Casa d'Infants",
@@ -13,9 +21,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider localization={caES}>
-      <html lang="ca">
-        <body>
+    <html lang="ca">
+      <body>
+        <ClerkProvider localization={localization} appearance={{ theme: shadcn }}>
           {/*
             TODO(before launch): replace Proxima Nova. The Typekit kit `pun6hlu`
             belongs to Videocation and must not ship with this app. Pick the
@@ -40,8 +48,8 @@ export default function RootLayout({
             precedence="default"
           />
           {children}
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }
