@@ -193,6 +193,20 @@ constraints). The domain module checks first to give a friendly error.
   is a domain rule only.
 - **Slugs**: `paulo-freire` and `carme-aymerich` are the real-world House names; permanent.
 
+## Plan-time corrections (2026-10-04)
+
+Found while checking Next 16 docs and AGENTS.md during plan writing:
+
+- **Routes are English** (AGENTS.md): `/[house]/equip` became `/[house]/team`; the UI label
+  stays "Equip". The no-access page is `/no-access`.
+- **Layouts and pages render in parallel** in the App Router, so a gate only in
+  `(app)/layout.tsx` would not stop a child page's data query. `requireDirector()` now
+  redirects to `/no-access` and is called by every House page and data function.
+  `forbidden()` was rejected: still experimental in Next 16.
+- **The seed cannot import `server-only` modules**, so the transfer transaction lives in
+  `src/server/membership-store.ts` (client passed in, no auth). `src/server/houses.ts` wraps
+  it with `requireDirector()`.
+
 ## Trade-offs noted
 
 - **URL segment vs. cookie**: URL adds a dynamic segment to every route, but makes the context

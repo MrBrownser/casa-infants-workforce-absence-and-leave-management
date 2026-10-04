@@ -5,7 +5,7 @@ The director manages two Cases d'Infants, Paulo Freire and Carme Aymerich, each 
 ## What Changes
 
 - Add the first domain models: `House` (two rows inserted by the migration), `Employee` (name only) and dated `HouseMembership` with a Postgres exclusion constraint so an employee can never belong to two Houses at once.
-- Add House-scoped routing: `/[house]/...` (e.g. `/paulo-freire/equip`). The URL holds the active House; the proxy remembers the last visited House in a cookie used only to redirect `/dashboard`.
+- Add House-scoped routing: `/[house]/...` (e.g. `/paulo-freire/team`). The URL holds the active House; the proxy remembers the last visited House in a cookie used only to redirect `/dashboard`.
 - Add a House switcher (two-option segmented control) in the top bar that keeps the current section when switching, plus section nav (Inici, Equip) on desktop and a bottom tab bar on mobile.
 - Add a read-only **Equip** page listing the active House's current members.
 - Add a pure domain module for membership (current/historical members, overlap check, transfer planning, "today" in Europe/Madrid) and a thin Prisma data layer.
@@ -29,7 +29,7 @@ The director manages two Cases d'Infants, Paulo Freire and Carme Aymerich, each 
 ## Capabilities
 
 ### New Capabilities
-- `house-context`: the two Houses, the active House held in the URL, switching, preservation across navigation, House-scoped pages and the director-only access gate.
+- `house-context`: the two Houses, the active House held in the URL, switching, preservation across navigation, House-scoped pages and the director-only access gate (`/no-access`).
 - `house-membership`: employees and their effective-dated House membership, one House at a time, transfers that never rewrite history, current vs. historical team members, and the rule that temporary cross-House work is not membership.
 
 ### Modified Capabilities
@@ -49,6 +49,6 @@ The director manages two Cases d'Infants, Paulo Freire and Carme Aymerich, each 
 
 - `prisma/schema.prisma`, first migration (hand-edited for `btree_gist` + exclusion constraint + House rows), `prisma/seed.ts`, `package.json` (seed config).
 - `src/proxy.ts` (active-house cookie), `src/lib/auth.ts` (`requireDirector`), new `src/lib/houses.ts`, `src/lib/house-membership.ts`, `src/server/houses.ts`.
-- Routes: `src/app/(app)/[house]/layout.tsx`, `[house]/page.tsx`, `[house]/equip/page.tsx`; `/dashboard` becomes a redirect; `(app)/layout.tsx` gains the access gate.
+- Routes: `src/app/(app)/[house]/layout.tsx`, `[house]/page.tsx`, `[house]/team/page.tsx`; `/dashboard` becomes a redirect; new `/no-access` page (the access gate).
 - Components: House switcher, section nav / bottom tab bar, no-access page, Equip list.
 - Clerk dashboard: set `publicMetadata.role = "director"` on the director's user by hand.

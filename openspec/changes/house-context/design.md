@@ -53,17 +53,17 @@ Stakeholders: the director (only user for now); later, educators and the ER stan
   - `findOverlap(existing, candidate)`.
   - `planTransfer(current, toHouseId, startsOn)` returns `{ close: { id, endsOn }, open: { employeeId, houseId, startsOn } }`. `endsOn` is the day before `startsOn`. It throws `TransferError` for the same House, for `startsOn <= current.startsOn`, or for a current row that already has an `endsOn`.
 
-  `src/server/houses.ts` (`server-only`) has `getHouseBySlug`, `listCurrentMembers(houseId, date)` and `transferEmployee(employeeId, toHouseId, startsOn)`. The last one runs `planTransfer` inside `prisma.$transaction`. Every read and write calls `requireDirector()`, except where the seed uses an internal variant without auth.
+  `src/server/membership-store.ts` (no auth, no `server-only`, takes the Prisma client as a parameter) has `applyTransfer(db, employeeId, toHouseId, startsOn)`, which runs `planTransfer` inside `db.$transaction`, plus the row mappers. `src/server/houses.ts` (`server-only`) has `getHouseBySlug`, `listCurrentMembers(houseId, date)` and `transferEmployee(...)`. Each calls `requireDirector()` first and then delegates to the store with the app's client. The seed uses `membership-store.ts` directly with its own client, because `server-only` cannot be imported outside Next.
 - **Why**: The rules are testable without a DB, and the data layer stays small. The DB constraint is the backstop.
 - **Alternatives**: Logic inside Prisma queries (hard to test). A full repository abstraction (YAGNI).
 
 ### D6: Director gate via Clerk public metadata
-- **Choice**: `requireDirector()` in `src/lib/auth.ts` returns `{ userId, name }` when `currentUser().publicMetadata.role === 'director'`, otherwise throws `NotDirectorError`. `isDirector(user)` is a pure helper for tests. `(app)/layout.tsx` checks `isDirector` and, for a non-director, renders a `NoAccess` component ("Sense accés", icon + text, `UserButton`) instead of `children`.
-- **Why**: Employee names become personal data now, and the sign-up page is open. This is the smallest guard that holds until SPEC-002 brings real roles.
-- **Alternatives**: Rely on closing sign-ups in Clerk (configuration, not code; easy to undo by mistake).
+- **Choice**: `requireDirector()` in `src/lib/auth.ts` returns `{ userId, name }` when `currentUser().publicMetadata.role === 'director'`. Otherwise it calls `redirect('/no-access')`, which throws and stops the caller. `isDirector(user)` is a pure helper for tests. Every House page, the `[house]` layout, `/dashboard` and every function in `src/server/houses.ts` call it. `src/app/(app)/no-access/page.tsx` renders a `NoAccess` component ("Sense accés", icon + text, `UserButton` in the top bar) and does not call `requireDirector()`.
+- **Why**: Employee names become personal data now, and the sign-up page is open. This is the smallest guard that holds until SPEC-002 brings real roles. Next.js renders layouts and pages **in parallel**, so a gate that only lives in a parent layout does not stop a child page's data query. Each page and data function must check for itself.
+- **Alternatives**: A gate only in `(app)/layout.tsx` (leaks because of parallel rendering). `forbidden()` (still experimental in Next 16, needs `experimental.authInterrupts`). Relying on closing sign-ups in Clerk (configuration, not code; easy to undo by mistake).
 
 ### D7: House switcher as links that keep the section
-- **Choice**: A `HouseSwitcher` client component uses `usePathname()` and a pure `switchHousePath(pathname, toSlug)` that swaps the first segment (`/paulo-freire/equip` becomes `/carme-aymerich/equip`). It renders a two-option segmented control of `Link`s with `aria-current="page"` on the active one. The active style is the `secondary` (Salvia clara) surface with `foreground` text; never `accent` (honey). It sits in the top bar on desktop and in the top title area on mobile.
+- **Choice**: A `HouseSwitcher` client component uses `usePathname()` and a pure `switchHousePath(pathname, toSlug)` that swaps the first segment (`/paulo-freire/team` becomes `/carme-aymerich/team`). It renders a two-option segmented control of `Link`s with `aria-current="page"` on the active one. The active style is the `secondary` (Salvia clara) surface with `foreground` text; never `accent` (honey). It sits in the top bar on desktop and in the top title area on mobile.
 - **Why**: With two Houses, both options visible at once make the active House obvious (FR-002). Plain links mean switching writes nothing (FR-003, EC-001).
 - **Alternatives**: A dropdown (hides the other House, extra click). A server action plus redirect (an unneeded write path).
 
@@ -72,7 +72,7 @@ Stakeholders: the director (only user for now); later, educators and the ER stan
   - `[house]/layout.tsx` awaits `params`, calls `findHouseBySlug` (`notFound()` if unknown), renders `TopBar` with the switcher and `SectionNav` (Inici, Equip), and on mobile a `BottomTabBar` with the same items.
   - `SectionNav` builds hrefs from the active slug.
   - `[house]/page.tsx` shows the eyebrow (House name, micro uppercase) and the h1 "Inici".
-  - `[house]/equip/page.tsx` shows the eyebrow and h1 "Equip", then the list of current members (name plus "Des del <date>", `tabular-nums`, Catalan date format) in a `rounded-2xl` `shadow-clay` panel. When empty, it shows the house mark and "Encara no hi ha ningú a l'equip de <House>."
+  - `[house]/team/page.tsx` shows the eyebrow and h1 "Equip", then the list of current members (name plus "Des del <date>", `tabular-nums`, Catalan date format) in a `rounded-2xl` `shadow-clay` panel. When empty, it shows the house mark and "Encara no hi ha ningú a l'equip de <House>."
 - **Why**: Follows DESIGN.md (no sidebar, top bar on desktop, bottom tab bar on mobile). Future sections slot in as `[house]/<section>`.
 
 ### D9: BR-004 contract for future House-scoped records
