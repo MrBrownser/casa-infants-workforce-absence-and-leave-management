@@ -27,8 +27,8 @@
 ## 5. Data layer and seed
 
 - [x] 5.1 Add `src/server/membership-store.ts` (`applyTransfer(db, ...)` and row mappers, client passed in, no auth) and `src/server/houses.ts` (`server-only`: `getHouseBySlug`, `listCurrentMembers(houseId, date)`, `transferEmployee`, each behind `requireDirector()`), with unit tests using a mocked client
-- [ ] 5.2 Add the dev seed `prisma/seed.ts` (fictional people: Ana PF to CA from 1 July via the transfer path, Marta CA, plus two per House incl. a CT and an ER as names), register it in `prisma.config.ts`, and make it safe to re-run
-- [ ] 5.3 Run the seed against the dev DB
+- [x] 5.2 Add the dev seed `prisma/seed.ts` (fictional people: Ana PF to CA from 1 July via the transfer path, Marta CA, plus two per House incl. a CT and an ER as names), register it in `prisma.config.ts`, and make it safe to re-run
+- [x] 5.3 Run the seed against the dev DB
 
 ## 6. House context routing
 
