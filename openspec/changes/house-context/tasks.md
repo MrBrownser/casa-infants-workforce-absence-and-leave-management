@@ -52,6 +52,6 @@
 
 ## 9. Docs and verification
 
-- [ ] 9.1 Update `AGENTS.md` (layout: `[house]` routes, `houses.ts`, membership module; the director flag) and `README.md` (seed command, setting the Clerk director flag)
-- [ ] 9.2 Run `npm run lint`, `npm run typecheck`, `npm test` and `npm run build`; all must pass
-- [ ] 9.3 Manual smoke test in the dev server as director and non-director: switching keeps the section, `/dashboard` returns to the last House, an unknown slug gives 404, the non-director sees "Sense accés", and Ana is listed under the correct House for today
+- [x] 9.1 Update `AGENTS.md` (layout: `[house]` routes, `houses.ts`, membership module; the director flag) and `README.md` (seed command, setting the Clerk director flag)
+- [x] 9.2 Run `npm run lint`, `npm run typecheck`, `npm test` and `npm run build`; all must pass
+- [~] 9.3 Manual smoke test in the dev server as director and non-director: switching keeps the section, `/dashboard` returns to the last House, an unknown slug gives 404, the non-director sees "Sense accés", and Ana is listed under the correct House for today

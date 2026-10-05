@@ -7,8 +7,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # Casa d'Infants: Operations Manual
 
 A time and leave (absence) management web app for the Casa d'Infants team.
-This repo is currently a bare skeleton: auth, a landing page and a protected
-`/dashboard` placeholder. No domain features yet.
+The House context (SPEC-001, `openspec/changes/house-context/`) is in place: two Houses,
+House-scoped routes, dated employee membership and a read-only team page. Other domain
+features (APs, calendar, vacations, absences) are not built yet.
 
 See `README.md` for setup.
 
@@ -19,19 +20,39 @@ See `README.md` for setup.
 - **Tailwind v4 + shadcn/ui**, styling. `src/app/globals.css` holds the design tokens.
 - **Prisma 7 + Supabase Postgres (EU)**, data. Pooled connection (`:6543`,
   `pgbouncer=true`) at runtime via `DATABASE_URL`; direct connection (`:5432`) for
-  migrations via `DIRECT_URL`. The schema has no models yet. The current Supabase
+  migrations via `DIRECT_URL`. Models: `House`, `Employee`, `HouseMembership`. The current Supabase
   project (`eu-west-1`) is the **dev** database; production will get its own project.
 - **Clerk**, auth, with the Catalan localization (`caES` from `@clerk/localizations`)
   and the shadcn theme (`@clerk/ui/themes`, mapped to our tokens in `globals.css`).
-  `src/lib/auth.ts` exposes `requireUser()`; roles are not modelled yet.
+  `src/lib/auth.ts` exposes `requireUser()` and the temporary `requireDirector()`; roles arrive with SPEC-002.
 - **react-hook-form + zod**, forms and validation (one schema, both ends).
 - **Vitest + Testing Library**, tests (`npm test`).
 
 ## Layout
 
 - `src/app/page.tsx`: public landing page.
-- `src/app/(app)/`: signed-in area (layout runs `requireUser()`). Add product routes here.
+- `src/app/(app)/`: signed-in area (layout runs `requireUser()`).
+  - `[house]/`: House-scoped area. The first URL segment is the active House
+    (`/paulo-freire`, `/carme-aymerich`). **Add House-specific features as
+    `[house]/<section>/`** and register the section in `src/components/section-nav.tsx`.
+  - `dashboard/`: redirects to the last visited House (`active-house` cookie, set in `src/proxy.ts`).
+  - `no-access/`: shown to signed-in users without the director flag.
+- `src/lib/houses.ts`: the two Houses (keep in sync with the `house_context` migration).
+- `src/lib/dates.ts`: `IsoDate` helpers; "today" is always `todayInMadrid()`.
+- `src/lib/house-membership.ts`: pure membership rules (current/historical members, transfers).
+- `src/server/houses.ts`: House data, director-only. `src/server/membership-store.ts`: Prisma
+  persistence without auth (seed only; app code uses `houses.ts`).
 - `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: provisional clay-house mark. `src/components/ui/`: shadcn primitives.
+
+## Access and data rules
+
+- Access is temporary: `requireDirector()` checks Clerk `publicMetadata.role === "director"`
+  (set by hand in the Clerk dashboard; currently the director and the developer). **Call it in
+  every page and data function**, not only in a layout: layouts and pages render in parallel.
+- Every House-scoped record stores its own `houseId` at creation time. Never derive it from an
+  employee's current membership (a transfer must not move history).
+- One House at a time per employee is enforced by a Postgres exclusion constraint written by
+  hand in the `house_context` migration. Prisma does not show it in `schema.prisma`.
 
 ## Design system
 
