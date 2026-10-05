@@ -20,9 +20,9 @@
 
 ## 4. Access gate
 
-- [ ] 4.1 Add a pure `isDirector(user)` and `requireDirector()` (redirects non-directors to `/no-access`) in `src/lib/auth.ts`, with unit tests
-- [ ] 4.2 Add the `NoAccess` component ("Sense accés", icon + text, user button) with a component test
-- [ ] 4.3 Add `src/app/(app)/no-access/page.tsx` rendering `NoAccess` (it does not call `requireDirector()`)
+- [x] 4.1 Add a pure `isDirector(user)` and `requireDirector()` (redirects non-directors to `/no-access`) in `src/lib/auth.ts`, with unit tests
+- [x] 4.2 Add the `NoAccess` component ("Sense accés", icon + text, user button) with a component test
+- [x] 4.3 Add `src/app/(app)/no-access/page.tsx` rendering `NoAccess` (it does not call `requireDirector()`)
 
 ## 5. Data layer and seed
 
@@ -36,7 +36,7 @@
 - [ ] 6.2 Update `src/proxy.ts` to set the `active-house` cookie (httpOnly, lax, secure in prod, 1 year) only when the first segment is a known slug and differs from the current cookie
 - [ ] 6.3 Turn `src/app/(app)/dashboard/page.tsx` into a redirect using `resolveDashboardRedirect`
 - [ ] 6.4 Add `src/app/(app)/[house]/layout.tsx`: await `params`, `notFound()` for unknown slugs, render the top bar with the switcher and section nav, and the mobile bottom tab bar
-- [ ] 6.5 Remove the default `TopBar` rendering from `(app)/layout.tsx`, so the `[house]` layout and the no-access page each own their top bar
+- [x] 6.5 Remove the default `TopBar` rendering from `(app)/layout.tsx`, so the `[house]` layout and the no-access page each own their top bar
 
 ## 7. House UI components
 
