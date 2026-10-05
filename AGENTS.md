@@ -7,7 +7,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # Casa d'Infants: Operations Manual
 
 A time and leave (absence) management web app for the Casa d'Infants team.
-The House context (SPEC-001, `openspec/changes/house-context/`) is in place: two Houses,
+The House context (SPEC-001; specs in `openspec/specs/house-context/` and `openspec/specs/house-membership/`, history in `openspec/changes/archive/2026-10-05-house-context/`) is in place: two Houses,
 House-scoped routes, dated employee membership and a read-only team page. Other domain
 features (APs, calendar, vacations, absences) are not built yet.
 
