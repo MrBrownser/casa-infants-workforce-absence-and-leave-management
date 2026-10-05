@@ -78,7 +78,7 @@ Temporary responsibilities or coverage in the other House (a corretor covering a
 - **THEN** the ER has a single employee record and a single current membership, in Paulo Freire
 
 ### Requirement: Minimal employee data
-An employee record SHALL hold only a full name in this capability. Deleting an employee MUST delete their House memberships.
+An employee record SHALL hold only a full name as personal data in this capability (technical metadata such as a creation timestamp is allowed). Deleting an employee MUST delete their House memberships.
 
 #### Scenario: Employee erasure
 - **WHEN** an employee record is deleted
