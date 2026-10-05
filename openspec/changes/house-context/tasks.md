@@ -47,8 +47,8 @@
 ## 8. House pages
 
 - [x] 8.1 Add `src/app/(app)/[house]/page.tsx` (Inici placeholder with the House header)
-- [ ] 8.2 Add a `TeamList` component (name plus "Des del" date in Catalan format, `tabular-nums`, clay panel, empty state with the house mark), with component tests for the list and the empty state
-- [ ] 8.3 Add `src/app/(app)/[house]/team/page.tsx` wiring `listCurrentMembers(house.id, todayInMadrid())` into `TeamList`
+- [x] 8.2 Add a `TeamList` component (name plus "Des del" date in Catalan format, `tabular-nums`, clay panel, empty state with the house mark), with component tests for the list and the empty state
+- [x] 8.3 Add `src/app/(app)/[house]/team/page.tsx` wiring `listCurrentMembers(house.id, todayInMadrid())` into `TeamList`
 
 ## 9. Docs and verification
 
