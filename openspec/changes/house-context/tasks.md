@@ -5,7 +5,7 @@
 
 ## 2. Membership domain module
 
-- [ ] 2.1 Add `IsoDate` helpers and `todayInMadrid(now?)` in `src/lib/dates.ts`, with tests covering the UTC/Madrid midnight boundary
+- [x] 2.1 Add `IsoDate` helpers and `todayInMadrid(now?)` in `src/lib/dates.ts`, with tests covering the UTC/Madrid midnight boundary
 - [ ] 2.2 Add `isActiveOn` and `membersOn`, with tests for the current-team (scenario 4) and historical-membership (scenario 5, EC-002) scenarios
 - [ ] 2.3 Add `findOverlap`, with tests for same-House and cross-House overlaps and adjacent (non-overlapping) periods
 - [ ] 2.4 Add `planTransfer` and `TransferError`, with tests for close/open, advance transfer, same-House rejection, start-date rejection and unchanged past periods (scenario 8)
