@@ -18,7 +18,7 @@ export function TopBar({
         <HouseMark className="size-7" />
         Casa d&apos;Infants
       </Link>
-      <div className="hidden flex-1 items-center gap-1.5 overflow-hidden text-sm font-medium text-muted-foreground sm:flex">
+      <div className="hidden flex-1 items-center gap-3 overflow-hidden text-sm font-medium text-muted-foreground md:flex">
         {breadcrumb}
       </div>
       {children && <div className="ml-auto flex items-center gap-2">{children}</div>}

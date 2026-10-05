@@ -40,9 +40,9 @@
 
 ## 7. House UI components
 
-- [ ] 7.1 Add the `HouseSwitcher` client component (two-option segmented control of links, `aria-current`, secondary selected style, no honey), with a component test
-- [ ] 7.2 Add `SectionNav` (desktop pills) and `BottomTabBar` (mobile) for Inici and Equip, with hrefs built from the active slug, with a component test
-- [ ] 7.3 Add the `HousePageHeader` (micro uppercase eyebrow with the House name and a Fraunces h1)
+- [x] 7.1 Add the `HouseSwitcher` client component (two-option segmented control of links, `aria-current`, secondary selected style, no honey), with a component test
+- [x] 7.2 Add `SectionNav` (desktop pills) and `BottomTabBar` (mobile) for Inici and Equip, with hrefs built from the active slug, with a component test
+- [x] 7.3 Add the `HousePageHeader` (micro uppercase eyebrow with the House name and a Fraunces h1)
 
 ## 8. House pages
 
