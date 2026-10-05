@@ -1,7 +1,7 @@
 ## 1. Houses in code
 
-- [ ] 1.1 Add `src/lib/houses.ts` with the `HOUSES` constant, `HouseSlug` type, `isHouseSlug`, `findHouseBySlug` and `DEFAULT_HOUSE_SLUG` (`paulo-freire`), with unit tests
-- [ ] 1.2 Add pure `switchHousePath(pathname, toSlug)` (swaps the first segment, keeps the section) with unit tests
+- [x] 1.1 Add `src/lib/houses.ts` with the `HOUSES` constant, `HouseSlug` type, `isHouseSlug`, `findHouseBySlug` and `DEFAULT_HOUSE_SLUG` (`paulo-freire`), with unit tests
+- [x] 1.2 Add pure `switchHousePath(pathname, toSlug)` (swaps the first segment, keeps the section) with unit tests
 
 ## 2. Membership domain module
 
