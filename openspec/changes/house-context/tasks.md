@@ -12,11 +12,11 @@
 
 ## 3. Database schema and migration
 
-- [ ] 3.1 Add `House`, `Employee` and `HouseMembership` models to `prisma/schema.prisma` (`@db.Date` dates, cascade delete from Employee, index on `houseId, startsOn`, comment pointing to the hand-written constraints)
-- [ ] 3.2 Create the migration with `--create-only`, then hand-edit it: `btree_gist` extension, CHECK `ends_on >= starts_on`, EXCLUDE overlap constraint, INSERT the two Houses
-- [ ] 3.3 Add a unit test asserting the migration's inserted House slugs and names match `HOUSES`
-- [ ] 3.4 Apply the migration to the dev database and confirm a follow-up `prisma migrate dev` reports no drift
-- [ ] 3.5 Manually verify against the dev DB that an overlapping membership insert and an end-before-start row are both rejected (record the output)
+- [x] 3.1 Add `House`, `Employee` and `HouseMembership` models to `prisma/schema.prisma` (`@db.Date` dates, cascade delete from Employee, index on `houseId, startsOn`, comment pointing to the hand-written constraints)
+- [x] 3.2 Create the migration with `--create-only`, then hand-edit it: `btree_gist` extension, CHECK `ends_on >= starts_on`, EXCLUDE overlap constraint, INSERT the two Houses
+- [x] 3.3 Add a unit test asserting the migration's inserted House slugs and names match `HOUSES`
+- [x] 3.4 Apply the migration to the dev database and confirm a follow-up `prisma migrate dev` reports no drift
+- [x] 3.5 Manually verify against the dev DB that an overlapping membership insert and an end-before-start row are both rejected (record the output)
 
 ## 4. Access gate
 

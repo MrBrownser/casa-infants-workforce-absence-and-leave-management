@@ -12,5 +12,44 @@ datasource db {
 }
 
 // ── Data model ───────────────────────────────────────────────────────────────
-// No models yet. Add them through the OpenSpec workflow (/opsx:propose), then
-// run `npm run db:migrate` to create the first migration.
+
+/// One of the two Cases d'Infants. Rows are inserted by the house_context
+/// migration; keep them in sync with HOUSES in src/lib/houses.ts.
+model House {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String            @unique
+  name        String
+  memberships HouseMembership[]
+
+  @@map("houses")
+}
+
+/// Minimal on purpose (GDPR minimisation): roles, contact data and the Clerk
+/// link arrive with SPEC-002.
+model Employee {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName    String            @map("full_name")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  memberships HouseMembership[]
+
+  @@map("employees")
+}
+
+/// A period (inclusive dates, endsOn null = ongoing) during which an employee
+/// belongs to a House. The migration adds constraints Prisma cannot express:
+/// CHECK (ends_on >= starts_on) and an EXCLUDE USING gist constraint that
+/// forbids overlapping periods per employee (one House at a time).
+/// See prisma/migrations/*_house_context/migration.sql.
+model HouseMembership {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employeeId String    @map("employee_id") @db.Uuid
+  houseId    String    @map("house_id") @db.Uuid
+  startsOn   DateTime  @map("starts_on") @db.Date
+  endsOn     DateTime? @map("ends_on") @db.Date
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  house      House     @relation(fields: [houseId], references: [id], onDelete: Restrict)
+
+  @@index([houseId, startsOn])
+  @@index([employeeId])
+  @@map("house_memberships")
+}
