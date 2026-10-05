@@ -4,7 +4,14 @@ import { HouseSwitcher } from '@/components/house-switcher';
 import { BottomTabBar, SectionNav } from '@/components/section-nav';
 import { TopBar } from '@/components/top-bar';
 import { requireDirector } from '@/lib/auth';
-import { findHouseBySlug } from '@/lib/houses';
+import { HOUSES, findHouseBySlug } from '@/lib/houses';
+
+// Unknown slugs 404 before any Clerk or DB work. Pages still render per request.
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return HOUSES.map((house) => ({ house: house.slug }));
+}
 
 // Every route under /[house] runs in the context of that House (FR-004,
 // FR-005). Pages still call requireDirector() themselves: layouts and pages

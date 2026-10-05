@@ -17,9 +17,12 @@ export function HouseSwitcher({ activeSlug, className }: Readonly<{ activeSlug: 
       {HOUSES.map((house) => {
         const active = house.slug === activeSlug;
         return (
+          // prefetch={false}: a prefetch of the other House's URL goes through the
+          // proxy, which would set the remembered-House cookie to the House not visited.
           <Link
             key={house.slug}
             href={switchHousePath(pathname, house.slug)}
+            prefetch={false}
             aria-current={active ? 'page' : undefined}
             className={cn(
               'inline-flex min-h-11 flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 text-sm font-medium transition-colors duration-150 ease-out md:min-h-8',

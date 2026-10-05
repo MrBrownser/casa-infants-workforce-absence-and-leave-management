@@ -4,6 +4,7 @@ import { HousePageHeader } from '@/components/house-page-header';
 import { TeamList } from '@/components/team-list';
 import { requireDirector } from '@/lib/auth';
 import { todayInMadrid } from '@/lib/dates';
+import { findHouseBySlug } from '@/lib/houses';
 import { getHouseBySlug, listCurrentMembers } from '@/server/houses';
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 export default async function TeamPage({ params }: Readonly<{ params: Promise<{ house: string }> }>) {
   await requireDirector();
   const { house: slug } = await params;
+  if (!findHouseBySlug(slug)) notFound();
   const house = await getHouseBySlug(slug);
   if (!house) notFound();
 

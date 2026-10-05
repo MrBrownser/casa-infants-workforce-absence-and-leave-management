@@ -1,6 +1,7 @@
 import 'server-only';
 import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 
 export const NO_ACCESS_PATH = '/no-access';
 
@@ -15,8 +16,11 @@ function displayName(user: ClerkUserLike): string | null {
   return [user.firstName, user.lastName].filter(Boolean).join(' ') || null;
 }
 
+// One Clerk Backend API call per request, however many callers check auth.
+const getCurrentUser = cache(() => currentUser());
+
 export async function requireUser() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error('Not authorized');
   return { userId: user.id, name: displayName(user) };
 }
@@ -33,7 +37,7 @@ export function isDirector(user: { publicMetadata?: Record<string, unknown> } | 
  * does not stop a page's queries.
  */
 export async function requireDirector() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error('Not authorized');
   if (!isDirector(user)) redirect(NO_ACCESS_PATH);
   return { userId: user.id, name: displayName(user) };

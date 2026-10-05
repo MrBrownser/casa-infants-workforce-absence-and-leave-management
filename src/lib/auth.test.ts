@@ -3,6 +3,8 @@ import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { NO_ACCESS_PATH, isDirector, requireDirector } from './auth';
 
+// React's per-request cache would memoize across tests outside RSC: pass it through.
+vi.mock('react', async (orig) => ({ ...(await orig<typeof import('react')>()), cache: <T,>(fn: T) => fn }));
 vi.mock('@clerk/nextjs/server', () => ({ currentUser: vi.fn() }));
 vi.mock('next/navigation', () => ({
   redirect: vi.fn(() => {

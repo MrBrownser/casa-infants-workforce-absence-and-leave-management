@@ -1,4 +1,3 @@
-//
 // The active House lives in the URL. This cookie only remembers the last one
 // so /dashboard can send the director back to it. It is never used to
 // authorize or to scope queries.
