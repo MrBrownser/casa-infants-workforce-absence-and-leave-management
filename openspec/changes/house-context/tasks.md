@@ -32,9 +32,9 @@
 
 ## 6. House context routing
 
-- [ ] 6.1 Add pure `resolveDashboardRedirect(cookieValue)` and `activeHouseCookieUpdate(pathname, currentCookie)` helpers, with unit tests
-- [ ] 6.2 Update `src/proxy.ts` to set the `active-house` cookie (httpOnly, lax, secure in prod, 1 year) only when the first segment is a known slug and differs from the current cookie
-- [ ] 6.3 Turn `src/app/(app)/dashboard/page.tsx` into a redirect using `resolveDashboardRedirect`
+- [x] 6.1 Add pure `resolveDashboardRedirect(cookieValue)` and `activeHouseCookieUpdate(pathname, currentCookie)` helpers, with unit tests
+- [x] 6.2 Update `src/proxy.ts` to set the `active-house` cookie (httpOnly, lax, secure in prod, 1 year) only when the first segment is a known slug and differs from the current cookie
+- [x] 6.3 Turn `src/app/(app)/dashboard/page.tsx` into a redirect using `resolveDashboardRedirect`
 - [ ] 6.4 Add `src/app/(app)/[house]/layout.tsx`: await `params`, `notFound()` for unknown slugs, render the top bar with the switcher and section nav, and the mobile bottom tab bar
 - [x] 6.5 Remove the default `TopBar` rendering from `(app)/layout.tsx`, so the `[house]` layout and the no-access page each own their top bar
 
