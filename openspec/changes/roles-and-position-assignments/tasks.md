@@ -52,7 +52,7 @@
 
 ## 8. Seed, docs and acceptance
 
-- [ ] 8.1 Add `prisma/seed-data.ts` (`SEED_INVENTORY` from the product owner's two lists: 10 fictional people and positions per House) and rebuild `prisma/seed.ts` on the staffing store
+- [x] 8.1 Add `prisma/seed-data.ts` (`SEED_INVENTORY` from the product owner's two lists: 10 fictional people and positions per House) and rebuild `prisma/seed.ts` on the staffing store
 - [ ] 8.2 Apply the migration to the dev Supabase DB (reset and reseed only with the user's go-ahead), grant the developer, and record a manual check that a direct overlapping assignment is rejected there
 - [ ] 8.3 Update README (test:db prerequisites, operator scripts, first-deploy cutover and recovery, dev reset), AGENTS.md (models, auth, layout) and DESIGN.md if any new pattern needs recording
 - [ ] 8.4 Run `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:db` and `npm run build`
