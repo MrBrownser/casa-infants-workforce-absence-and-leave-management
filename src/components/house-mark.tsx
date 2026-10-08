@@ -11,7 +11,7 @@ import Image, { type ImageLoaderProps } from 'next/image';
  * smallest one that covers the requested width, so nothing is re-encoded.
  * The untouched originals are in `public/brand/fasi-source/`.
  */
-const SIZES = [256, 512, 848] as const;
+const SIZES = [256, 512, 847] as const;
 
 function houseLoader({ width }: ImageLoaderProps) {
   const size = SIZES.find((s) => s >= width) ?? SIZES[SIZES.length - 1];
@@ -24,8 +24,8 @@ export function HouseMark({ className }: Readonly<{ className?: string }>) {
       loader={houseLoader}
       src="casa-plastelina"
       alt=""
-      width={848}
-      height={869}
+      width={847}
+      height={868}
       sizes="(min-width: 768px) 320px, 70vw"
       className={`object-contain ${className ?? ''}`}
     />
