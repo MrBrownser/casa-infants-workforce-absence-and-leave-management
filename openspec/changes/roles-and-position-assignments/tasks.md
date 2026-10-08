@@ -28,7 +28,7 @@
 - [x] 4.3 Add `createEmployee` (with initial membership and optional assignment), `addMembership` and `editEmployeeName` (stale `updatedAt`), with DB tests (AC-001, AC-002, AC-003, AC-024)
 - [x] 4.4 Add `handover` and `endAssignment` with preview/confirm plan tokens, with DB tests (AC-004, AC-005, stale confirm, concurrent race AC-006)
 - [x] 4.5 Add `endMembership` and `transfer` with preview/confirm, replacing `applyTransfer` in `membership-store.ts`, with DB tests (AC-009..AC-013, AC-016, rollback leaves no partial change)
-- [ ] 4.6 Add read queries for team views, employee history and position history, scoped by House
+- [x] 4.6 Add read queries for team views, employee history and position history, scoped by House
 
 ## 5. Application access
 
