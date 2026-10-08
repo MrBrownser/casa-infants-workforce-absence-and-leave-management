@@ -4,7 +4,7 @@ import { requireDirector } from '@/lib/auth';
 import { todayInMadrid } from '@/lib/dates';
 import { findHouseBySlug } from '@/lib/houses';
 import { getHouseBySlug } from '@/server/houses';
-import { loadEmployeeHistory } from '@/server/staffing';
+import { loadEmployeeHistory, loadPositionDetail } from '@/server/staffing';
 
 // Shared start of every team page: the director check comes first (pages and
 // layouts render in parallel), then the House from the URL, then the record.
@@ -26,4 +26,13 @@ export async function employeeContext(params: Promise<{ house: string; employeeI
   const history = await loadEmployeeHistory(context.house.id, employeeId);
   if (!history) notFound();
   return { ...context, history };
+}
+
+// An unknown, other-House or non-UUID position is a 404. Goes through houseContext, so the director check comes first.
+export async function positionContext(params: Promise<{ house: string; positionId: string }>) {
+  const context = await houseContext(params);
+  const { positionId } = await params;
+  const detail = await loadPositionDetail(context.house.id, positionId);
+  if (!detail) notFound();
+  return { ...context, detail };
 }
