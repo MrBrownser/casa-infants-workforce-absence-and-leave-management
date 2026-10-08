@@ -34,7 +34,7 @@
 
 - [x] 5.1 Add `src/server/access-store.ts` (`grantDirector`, `revokeDirector`, `listGrants`, `linkAccount`, `unlinkAccount`) with DB tests (duplicate link rejected AC-021, revoke/grant)
 - [x] 5.2 Switch `requireDirector()` to grants (`auth()` userId, per-request cached grant lookup, pure `isEnabledDirectorGrant`), delete the metadata check, and update callers and tests (AC-018, AC-019)
-- [ ] 5.3 Add `scripts/access.ts` and `scripts/account-link.ts` (`@clerk/backend` user verification, environment and DB host banner, confirmation or `--yes`) and the npm scripts, with unit tests for argument parsing and the confirmation guard
+- [x] 5.3 Add `scripts/access.ts` and `scripts/account-link.ts` (`@clerk/backend` user verification, environment and DB host banner, confirmation or `--yes`) and the npm scripts, with unit tests for argument parsing and the confirmation guard
 
 ## 6. Server layer and actions
 
