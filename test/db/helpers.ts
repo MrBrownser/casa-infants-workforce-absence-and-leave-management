@@ -62,3 +62,21 @@ export async function expectPgError(promise: Promise<unknown>, code: string): Pr
   expect(error, `expected Postgres error ${code}`).not.toBeNull();
   expect(pgCodeOf(error)).toBe(code);
 }
+
+export async function insertPosition(db: PrismaClient, houseId: string, roleCode: string, label: string): Promise<string> {
+  return (await db.position.create({ data: { houseId, roleCode, label } })).id;
+}
+
+export async function insertAssignment(
+  db: PrismaClient,
+  employeeId: string,
+  positionId: string,
+  houseId: string,
+  startsOn: IsoDate,
+  endsOn: IsoDate | null = null,
+): Promise<string> {
+  const row = await db.positionAssignment.create({
+    data: { employeeId, positionId, houseId, startsOn: isoDateToDate(startsOn), endsOn: endsOn ? isoDateToDate(endsOn) : null },
+  });
+  return row.id;
+}

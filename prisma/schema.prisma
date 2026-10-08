@@ -13,24 +13,28 @@ datasource db {
 
 // ── Data model ───────────────────────────────────────────────────────────────
 
-/// One of the two Cases d'Infants. Rows are inserted by the house_context
 /// migration; keep them in sync with HOUSES in src/lib/houses.ts.
 model House {
-  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug        String            @unique
+  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String               @unique
   name        String
   memberships HouseMembership[]
+  positions   Position[]
+  assignments PositionAssignment[]
 
   @@map("houses")
 }
 
-/// Minimal on purpose (GDPR minimisation): roles, contact data and the Clerk
-/// link arrive with SPEC-002.
+/// account links and grants live in their own tables.
 model Employee {
-  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  fullName    String            @map("full_name")
-  createdAt   DateTime          @default(now()) @map("created_at")
+  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName    String               @map("full_name")
+  createdAt   DateTime             @default(now()) @map("created_at")
+  /// Version for stale name edits (design D6).
+  updatedAt   DateTime             @default(now()) @updatedAt @map("updated_at")
   memberships HouseMembership[]
+  assignments PositionAssignment[]
+  accountLink EmployeeAccountLink?
 
   @@map("employees")
 }
@@ -40,6 +44,7 @@ model Employee {
 /// CHECK (ends_on >= starts_on) and an EXCLUDE USING gist constraint that
 /// forbids overlapping periods per employee (one House at a time).
 /// See prisma/migrations/*_house_context/migration.sql.
+/// The staffing migration adds a deferred trigger: shortening or deleting a membership must not strand an assignment (SQLSTATE CI001).
 model HouseMembership {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   employeeId String    @map("employee_id") @db.Uuid
@@ -52,4 +57,80 @@ model HouseMembership {
   @@index([houseId, startsOn])
   @@index([employeeId])
   @@map("house_memberships")
+}
+
+/// staffing migration; keep them in sync with ROLES in src/lib/roles.ts.
+model OccupationalRole {
+  code      String     @id
+  label     String
+  positions Position[]
+
+  @@map("occupational_roles")
+}
+
+/// `roleCode` (SQLSTATE CI002). Never write `labelKey` from the app.
+model Position {
+  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  houseId     String               @map("house_id") @db.Uuid
+  roleCode    String               @map("role_code")
+  label       String
+  labelKey    String               @default("") @map("label_key")
+  createdAt   DateTime             @default(now()) @map("created_at")
+  house       House                @relation(fields: [houseId], references: [id], onDelete: Restrict)
+  role        OccupationalRole     @relation(fields: [roleCode], references: [code], onDelete: Restrict)
+  assignments PositionAssignment[]
+
+  @@unique([houseId, labelKey])
+  @@unique([id, houseId])
+  @@map("positions")
+}
+
+/// The composite relation makes the House match the position's House.
+model PositionAssignment {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employeeId String    @map("employee_id") @db.Uuid
+  positionId String    @map("position_id") @db.Uuid
+  houseId    String    @map("house_id") @db.Uuid
+  startsOn   DateTime  @map("starts_on") @db.Date
+  endsOn     DateTime? @map("ends_on") @db.Date
+  createdAt  DateTime  @default(now()) @map("created_at")
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  position   Position  @relation(fields: [positionId, houseId], references: [id, houseId], onDelete: Restrict)
+  house      House     @relation(fields: [houseId], references: [id], onDelete: Restrict)
+
+  @@index([houseId, startsOn])
+  @@index([employeeId])
+  @@index([positionId])
+  @@map("position_assignments")
+}
+
+/// revokedAt. Provisioned only by `npm run access`; never by a form.
+model AccessGrant {
+  clerkUserId String    @id @map("clerk_user_id")
+  role        String
+  grantedAt   DateTime  @default(now()) @map("granted_at")
+  revokedAt   DateTime? @map("revoked_at")
+
+  @@map("access_grants")
+}
+
+/// Managed only by `npm run account-link`.
+model EmployeeAccountLink {
+  employeeId  String   @id @map("employee_id") @db.Uuid
+  clerkUserId String   @unique @map("clerk_user_id")
+  linkedAt    DateTime @default(now()) @map("linked_at")
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("employee_account_links")
+}
+
+/// minimal "who did what, when" trail. `result` holds IDs only, never names.
+model OperationReceipt {
+  id               String   @id @db.Uuid
+  kind             String
+  actorClerkUserId String   @map("actor_clerk_user_id")
+  result           Json?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("operation_receipts")
 }

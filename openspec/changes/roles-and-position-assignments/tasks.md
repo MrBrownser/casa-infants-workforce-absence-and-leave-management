@@ -16,10 +16,10 @@
 
 ## 3. Schema and migration
 
-- [ ] 3.1 Add Prisma models `OccupationalRole`, `Position`, `PositionAssignment`, `AccessGrant`, `EmployeeAccountLink`, `OperationReceipt` and `Employee.updatedAt`, with comments pointing to the hand-written SQL
-- [ ] 3.2 Create the `staffing` migration with `--create-only` and hand-add: role rows (`ON CONFLICT DO NOTHING`), `positions_normalise_and_freeze` trigger, `CHECK` constraints, both assignment EXCLUDE constraints, the deferred containment constraint trigger on both tables (with in-trigger employee lock and SQLSTATE `CI001`); confirm a second `--create-only` produces an empty migration
-- [ ] 3.3 Add a migration sync test: roles match `ROLES` and the hand-written blocks are present
-- [ ] 3.4 Add DB tests: role idempotency, label uniqueness (trim and case), House/role immutability, House-match FK, direct overlap inserts (employee and position), containment via direct SQL (insert beyond membership, membership shortened, deferred order inside one transaction), employee delete cascades (memberships, assignments, link; positions and grants kept), SPEC-001-shaped data preserved
+- [x] 3.1 Add Prisma models `OccupationalRole`, `Position`, `PositionAssignment`, `AccessGrant`, `EmployeeAccountLink`, `OperationReceipt` and `Employee.updatedAt`, with comments pointing to the hand-written SQL
+- [x] 3.2 Create the `staffing` migration with `--create-only` and hand-add: role rows (`ON CONFLICT DO NOTHING`), `positions_normalise_and_freeze` trigger, `CHECK` constraints, both assignment EXCLUDE constraints, the deferred containment constraint trigger on both tables (with in-trigger employee lock and SQLSTATE `CI001`); confirm a second `--create-only` produces an empty migration
+- [x] 3.3 Add a migration sync test: roles match `ROLES` and the hand-written blocks are present
+- [x] 3.4 Add DB tests: role idempotency, label uniqueness (trim and case), House/role immutability, House-match FK, direct overlap inserts (employee and position), containment via direct SQL (insert beyond membership, membership shortened, deferred order inside one transaction), employee delete cascades (memberships, assignments, link; positions and grants kept), SPEC-001-shaped data preserved
 
 ## 4. Staffing store (Prisma, no auth)
 
