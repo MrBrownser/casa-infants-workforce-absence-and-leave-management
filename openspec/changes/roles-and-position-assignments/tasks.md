@@ -39,7 +39,7 @@
 ## 6. Server layer and actions
 
 - [ ] 6.1 Add `src/server/staffing.ts` (`server-only`, `requireDirector()` first, House-scoped reads: `getTeamView`, `getEmployeeHistory`, `getPositionsPage`, `getPositionHistory`) and retire `listCurrentMembers`/`transferEmployee` from `src/server/houses.ts`, with mocked tests asserting the access check precedes any query
-- [ ] 6.2 Add Server Functions for every workflow (House from bound slug, zod parse, actor from `requireDirector`, store call, `revalidatePath`, redirect with `?done`), with tests for access-first, tampered IDs and ignored permission fields (AC-020)
+- [x] 6.2 Add Server Functions for every workflow (House from bound slug, zod parse, actor from `requireDirector`, store call, `revalidatePath`, redirect with `?done`), with tests for access-first, tampered IDs and ignored permission fields (AC-020)
 
 ## 7. UI
 
