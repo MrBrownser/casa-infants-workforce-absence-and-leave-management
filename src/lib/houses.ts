@@ -25,14 +25,22 @@ export function houseSlugFromPath(pathname: string): HouseSlug | null {
   return isHouseSlug(first) ? first : null;
 }
 
+// Team pages without a record in the path keep their section when switching;
+// employee and position pages go to the other House's team list, because an
+// employee or position ID has no relationship with the other House (FR-006).
+const RECORD_FREE_TEAM_PAGES = new Set(['new', 'positions']);
+
 /**
  * Same section, other House: `/paulo-freire/team` becomes `/carme-aymerich/team`.
  * A path outside any House goes to the target House home.
  */
 export function switchHousePath(pathname: string, toSlug: HouseSlug): string {
-  if (!houseSlugFromPath(pathname)) return `/${toSlug}`;
-  const segments = pathname.split('/');
-  segments[1] = toSlug;
-  const path = segments.join('/');
-  return path.endsWith('/') ? path.slice(0, -1) : path;
+  const fromSlug = houseSlugFromPath(pathname);
+  if (!fromSlug) return `/${toSlug}`;
+  const [, section, page, ...deeper] = pathname.split('/').filter(Boolean);
+  const rest = [section, page, ...deeper].filter((segment): segment is string => segment !== undefined);
+  if (fromSlug === toSlug) return `/${[toSlug, ...rest].join('/')}`;
+  const recordPage = section === 'team' && page !== undefined && (deeper.length > 0 || !RECORD_FREE_TEAM_PAGES.has(page));
+  if (recordPage) return `/${toSlug}/team`;
+  return `/${[toSlug, ...rest].join('/')}`;
 }

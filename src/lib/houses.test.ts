@@ -44,10 +44,19 @@ describe('houseSlugFromPath', () => {
 });
 
 describe('switchHousePath', () => {
-  it('swaps the House and keeps the section', () => {
+  const ID = '6f1c2e7a-0b3d-4c5e-8f90-1a2b3c4d5e6f';
+
+  it('swaps the House and keeps sections without a record', () => {
     expect(switchHousePath('/paulo-freire', 'carme-aymerich')).toBe('/carme-aymerich');
     expect(switchHousePath('/paulo-freire/team', 'carme-aymerich')).toBe('/carme-aymerich/team');
-    expect(switchHousePath('/paulo-freire/team/a/b', 'carme-aymerich')).toBe('/carme-aymerich/team/a/b');
+    expect(switchHousePath('/paulo-freire/team/new', 'carme-aymerich')).toBe('/carme-aymerich/team/new');
+    expect(switchHousePath('/paulo-freire/team/positions', 'carme-aymerich')).toBe('/carme-aymerich/team/positions');
+  });
+
+  it("sends employee and position pages to the other House's team list (FR-006)", () => {
+    expect(switchHousePath(`/paulo-freire/team/${ID}`, 'carme-aymerich')).toBe('/carme-aymerich/team');
+    expect(switchHousePath(`/paulo-freire/team/${ID}/transfer`, 'carme-aymerich')).toBe('/carme-aymerich/team');
+    expect(switchHousePath(`/paulo-freire/team/positions/${ID}`, 'carme-aymerich')).toBe('/carme-aymerich/team');
   });
 
   it('drops a trailing slash', () => {
@@ -56,6 +65,7 @@ describe('switchHousePath', () => {
 
   it('keeps the path when switching to the same House', () => {
     expect(switchHousePath('/paulo-freire/team', 'paulo-freire')).toBe('/paulo-freire/team');
+    expect(switchHousePath(`/paulo-freire/team/${ID}`, 'paulo-freire')).toBe(`/paulo-freire/team/${ID}`);
   });
 
   it('goes to the House home from a non-House path', () => {
