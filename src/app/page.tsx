@@ -48,7 +48,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="grid aspect-square place-items-center rounded-2xl bg-sage shadow-clay">
-          <HouseMark className="w-[70%] drop-shadow-[18px_22px_18px_rgb(80_34_18/0.28)]" />
+          <HouseMark className="w-[80%]" />
         </div>
       </section>
     </main>

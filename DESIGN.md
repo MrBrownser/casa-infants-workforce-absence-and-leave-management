@@ -135,8 +135,8 @@ Do not apply 20px radii to dense elements (table cells, calendar bars): it reads
 
 ## Illustration
 
-- **TODO before launch: replace the provisional SVG house** (`src/components/house-mark.tsx`) with the final illustration: FASI's clay-house image (only with FASI's permission) or a commissioned illustration in the same clay style.
-- Until then, the provisional SVG is used as the wordmark mark, on the landing page and in empty states ("No queda res pendent").
+- The house is FASI's plasticine photo (`public/brand/`, cut out with its soft shadow kept, WebP in 848/512/256 px; originals in `public/brand/fasi-source/`), rendered by `src/components/house-mark.tsx`. It is the wordmark mark, the landing page illustration and the empty-state mark ("No queda res pendent").
+- **TODO before launch: confirm FASI's permission to use the image**, or replace it with a commissioned illustration in the same clay style.
 
 ## Anti-Patterns
 

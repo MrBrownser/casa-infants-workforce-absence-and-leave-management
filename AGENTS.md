@@ -42,7 +42,7 @@ See `README.md` for setup.
 - `src/lib/house-membership.ts`: pure membership rules (current/historical members, transfers).
 - `src/server/houses.ts`: House data, director-only. `src/server/membership-store.ts`: Prisma
   persistence without auth (seed only; app code uses `houses.ts`).
-- `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: provisional clay-house mark. `src/components/ui/`: shadcn primitives.
+- `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: FASI clay-house mark (images in `public/brand/`). `src/components/ui/`: shadcn primitives.
 
 ## Access and data rules
 
@@ -76,9 +76,9 @@ rules enforced without asking:
   `rounded-md` in dense contexts. Cards use `shadow-clay`.
 - 150–200ms transitions, purposeful only; filled buttons "press in" on click.
 
-> **TODO before launch: replace the provisional clay-house SVG**
-> (`src/components/house-mark.tsx`) with the final illustration (FASI's image with
-> their permission, or a commissioned one). See `DESIGN.md` → Illustration.
+> **TODO before launch: confirm FASI's permission** to use their clay-house image
+> (`public/brand/`, rendered by `src/components/house-mark.tsx`), or replace it with a
+> commissioned one. See `DESIGN.md` → Illustration.
 
 ## Conventions
 
