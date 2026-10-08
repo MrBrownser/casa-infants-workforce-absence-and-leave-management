@@ -135,7 +135,7 @@ Do not apply 20px radii to dense elements (table cells, calendar bars): it reads
 
 ## Illustration
 
-- The house is FASI's plasticine photo (`public/brand/`, cut out with its soft shadow kept, WebP in 813/512/256 px; originals in `public/brand/fasi-source/`), rendered by `src/components/house-mark.tsx`. It is the wordmark mark, the landing page illustration and the empty-state mark ("No queda res pendent").
+- The house is FASI's plasticine photo (`public/brand/`, cut out with its soft shadow kept, WebP in 835/512/256 px; originals in `public/brand/fasi-source/`), rendered by `src/components/house-mark.tsx`. It is the wordmark mark, the landing page illustration and the empty-state mark ("No queda res pendent").
 - **TODO before launch: confirm FASI's permission to use the image**, or replace it with a commissioned illustration in the same clay style.
 
 ## Anti-Patterns
