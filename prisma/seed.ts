@@ -1,11 +1,10 @@
 // Dev seed with FICTIONAL people only (GDPR: never seed real staff). Runs the
-// real transfer path so Ana's House history is built exactly as the app would.
+// Task 12 rewrites it to go through the staffing store.
 // Safe to re-run: it does nothing when employees already exist.
 import { config } from 'dotenv';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
 import { isoDateToDate } from '../src/lib/dates';
-import { applyTransfer } from '../src/server/membership-store';
 
 config({ path: ['.env.local', '.env'], quiet: true });
 
@@ -18,7 +17,6 @@ const db = new PrismaClient({
 });
 
 const SEED_START = '2025-09-01';
-const ANA_MOVES_ON = '2026-07-01';
 
 // Roles (CT, ER) arrive with SPEC-002; for now they are only noted here.
 const PEOPLE = [
@@ -52,10 +50,7 @@ async function main() {
     });
   }
 
-  const ana = await db.employee.findFirstOrThrow({ where: { fullName: 'Ana Puig' } });
-  await applyTransfer(db, ana.id, houseId('carme-aymerich'), ANA_MOVES_ON);
-
-  console.log(`Seeded ${PEOPLE.length} fictional employees. Ana Puig moves to Carme Aymerich on ${ANA_MOVES_ON}.`);
+  console.log(`Seeded ${PEOPLE.length} fictional employees.`);
 }
 
 main()

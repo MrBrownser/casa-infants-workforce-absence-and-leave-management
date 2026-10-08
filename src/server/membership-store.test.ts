@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaClient } from '@/generated/prisma/client';
-import { StaffingError } from '@/lib/staffing-error';
-import { applyTransfer, findCurrentMembers, toMembership } from './membership-store';
+import { findCurrentMembers, toMembership } from './membership-store';
 
 const d = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
@@ -34,44 +33,5 @@ describe('findCurrentMembers', () => {
       { employeeId: 'e3', fullName: 'Èric Bosch', startsOn: '2025-09-01' },
       { employeeId: 'e2', fullName: 'Laia Serra', startsOn: '2025-09-01' },
     ]);
-  });
-});
-
-describe('applyTransfer', () => {
-  function fakeDb(current: ReturnType<typeof row> | null) {
-    const tx = {
-      houseMembership: {
-        findFirst: vi.fn().mockResolvedValue(current),
-        update: vi.fn().mockResolvedValue({}),
-        create: vi.fn().mockResolvedValue({}),
-      },
-    };
-    const db = { $transaction: vi.fn(async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx)) };
-    return { db: db as unknown as PrismaClient, tx };
-  }
-
-  it('closes the ongoing membership and opens the new one in one transaction', async () => {
-    const { db, tx } = fakeDb(row('m1', 'e1', 'Ana Puig', 'pf', '2025-09-01', null));
-
-    await applyTransfer(db, 'e1', 'ca', '2026-07-01');
-
-    expect(tx.houseMembership.findFirst).toHaveBeenCalledWith({ where: { employeeId: 'e1', endsOn: null } });
-    expect(tx.houseMembership.update).toHaveBeenCalledWith({ where: { id: 'm1' }, data: { endsOn: d('2026-06-30') } });
-    expect(tx.houseMembership.create).toHaveBeenCalledWith({
-      data: { employeeId: 'e1', houseId: 'ca', startsOn: d('2026-07-01') },
-    });
-  });
-
-  it('rejects an employee without an ongoing membership and writes nothing', async () => {
-    const { db, tx } = fakeDb(null);
-    await expect(applyTransfer(db, 'e1', 'ca', '2026-07-01')).rejects.toThrow(StaffingError);
-    expect(tx.houseMembership.update).not.toHaveBeenCalled();
-    expect(tx.houseMembership.create).not.toHaveBeenCalled();
-  });
-
-  it('rejects a same-House transfer and writes nothing', async () => {
-    const { db, tx } = fakeDb(row('m1', 'e1', 'Ana Puig', 'pf', '2025-09-01', null));
-    await expect(applyTransfer(db, 'e1', 'pf', '2026-07-01')).rejects.toThrow(/same-house/);
-    expect(tx.houseMembership.update).not.toHaveBeenCalled();
   });
 });

@@ -8,7 +8,16 @@ import type { PrismaClient } from '@/generated/prisma/client';
 import { isoDateToDate, type IsoDate } from '@/lib/dates';
 import type { RoleCode } from '@/lib/roles';
 import type { PlanNames } from '@/lib/staffing-messages';
-import { planEndAssignment, planHandover, planNewMembership, type PlanClose, type PlanOpen, type StaffingPlan } from '@/lib/staffing';
+import {
+  planEndAssignment,
+  planEndMembership,
+  planHandover,
+  planHouseTransfer,
+  planNewMembership,
+  type PlanClose,
+  type PlanOpen,
+  type StaffingPlan,
+} from '@/lib/staffing';
 import { StaffingError } from '@/lib/staffing-error';
 import { toStaffingError } from './db-errors';
 import { planToken } from './plan-token';
@@ -274,5 +283,92 @@ export async function endAssignment(
     if (!row) throw new StaffingError('not-found');
     await applyPlan(tx, planEndAssignment(toAssignment(row), input.endsOn));
     return { assignmentId: row.id, employeeId: row.employeeId };
+  });
+}
+
+// ── Ending a membership and House transfers ──────────────────────────────────
+
+/**
+ * Recomputes the plan under the locks and checks it against the previewed
+ * token. A rule failure now means the state moved since the preview (`stale`),
+ * except `not-found` and `not-ongoing`: those say the thing is gone or already
+ * done, which the person needs to hear as it is (a second submit of a transfer).
+ */
+async function confirmedPlan(compute: () => Promise<StaffingPlan>, expectedToken: string): Promise<StaffingPlan> {
+  let plan: StaffingPlan;
+  try {
+    plan = await compute();
+  } catch (error) {
+    if (error instanceof StaffingError && error.reason !== 'not-found' && error.reason !== 'not-ongoing') throw new StaffingError('stale');
+    throw error;
+  }
+  if (planToken(plan) !== expectedToken) throw new StaffingError('stale');
+  return plan;
+}
+
+async function endMembershipPlan(db: Tx, houseId: string, input: { membershipId: string; endsOn: IsoDate }): Promise<StaffingPlan> {
+  const row = await db.houseMembership.findFirst({ where: { id: input.membershipId, houseId } });
+  if (!row) throw new StaffingError('not-found');
+  return planEndMembership({ membership: toMembership(row), endsOn: input.endsOn, assignments: await employeeAssignments(db, row.employeeId) });
+}
+
+export function previewEndMembership(db: PrismaClient, houseId: string, input: { membershipId: string; endsOn: IsoDate }): Promise<Preview> {
+  return mapped(async () => previewOf(db, await endMembershipPlan(db, houseId, input)));
+}
+
+/** Ends an ongoing membership and closes its assignments that run past the end (FR-003). Not erasure. */
+export async function endMembership(
+  db: PrismaClient,
+  ctx: OperationContext,
+  houseId: string,
+  input: { membershipId: string; endsOn: IsoDate; planToken: string },
+): Promise<Outcome<{ membershipId: string; employeeId: string }>> {
+  const owner = await mapped(() => db.houseMembership.findFirst({ where: { id: input.membershipId, houseId }, select: { employeeId: true } }));
+  if (!owner) throw new StaffingError('not-found');
+  return runOperation(db, ctx, 'end-membership', [owner.employeeId], async (tx) => {
+    const plan = await confirmedPlan(() => endMembershipPlan(tx, houseId, input), input.planToken);
+    await applyPlan(tx, plan);
+    return { membershipId: input.membershipId, employeeId: owner.employeeId };
+  });
+}
+
+export type TransferRequest = { employeeId: string; toHouseId: string; startsOn: IsoDate; destinationPositionId: string | null };
+
+async function transferPlan(db: Tx, houseId: string, input: TransferRequest): Promise<StaffingPlan> {
+  // The source must be an ongoing membership of the route's House, so a
+  // second submit cannot transfer the newly created destination membership.
+  const source = await db.houseMembership.findFirst({ where: { employeeId: input.employeeId, houseId, endsOn: null } });
+  if (!source) throw new StaffingError('not-ongoing');
+  const destinationPosition = input.destinationPositionId ? await positionInHouse(db, input.destinationPositionId, input.toHouseId) : null;
+  return planHouseTransfer({
+    source: toMembership(source),
+    toHouseId: input.toHouseId,
+    startsOn: input.startsOn,
+    destinationPosition,
+    employeeMemberships: await employeeMemberships(db, input.employeeId),
+    employeeAssignments: await employeeAssignments(db, input.employeeId),
+    destinationPositionAssignments: destinationPosition ? await positionAssignments(db, destinationPosition.id) : [],
+  });
+}
+
+export function previewTransfer(db: PrismaClient, houseId: string, input: TransferRequest): Promise<Preview> {
+  return mapped(async () => previewOf(db, await transferPlan(db, houseId, input)));
+}
+
+/**
+ * House transfer (FR-006): memberships and assignments close on D-1 and open on D
+ * in one transaction. Only the transferred employee's rows are written (the
+ * destination position must be free, never displaced), so only they are locked.
+ */
+export function transfer(
+  db: PrismaClient,
+  ctx: OperationContext,
+  houseId: string,
+  input: TransferRequest & { planToken: string },
+): Promise<Outcome<MembershipResult>> {
+  return runOperation(db, ctx, 'transfer', [input.employeeId], async (tx) => {
+    const plan = await confirmedPlan(() => transferPlan(tx, houseId, input), input.planToken);
+    const ids = await applyPlan(tx, plan);
+    return { employeeId: input.employeeId, membershipId: ids.membershipIds[0], assignmentId: ids.assignmentIds[0] ?? null };
   });
 }

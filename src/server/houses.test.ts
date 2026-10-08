@@ -1,14 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { requireDirector } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getHouseBySlug, listCurrentMembers, transferEmployee } from './houses';
+import { getHouseBySlug, listCurrentMembers } from './houses';
 
 vi.mock('@/lib/auth', () => ({ requireDirector: vi.fn() }));
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     house: { findUnique: vi.fn() },
     houseMembership: { findMany: vi.fn() },
-    $transaction: vi.fn(),
   },
 }));
 
@@ -22,10 +21,8 @@ describe('House data for a non-director', () => {
   it('stops before any query', async () => {
     await expect(getHouseBySlug('paulo-freire')).rejects.toThrow('NEXT_REDIRECT');
     await expect(listCurrentMembers('pf', '2026-10-04')).rejects.toThrow('NEXT_REDIRECT');
-    await expect(transferEmployee('e1', 'ca', '2026-07-01')).rejects.toThrow('NEXT_REDIRECT');
     expect(prisma.house.findUnique).not.toHaveBeenCalled();
     expect(prisma.houseMembership.findMany).not.toHaveBeenCalled();
-    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 });
 
