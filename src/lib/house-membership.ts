@@ -1,5 +1,6 @@
 // src/lib/house-membership.ts
 import { addDays, type IsoDate } from './dates';
+import { StaffingError } from './staffing-error';
 
 /**
  * A period during which an employee belongs to a House. Both bounds are
@@ -44,18 +45,6 @@ export function findOverlap<T extends MembershipPeriod>(existing: readonly T[], 
   return existing.find((m) => m.employeeId === candidate.employeeId && overlaps(m, candidate));
 }
 
-export type TransferErrorReason = 'no-current-membership' | 'already-ending' | 'same-house' | 'starts-too-early';
-
-export class TransferError extends Error {
-  readonly reason: TransferErrorReason;
-
-  constructor(reason: TransferErrorReason) {
-    super(`Invalid transfer: ${reason}`);
-    this.name = 'TransferError';
-    this.reason = reason;
-  }
-}
-
 export type TransferPlan = {
   close: { id: string; endsOn: IsoDate };
   open: { employeeId: string; houseId: string; startsOn: IsoDate };
@@ -66,9 +55,9 @@ export type TransferPlan = {
  * new one. Past periods keep their House and start date (BR-004).
  */
 export function planTransfer(current: Membership, toHouseId: string, startsOn: IsoDate): TransferPlan {
-  if (current.endsOn !== null) throw new TransferError('already-ending');
-  if (current.houseId === toHouseId) throw new TransferError('same-house');
-  if (startsOn <= current.startsOn) throw new TransferError('starts-too-early');
+  if (current.endsOn !== null) throw new StaffingError('not-ongoing');
+  if (current.houseId === toHouseId) throw new StaffingError('same-house');
+  if (startsOn <= current.startsOn) throw new StaffingError('starts-too-early');
   return {
     close: { id: current.id, endsOn: addDays(startsOn, -1) },
     open: { employeeId: current.employeeId, houseId: toHouseId, startsOn },

@@ -1,7 +1,7 @@
 // src/lib/house-membership.test.ts
 import { describe, expect, it } from 'vitest';
+import { StaffingError } from './staffing-error';
 import {
-  TransferError,
   findOverlap,
   houseOf,
   isActiveOn,
@@ -100,11 +100,11 @@ describe('planTransfer', () => {
   });
 
   it('rejects a transfer to the same House', () => {
-    expect(() => planTransfer(current, PF, '2026-07-01')).toThrow(TransferError);
+    expect(() => planTransfer(current, PF, '2026-07-01')).toThrow(StaffingError);
     try {
       planTransfer(current, PF, '2026-07-01');
     } catch (error) {
-      expect((error as TransferError).reason).toBe('same-house');
+      expect((error as StaffingError).reason).toBe('same-house');
     }
   });
 
@@ -114,6 +114,6 @@ describe('planTransfer', () => {
   });
 
   it('rejects a membership that already has an end date', () => {
-    expect(() => planTransfer(anaPf, CA, '2026-08-01')).toThrow(/already-ending/);
+    expect(() => planTransfer(anaPf, CA, '2026-08-01')).toThrow(/not-ongoing/);
   });
 });

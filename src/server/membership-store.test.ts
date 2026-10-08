@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaClient } from '@/generated/prisma/client';
-import { TransferError } from '@/lib/house-membership';
+import { StaffingError } from '@/lib/staffing-error';
 import { applyTransfer, findCurrentMembers, toMembership } from './membership-store';
 
 const d = (iso: string) => new Date(`${iso}T00:00:00Z`);
@@ -64,7 +64,7 @@ describe('applyTransfer', () => {
 
   it('rejects an employee without an ongoing membership and writes nothing', async () => {
     const { db, tx } = fakeDb(null);
-    await expect(applyTransfer(db, 'e1', 'ca', '2026-07-01')).rejects.toThrow(TransferError);
+    await expect(applyTransfer(db, 'e1', 'ca', '2026-07-01')).rejects.toThrow(StaffingError);
     expect(tx.houseMembership.update).not.toHaveBeenCalled();
     expect(tx.houseMembership.create).not.toHaveBeenCalled();
   });

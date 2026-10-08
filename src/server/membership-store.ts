@@ -5,7 +5,8 @@
 // src/server/houses.ts, which checks the director first.
 import type { PrismaClient } from '@/generated/prisma/client';
 import { dateToIsoDate, isoDateToDate, type IsoDate } from '@/lib/dates';
-import { TransferError, membersOn, planTransfer, type Membership, type TeamMember } from '@/lib/house-membership';
+import { StaffingError } from '@/lib/staffing-error';
+import { membersOn, planTransfer, type Membership, type TeamMember } from '@/lib/house-membership';
 
 type MembershipRow = { id: string; employeeId: string; houseId: string; startsOn: Date; endsOn: Date | null };
 
@@ -31,7 +32,7 @@ export async function findCurrentMembers(db: PrismaClient, houseId: string, date
 export async function applyTransfer(db: PrismaClient, employeeId: string, toHouseId: string, startsOn: IsoDate): Promise<void> {
   await db.$transaction(async (tx) => {
     const current = await tx.houseMembership.findFirst({ where: { employeeId, endsOn: null } });
-    if (!current) throw new TransferError('no-current-membership');
+    if (!current) throw new StaffingError('not-ongoing');
     const plan = planTransfer(toMembership(current), toHouseId, startsOn);
     await tx.houseMembership.update({ where: { id: plan.close.id }, data: { endsOn: isoDateToDate(plan.close.endsOn) } });
     await tx.houseMembership.create({
