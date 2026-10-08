@@ -1,7 +1,7 @@
 ## 1. Database test harness
 
-- [ ] 1.1 Add `vitest.db.config.ts`, `test/db/global-setup.ts` (ephemeral `initdb --locale=en_US.UTF-8` + `pg_ctl` on a free port, `prisma migrate deploy`, localhost-only guard, teardown) and `test/db/helpers.ts` (`createTestClient`, `resetData`, fixtures); exclude `*.db.test.ts` from the default Vitest config; add `npm run test:db`
-- [ ] 1.2 Add a first DB test that proves the SPEC-001 membership constraints (overlap and end-before-start rejected by direct SQL) against the harness
+- [x] 1.1 Add `vitest.db.config.ts`, `test/db/global-setup.ts` (ephemeral `initdb --locale=en_US.UTF-8` + `pg_ctl` on a free port, `prisma migrate deploy`, localhost-only guard, teardown) and `test/db/helpers.ts` (`createTestClient`, `resetData`, fixtures); exclude `*.db.test.ts` from the default Vitest config; add `npm run test:db`
+- [x] 1.2 Add a first DB test that proves the SPEC-001 membership constraints (overlap and end-before-start rejected by direct SQL) against the harness
 
 ## 2. Roles and staffing domain (pure)
 

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    // Real-database tests run with `npm run test:db` (vitest.db.config.ts).
+    exclude: [...configDefaults.exclude, '**/*.db.test.ts'],
   },
   resolve: {
     alias: {
