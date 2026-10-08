@@ -3,7 +3,7 @@ import { Lock } from 'lucide-react';
 import { HouseMark } from '@/components/house-mark';
 import { TopBar } from '@/components/top-bar';
 
-/** Shown to signed-in users without the director flag (temporary gate, see src/lib/auth.ts). */
+/** Shown to signed-in users without an enabled director grant (see src/lib/auth.ts). */
 export function NoAccess() {
   return (
     <div className="min-h-screen bg-background">

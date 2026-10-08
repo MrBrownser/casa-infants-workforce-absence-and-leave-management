@@ -28,7 +28,7 @@ describe('House data for a non-director', () => {
 
 describe('House data for the director', () => {
   beforeEach(() => {
-    vi.mocked(requireDirector).mockResolvedValue({ userId: 'user_1', name: 'Marta' });
+    vi.mocked(requireDirector).mockResolvedValue({ userId: 'user_1' });
   });
 
   it('looks a House up by slug', async () => {
