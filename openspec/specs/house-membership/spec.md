@@ -1,7 +1,7 @@
 # house-membership Specification
 
 ## Purpose
-TBD - created by archiving change house-context. Update Purpose after archive.
+Define minimal employee identity and effective-dated House membership, prevent overlapping periods, preserve history during transfers, and establish explicit House ownership for future business records.
 ## Requirements
 ### Requirement: Effective-dated House membership
 The system SHALL record an employee's House membership as periods with an inclusive start date and an inclusive, optional end date (no end date means ongoing). Dates MUST be calendar dates without time.
@@ -86,4 +86,3 @@ An employee record SHALL hold only a full name as personal data in this capabili
 #### Scenario: Employee erasure
 - **WHEN** an employee record is deleted
 - **THEN** all of that employee's House membership rows are deleted with it
-

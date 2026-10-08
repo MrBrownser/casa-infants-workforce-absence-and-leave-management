@@ -2,8 +2,10 @@
 
 A web app to manage time off, absences and leave for the Casa d'Infants team.
 
-> Status: skeleton. Auth, a landing page and a protected `/dashboard` placeholder
-> are in place; no time and leave features yet. The UI is in Catalan; code is in English.
+> Status: SPEC-001 implemented. Two House contexts, minimal employees, dated
+> membership, a read-only team page and a temporary director access gate are in
+> place. `/dashboard` redirects to the last visited House. APs, calendars,
+> vacations and absences are not built yet. The UI is in Catalan; code is in English.
 
 ## Stack
 
@@ -70,7 +72,14 @@ cp .env.example .env.local   # then fill in real values (see below)
 npm run dev            # http://localhost:3000
 ```
 
-Routes: `/` landing page, `/sign-in`, `/sign-up`, `/dashboard` (signed-in only).
+Routes: `/` landing page, `/sign-in`, `/sign-up`, `/dashboard` (director redirect),
+`/paulo-freire` and `/carme-aymerich` (House home), `/<house>/team` (current team),
+and `/no-access` (signed-in users without the temporary director flag).
+
+Membership history and atomic transfers exist in domain/server logic; employee
+editing, transfer forms, position assignments and historical-team UI are future
+work for SPEC-002. Business dates use Europe/Madrid. The URL scopes House data;
+the remembering cookie never authorises a request or filters data.
 
 If you edit `prisma/schema.prisma`, re-run `npm run db:generate` to refresh the
 generated client (`src/generated/prisma`, gitignored) before `npm run typecheck`
@@ -114,6 +123,18 @@ npm run db:studio     # browse data
    Without it you will land on the "Sense accés" page.
 
 ## Spec-Driven Development
+
+SPEC-001's as-built requirements are in
+[`house-context`](openspec/specs/house-context/spec.md) and
+[`house-membership`](openspec/specs/house-membership/spec.md). The archived
+[`delivery delta`](openspec/changes/archive/2026-10-05-house-context/spec-delta.md)
+records scope and implementation differences. Its requirement IDs refer to an
+earlier product-spec version; reconcile by content rather than copying those IDs.
+
+The local product documentation's SPEC-002 is the next review input: roles,
+dated positions, employee management, transfer/history UI and explicit application
+access. It is not implemented. After product review, create its OpenSpec change
+before coding; keep schedules and temporary coverage in their later specs.
 
 This repo is configured for OpenSpec with the **superpowers-bridge** schema
 (`openspec/config.yaml`). Build features through the workflow rather than ad hoc:

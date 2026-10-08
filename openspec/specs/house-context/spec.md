@@ -1,7 +1,7 @@
 # house-context Specification
 
 ## Purpose
-TBD - created by archiving change house-context. Update Purpose after archive.
+Establish the two Houses as URL-scoped operational contexts, preserve the active House during navigation, and protect House pages and data with the temporary director-only access gate delivered in SPEC-001.
 ## Requirements
 ### Requirement: Available Houses
 The system SHALL contain exactly two Houses, Paulo Freire (slug `paulo-freire`) and Carme Aymerich (slug `carme-aymerich`), present in every environment without manual data entry.
@@ -79,4 +79,3 @@ Only signed-in users whose Clerk public metadata has `role` equal to `director` 
 #### Scenario: Data layer rejects non-director
 - **WHEN** a House data function is called in a request from a non-director user
 - **THEN** it stops with a redirect to `/no-access` without querying House data
-
