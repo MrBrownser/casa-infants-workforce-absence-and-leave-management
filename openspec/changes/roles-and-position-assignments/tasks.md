@@ -46,7 +46,7 @@
 - [x] 7.1 Add UI primitives in the shadcn style (`Input`, `Label`, `NativeSelect`, `Alert`) themed with project tokens, plus shared form pieces (field error with icon, pending submit button, operation ID hook, confirmation summary, success note)
 - [x] 7.2 Update `switchHousePath` so employee and position pages switch to `/<other>/team` (team, new and positions keep their path), with tests
 - [x] 7.3 Rebuild the Equip page: Persones / Llocs / Membres anteriors views, date control and "not today" banner, actions; component tests (no honey, `Sense lloc assignat`, `Vacant`)
-- [ ] 7.4 Add `/[house]/team/new` (Persona nova / Persona existent, optional position) with component tests
+- [x] 7.4 Add `/[house]/team/new` (Persona nova / Persona existent, optional position) with component tests
 - [ ] 7.5 Add the employee history page and its action pages (edit name, assign/change position, end position, add period, end membership with confirmation, transfer with confirmation), with component tests
 - [ ] 7.6 Add the positions list (with `Nou lloc`) and the position page (history, relabel, assign/replace with confirmation), with component tests
 
