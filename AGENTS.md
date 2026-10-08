@@ -40,8 +40,7 @@ See `README.md` for setup.
 - `src/lib/houses.ts`: the two Houses (keep in sync with the `house_context` migration).
 - `src/lib/dates.ts`: `IsoDate` helpers; "today" is always `todayInMadrid()`.
 - `src/lib/house-membership.ts`: pure membership rules (current/historical members, transfers).
-- `src/server/houses.ts`: House data, director-only. `src/server/membership-store.ts`: Prisma
-  persistence without auth (seed only; app code uses `houses.ts`).
+- `src/server/houses.ts`: House data, director-only. `src/server/staffing.ts`: staffing reads (director-only).
 - `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: FASI clay-house mark (images in `public/brand/`). `src/components/ui/`: shadcn primitives.
 
 ## Access and data rules
