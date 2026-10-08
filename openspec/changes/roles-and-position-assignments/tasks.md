@@ -58,5 +58,17 @@
   - Direct duplicate assignment insert (rolled back): `ERROR: conflicting key value violates exclusion constraint "position_assignments_employee_no_overlap"`.
   - Locale: database ctype `en_US.UTF-8`, ICU provider; `lower('ÀREA')` = `àrea`. Labels "Àrea check" and " àrea CHECK " in the same House were rejected by `positions_house_id_label_key_key` (rolled back, nothing left behind).
 - [x] 8.3 Update README (test:db prerequisites, operator scripts, first-deploy cutover and recovery, dev reset), AGENTS.md (models, auth, layout) and DESIGN.md if any new pattern needs recording
-- [ ] 8.4 Run `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:db` and `npm run build`
-- [ ] 8.5 Browser acceptance with `/browse` on `npm run build && npm start` at desktop and mobile widths: add/edit, handover, future transfer, date view, former members, a rejected operation, denied access without grant; save screenshots as evidence
+- [x] 8.4 Run `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:db` and `npm run build`
+  - 2026-10-08, local (Node 24) on c210a65: lint and typecheck clean; `npm test` 39 files, 198 tests passed; `npm run test:db` 9 files, 65 tests passed; `npm run build` succeeded.
+- [x] 8.5 Browser acceptance with `/browse` on `npm run build && npm start` at desktop and mobile widths: add/edit, handover, future transfer, date view, former members, a rejected operation, denied access without grant; save screenshots as evidence
+  - 2026-10-08, production build on localhost against the dev Supabase DB, signed in with Clerk (development); screenshots at 1280px and 390px in `evidence/`.
+  - 01: Persones, Llocs (grouped by role, no honey) and Membres anteriors (empty state). Created vacant positions ER 2 (Paulo Freire) and CT 2 (Carme Aymerich) for the later steps.
+  - 02: Afegir persona "Laia Puig Ferrer" with vacant ER 2; blank name shows "Escriu el nom complet." with icon, dates kept.
+  - 03: Editar nom to "Laia Puig i Ferrer".
+  - 04: Substitueix on ER from 2026-11-02: preview lists Carla's ER and Laia's ER 2 ending 2026-11-01 and Laia's ER starting 2026-11-02; confirmed.
+  - 05: Pol on ER 2026-10-15 to 2026-11-15 rejected: "Hi ha una assignació futura que hi entra en conflicte. No s'ha canviat res."
+  - 06: Transfer of Pol to Carme Aymerich from 2026-11-16 into occupied CT rejected ("Aquest lloc ja està ocupat en aquestes dates.", as the spec requires); into vacant CT 2 confirmed. Today's Paulo Freire list unchanged; on 2026-11-16 Pol is gone from Paulo Freire and on CT 2 in Carme Aymerich; history shows both Houses.
+  - 07: House switch from an employee page lands on `/carme-aymerich/team` at both widths.
+  - 08: `npm run access -- revoke` then reload: `/no-access` "Sense accés"; `grant` then reload: back on `/paulo-freire/team`.
+  - 09: `/dashboard` redirects to the last House (`/carme-aymerich`); `/casa-inexistent/team` and `/paulo-freire/team/abc` show the Catalan 404.
+  - No findings. In the 390px full-page captures the fixed bottom tab bar is drawn mid-page; that is a capture artifact, not a layout bug.
