@@ -25,8 +25,9 @@
 - Logs never contain SQL text, Postgres messages or names. The only staffing log line is `[staffing] <kind> failed: unexpected`.
 - The hand-written SQL in `prisma/migrations/*_house_context` and `*_staffing` must never be removed. Never run `prisma migrate dev` or `prisma migrate reset` against Supabase in this plan; Task 25 is the only task that touches the dev Supabase DB, and only with the user's go-ahead.
 - Read the relevant guide in `node_modules/next/dist/docs/` before using a Next API this plan does not show (AGENTS.md).
-- **Worktree setup:** `.env.local` is gitignored. Copy it from the main checkout into the worktree before any Prisma, script or `npm run build` command: `cp ../<main-checkout>/.env.local .env.local` (adjust the path). Then `npm install` (runs `prisma generate`).
-- **DB tests:** `npm run test:db` starts a throwaway Postgres from the directory of the `postgres` binary (Homebrew `postgresql@14` here; `initdb` first on `PATH` may be libpq's client-only copy, which cannot start a server). Override with `PG_BIN=/path/to/bin`. It only ever connects to `localhost`.
+- **Secrets and where tasks run:** Tasks 1 to 24 need no secrets and no `.env.local`: `npm ci`, `npm test`, `npm run test:db` (throwaway local Postgres) and `npm run build` all work without environment variables (checked on 2026-10-08 in a clean checkout). They can run in a Claude Code cloud session (Ubuntu 24.04, root, PostgreSQL 16 preinstalled under `/usr/lib/postgresql/16/bin`, which the harness finds; do not start the system `postgresql` service). Never add Supabase or Clerk credentials to a cloud environment for this plan. Tasks 25 and 26 need the dev Supabase database, the Clerk dev keys and a browser: run them on the developer's machine with `.env.local`.
+- **Worktree setup:** run `npm install` (runs `prisma generate`) in a fresh worktree. On a local machine, also copy `.env.local` from the main checkout before Task 25 or 26 (`cp ../<main-checkout>/.env.local .env.local`).
+- **DB tests and one-off database work:** `npm run test:db` and `npx tsx test/db/with-postgres.ts -- <command>` start a throwaway Postgres (14 or newer) on `localhost` and never touch Supabase. Binaries come from `PG_BIN`, the directory of the `postgres` binary (macOS Homebrew), or `/usr/lib/postgresql/<version>/bin` (Debian/Ubuntu, e.g. a cloud sandbox after `apt-get install -y postgresql`). As root, the server tools run as the `postgres` OS user. On macOS the first `initdb` on `PATH` may be libpq's client-only copy; the harness avoids it.
 
 ## Review Focus
 
@@ -43,13 +44,17 @@
 **Covers:** tasks.md 1.1, 1.2
 
 **Files:**
-- Create: `vitest.db.config.ts`, `test/db/global-setup.ts`, `test/db/helpers.ts`
+- Create: `vitest.db.config.ts`, `test/db/local-postgres.ts`, `test/db/with-postgres.ts`, `test/db/global-setup.ts`, `test/db/helpers.ts`
 - Create (test): `src/server/membership-constraints.db.test.ts`
 - Modify: `vitest.config.ts`, `package.json` (script `test:db`)
 
 **Interfaces:**
 - Consumes: the existing `house_context` migration; `PrismaClient` from `@/generated/prisma/client`; `isoDateToDate` from `@/lib/dates`.
-- Produces (in `test/db/helpers.ts`):
+- Produces:
+  - `startLocalPostgres(database?: string): Promise<{ url: string; bin: string; stop: () => void }>` (`test/db/local-postgres.ts`, migrations applied)
+  - `npx tsx test/db/with-postgres.ts -- <command> [args...]`: runs one command with `DATABASE_URL`/`DIRECT_URL` pointing at a throwaway database (used by Tasks 7 and 12)
+  - `inject('databaseUrl')`, `inject('pgBin')` in DB tests
+  - In `test/db/helpers.ts`:
   - `createTestClient(): PrismaClient` (local URL only)
   - `resetData(db: PrismaClient): Promise<void>` (truncates every table except `houses`, `occupational_roles`, `_prisma_migrations`)
   - `houseIds(db: PrismaClient): Promise<{ pf: string; ca: string }>`
@@ -144,33 +149,37 @@ export default defineConfig({
 ```
 
 ```ts
-// test/db/global-setup.ts
+// test/db/local-postgres.ts
 //
-// Starts an ephemeral Postgres for `npm run test:db`: initdb into a temp
-// directory, TCP only on a free localhost port (temp paths are too long for a
-// Unix socket on macOS), then `prisma migrate deploy`. The binaries come from
-// the directory of the `postgres` server binary, because the first `initdb`
-// on PATH can be libpq's client-only copy. Override with PG_BIN.
+// A throwaway local Postgres for tests and one-off checks (never Supabase):
+// initdb into a temp directory, TCP only on a free localhost port (temp paths
+// can be too long for a Unix socket on macOS), then `prisma migrate deploy`.
+// Server binaries come from PG_BIN, the directory of the `postgres` binary
+// (macOS Homebrew; the first `initdb` on PATH can be libpq's client-only copy),
+// or Debian's /usr/lib/postgresql/<version>/bin. Postgres refuses to run as
+// root, so in root containers the server tools run as the `postgres` OS user.
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, realpathSync, rmSync } from 'node:fs';
 import { createServer, type AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import type { TestProject } from 'vitest/node';
 
-declare module 'vitest' {
-  export interface ProvidedContext {
-    databaseUrl: string;
-  }
-}
+export type LocalPostgres = { url: string; bin: string; stop: () => void };
+
+const asRoot = process.getuid?.() === 0;
 
 function pgBinDir(): string {
   if (process.env.PG_BIN) return process.env.PG_BIN;
   const which = spawnSync('which', ['postgres'], { encoding: 'utf8' });
-  if (which.status !== 0 || !which.stdout.trim()) {
-    throw new Error('Postgres server binaries not found: install Homebrew postgresql@14 (or newer) or set PG_BIN.');
+  if (which.status === 0 && which.stdout.trim()) return dirname(realpathSync(which.stdout.trim()));
+  const debian = '/usr/lib/postgresql';
+  if (existsSync(debian)) {
+    const versions = readdirSync(debian)
+      .filter((version) => existsSync(join(debian, version, 'bin', 'initdb')))
+      .sort((a, b) => Number(b) - Number(a));
+    if (versions[0]) return join(debian, versions[0], 'bin');
   }
-  return dirname(realpathSync(which.stdout.trim()));
+  throw new Error('Postgres server binaries not found: install PostgreSQL 14 or newer, or set PG_BIN.');
 }
 
 function freePort(): Promise<number> {
@@ -185,39 +194,105 @@ function freePort(): Promise<number> {
   });
 }
 
-export default async function setup(project: TestProject) {
+/** Runs a server tool (initdb, pg_ctl); as root, as the `postgres` OS user. */
+function serverTool(bin: string, tool: string, args: string[]): void {
+  const file = join(bin, tool);
+  if (asRoot) execFileSync('runuser', ['-u', 'postgres', '--', file, ...args], { stdio: 'pipe' });
+  else execFileSync(file, args, { stdio: 'pipe' });
+}
+
+export async function startLocalPostgres(database = 'casa_test'): Promise<LocalPostgres> {
   const bin = pgBinDir();
   const dir = mkdtempSync(join(tmpdir(), 'casa-pg-'));
+  if (asRoot) execFileSync('chown', ['-R', 'postgres', dir]);
   const data = join(dir, 'data');
   const port = await freePort();
-  const run = (file: string, args: string[], env?: NodeJS.ProcessEnv) =>
-    execFileSync(file, args, { stdio: 'pipe', env: env ?? process.env });
 
-  run(join(bin, 'initdb'), ['-D', data, '-U', 'postgres', '-A', 'trust', '-E', 'UTF8', '--locale=en_US.UTF-8']);
-  run(join(bin, 'pg_ctl'), [
+  // en_US.UTF-8 matches Supabase for lower(); minimal containers may only have C.UTF-8.
+  const initdb = (locale: string) =>
+    serverTool(bin, 'initdb', ['-D', data, '-U', 'postgres', '-A', 'trust', '-E', 'UTF8', `--locale=${locale}`]);
+  try {
+    initdb('en_US.UTF-8');
+  } catch {
+    rmSync(data, { recursive: true, force: true });
+    initdb('C.UTF-8');
+  }
+  serverTool(bin, 'pg_ctl', [
     '-D', data,
     '-o', `-p ${port} -c listen_addresses=localhost -c unix_socket_directories=''`,
     '-l', join(dir, 'postgres.log'),
     '-w', 'start',
   ]);
+
   const stop = () => {
-    spawnSync(join(bin, 'pg_ctl'), ['-D', data, '-m', 'fast', '-w', 'stop'], { stdio: 'ignore' });
+    try {
+      serverTool(bin, 'pg_ctl', ['-D', data, '-m', 'fast', '-w', 'stop']);
+    } catch {
+      // Already stopped.
+    }
     rmSync(dir, { recursive: true, force: true });
   };
 
   try {
-    run(join(bin, 'createdb'), ['-h', 'localhost', '-p', String(port), '-U', 'postgres', 'casa_test']);
-    const url = `postgresql://postgres@localhost:${port}/casa_test`;
+    execFileSync(join(bin, 'createdb'), ['-h', 'localhost', '-p', String(port), '-U', 'postgres', database], { stdio: 'pipe' });
+    const url = `postgresql://postgres@localhost:${port}/${database}`;
     // dotenv in prisma.config.ts does not override variables that are already set.
-    run('npx', ['prisma', 'migrate', 'deploy'], { ...process.env, DATABASE_URL: url, DIRECT_URL: url });
-    project.provide('databaseUrl', url);
+    execFileSync('npx', ['prisma', 'migrate', 'deploy'], { stdio: 'pipe', env: { ...process.env, DATABASE_URL: url, DIRECT_URL: url } });
+    return { url, bin, stop };
   } catch (error) {
     stop();
     throw error;
   }
-
-  return stop;
 }
+```
+
+```ts
+// test/db/global-setup.ts
+import type { TestProject } from 'vitest/node';
+import { startLocalPostgres } from './local-postgres';
+
+declare module 'vitest' {
+  export interface ProvidedContext {
+    databaseUrl: string;
+    pgBin: string;
+  }
+}
+
+/** One throwaway database per `npm run test:db` run, removed afterwards. */
+export default async function setup(project: TestProject) {
+  const postgres = await startLocalPostgres();
+  project.provide('databaseUrl', postgres.url);
+  project.provide('pgBin', postgres.bin);
+  return postgres.stop;
+}
+```
+
+```ts
+// test/db/with-postgres.ts
+//
+// Runs one command against a throwaway local Postgres with the migrations
+// applied, then deletes it. DATABASE_URL and DIRECT_URL point at it:
+//   npx tsx test/db/with-postgres.ts -- <command> [args...]
+import { spawnSync } from 'node:child_process';
+import { startLocalPostgres } from './local-postgres';
+
+async function main() {
+  const separator = process.argv.indexOf('--');
+  const [command, ...args] = separator >= 0 ? process.argv.slice(separator + 1) : process.argv.slice(2);
+  if (!command) throw new Error('Usage: npx tsx test/db/with-postgres.ts -- <command> [args...]');
+  const postgres = await startLocalPostgres('scratch');
+  try {
+    const result = spawnSync(command, args, { stdio: 'inherit', env: { ...process.env, DATABASE_URL: postgres.url, DIRECT_URL: postgres.url } });
+    process.exitCode = result.status ?? 1;
+  } finally {
+    postgres.stop();
+  }
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
 ```
 
 ```ts
@@ -312,6 +387,9 @@ In `package.json` `scripts`, after `"test:watch"`, add:
 
 Run: `npm run test:db`
 Expected: PASS, 4 tests in `membership-constraints.db.test.ts`.
+
+Run: `npx tsx test/db/with-postgres.ts -- npx prisma migrate status`
+Expected: Prisma reports the database schema is up to date, and the throwaway database is removed afterwards.
 
 Run: `npm test`
 Expected: PASS, and `membership-constraints.db.test.ts` is not collected.
@@ -1810,7 +1888,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Covers:** tasks.md 3.1, 3.2, 3.3, 3.4
 
 **Files:**
-- Modify: `prisma/schema.prisma`, `test/db/global-setup.ts` (provide `pgBin`), `test/db/helpers.ts` (position and assignment fixtures)
+- Modify: `prisma/schema.prisma`, `test/db/helpers.ts` (position and assignment fixtures)
 - Create: `prisma/migrations/20261008100000_staffing/migration.sql`
 - Create (tests): `src/lib/staffing-migration.test.ts`, `src/server/staffing-constraints.db.test.ts`, `src/server/staffing-upgrade.db.test.ts`
 
@@ -1819,7 +1897,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Produces:
   - Prisma models `OccupationalRole`, `Position` (`labelKey` maintained by the database), `PositionAssignment`, `AccessGrant` (PK `clerkUserId`), `EmployeeAccountLink` (PK `employeeId`, unique `clerkUserId`), `OperationReceipt`; `Employee.updatedAt` (`@updatedAt`).
   - Constraint names the store maps (Task 8): `house_memberships_no_overlap`, `house_memberships_period_check`, `position_assignments_employee_no_overlap`, `position_assignments_position_no_overlap`, `position_assignments_period_check`, `positions_house_id_label_key_key`, `operation_receipts_pkey`; SQLSTATEs `CI001` (assignment outside membership) and `CI002` (position House/role changed).
-  - Test helpers: `insertPosition(db, houseId, roleCode, label): Promise<string>`, `insertAssignment(db, employeeId, positionId, houseId, startsOn, endsOn?): Promise<string>`; `inject('pgBin')`.
+  - Test helpers: `insertPosition(db, houseId, roleCode, label): Promise<string>`, `insertAssignment(db, employeeId, positionId, houseId, startsOn, endsOn?): Promise<string>`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2087,7 +2165,6 @@ export async function insertAssignment(
 }
 ```
 
-In `test/db/global-setup.ts`, add `pgBin: string;` to `ProvidedContext` and call `project.provide('pgBin', bin);` next to `project.provide('databaseUrl', url);`.
 
 - [ ] **Step 2: Run them to verify they fail**
 
@@ -2221,16 +2298,11 @@ Also update the `HouseMembership` doc comment's last line to mention the staffin
 
 - [ ] **Step 4: Generate the migration against a throwaway local Postgres (never Supabase)**
 
+The helper applies the existing migrations to a fresh database, then runs the diff against it:
+
 ```bash
-B="$(dirname "$(realpath "$(which postgres)")")"   # or PG_BIN
-D="$(mktemp -d)"
-"$B/initdb" -D "$D/data" -U postgres -A trust -E UTF8 --locale=en_US.UTF-8 >/dev/null
-"$B/pg_ctl" -D "$D/data" -o "-p 54330 -c listen_addresses=localhost -c unix_socket_directories=''" -l "$D/log" -w start
-"$B/createdb" -h localhost -p 54330 -U postgres scratch
-export DATABASE_URL=postgresql://postgres@localhost:54330/scratch DIRECT_URL=postgresql://postgres@localhost:54330/scratch
-npx prisma migrate deploy
 mkdir -p prisma/migrations/20261008100000_staffing
-npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script -o prisma/migrations/20261008100000_staffing/migration.sql
+npx tsx test/db/with-postgres.ts -- npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script -o prisma/migrations/20261008100000_staffing/migration.sql
 ```
 
 Check the generated file contains `ALTER TABLE "employees" ADD COLUMN "updated_at"`, six `CREATE TABLE`s and the FK `"position_assignments_position_id_house_id_fkey" FOREIGN KEY ("position_id", "house_id") REFERENCES "positions"("id", "house_id")`. Then append this block, verbatim, at the end of the file:
@@ -2340,17 +2412,14 @@ CREATE CONSTRAINT TRIGGER "house_memberships_keep_assignments"
   FOR EACH ROW EXECUTE FUNCTION "house_memberships_check_containment"();
 ```
 
-Then apply it and prove there is no drift (Prisma must not try to undo the hand-written SQL):
+Then prove there is no drift (Prisma must not try to undo the hand-written SQL). The helper now applies both migrations before running the diff:
 
 ```bash
-npx prisma migrate deploy
-npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script
-"$B/pg_ctl" -D "$D/data" -m fast -w stop && rm -rf "$D"
-unset DATABASE_URL DIRECT_URL
+npx tsx test/db/with-postgres.ts -- npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script
 npm run db:generate
 ```
 
-Expected: `migrate deploy` applies `20261008100000_staffing`; the diff prints `-- This is an empty migration.`
+Expected: the setup applies `20261008100000_staffing` without errors; the diff prints `-- This is an empty migration.`
 
 - [ ] **Step 5: Run the tests**
 
@@ -3712,17 +3781,10 @@ main()
 Run: `npx vitest run prisma/seed-data.test.ts && npm run typecheck`
 Expected: PASS.
 
-Then prove the seed runs against a local Postgres (never Supabase here):
+Then prove the seed runs against a throwaway local Postgres (never Supabase here), twice:
 
 ```bash
-B="$(dirname "$(realpath "$(which postgres)")")"; D="$(mktemp -d)"
-"$B/initdb" -D "$D/data" -U postgres -A trust -E UTF8 --locale=en_US.UTF-8 >/dev/null
-"$B/pg_ctl" -D "$D/data" -o "-p 54331 -c listen_addresses=localhost -c unix_socket_directories=''" -l "$D/log" -w start
-"$B/createdb" -h localhost -p 54331 -U postgres seedcheck
-DATABASE_URL=postgresql://postgres@localhost:54331/seedcheck DIRECT_URL=postgresql://postgres@localhost:54331/seedcheck npx prisma migrate deploy
-DATABASE_URL=postgresql://postgres@localhost:54331/seedcheck DIRECT_URL=postgresql://postgres@localhost:54331/seedcheck npx prisma db seed
-DATABASE_URL=postgresql://postgres@localhost:54331/seedcheck DIRECT_URL=postgresql://postgres@localhost:54331/seedcheck npx prisma db seed
-"$B/pg_ctl" -D "$D/data" -m fast -w stop && rm -rf "$D"
+npx tsx test/db/with-postgres.ts -- sh -c 'npx prisma db seed && npx prisma db seed'
 ```
 
 Expected: first seed prints `Seeded 20 fictional employees, each in their own position from 2025-09-01.`; the second prints `Seed skipped: employees already exist.`
@@ -7968,7 +8030,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Covers:** tasks.md 8.2
 
-This task changes the shared dev Supabase database and needs the user's Clerk user ID. The controller (not a subagent) runs it, and only after the user says go.
+This task changes the shared dev Supabase database and needs the user's Clerk user ID. It runs on the developer's machine (needs `.env.local`), never in a cloud session. The controller (not a subagent) runs it, and only after the user says go. If Tasks 1 to 24 ran in the cloud, first pull the branch locally.
 
 - [ ] **Step 1: Ask the user**, in one message:
   1. Apply the `staffing` migration to the dev DB with `npx prisma migrate deploy` (non-destructive; keeps the SPEC-001 seed people)? Or reset it with the fictional inventory: `npx prisma migrate reset --force` then `npx prisma db seed` (deletes all dev data, which is fictional)?
@@ -8013,6 +8075,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ## Task 26: Full verification and browser acceptance
 
 **Covers:** tasks.md 8.4, 8.5
+
+Runs on the developer's machine (Clerk sign-in, the dev database and the gstack browser). Step 1 can also run in a cloud session.
 
 - [ ] **Step 1: Run every check**
 
