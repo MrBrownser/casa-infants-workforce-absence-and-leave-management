@@ -258,3 +258,35 @@ group, alert), styled with our tokens.
   Homebrew Postgres on the developer machine (documented in the README).
 - **No production inventory seed:** the realistic list exists only in dev; production
   positions are entered by hand by the director.
+
+## Plan-time updates (2026-10-08)
+
+Found while writing plan.md, after a throwaway spike against a local Postgres 14 and the
+real Prisma 7 adapter:
+
+- **Inventory received.** The product owner sent two fictional lists (list 1 = Paulo Freire,
+  list 2 = Carme Aymerich): 10 positions per House (PDG, PSI, ER, TFM, TFT, ET, ECS, EN x2,
+  CT), all occupied. The dev seed is now exactly those lists, from 2025-09-01, with no
+  scripted events; handovers, transfers and former members are exercised in browser
+  acceptance instead (design D14 updated).
+- **Branch base.** `feat/house-context` was merged to `main` (merge commit), so this branch
+  was rebased onto `origin/main`.
+- **Prisma error shapes.** Model writes surface Postgres errors as
+  `PrismaClientKnownRequestError` with `meta.driverAdapterError.cause.originalCode`;
+  exclusion constraints, CHECKs, trigger errors and deferred-trigger errors at commit come
+  as a bare `DriverAdapterError` with `cause.originalCode`. The constraint name is only in
+  the message. The store maps both shapes (plan Task 8).
+- **Hand-written SQL verified.** The full staffing migration (roles, position trigger,
+  EXCLUDE constraints, deferred containment trigger) applied cleanly, behaved as designed
+  (including accented `lower()` with `en_US.UTF-8`), and a follow-up `migrate diff`
+  reported an empty migration: no drift.
+- **Local Postgres quirks.** The first `initdb` on PATH is libpq's client-only copy, and
+  temp paths are too long for a Unix socket on macOS. The harness uses the binaries next
+  to the `postgres` server binary and TCP only.
+- **UI simplifications (design D11 updated).** Native `<select>` instead of the Radix
+  select; links (URL state) for the Equip views and "Persona nova / Persona existent";
+  the House switcher keeps `team`, `team/new` and `team/positions`.
+- **Error copy.** Conflict messages do not name the other person (design D8 updated), to
+  keep personal data out of the store's error type.
+- **Layering.** View types live in `src/lib/staffing-views.ts` so client components never
+  import a server module.

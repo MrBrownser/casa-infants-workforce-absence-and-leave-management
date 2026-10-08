@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Switch active House
-The director SHALL be able to switch between Paulo Freire and Carme Aymerich from the House switcher on every House-scoped page. Switching MUST keep the current section and MUST NOT create, modify, move or delete any business data. From a page of a specific employee or position (any path below `/<house>/team/`), switching SHALL go to the other House's team list instead of reusing that record's ID.
+The director SHALL be able to switch between Paulo Freire and Carme Aymerich from the House switcher on every House-scoped page. Switching MUST keep the current section and MUST NOT create, modify, move or delete any business data. From a page of a specific employee or position (`/<house>/team/<employeeId>/...` or `/<house>/team/positions/<positionId>/...`), switching SHALL go to the other House's team list instead of reusing that record's ID.
 
 #### Scenario: Director switches to Carme Aymerich
 - **WHEN** the director is on `/paulo-freire/team` and selects Carme Aymerich

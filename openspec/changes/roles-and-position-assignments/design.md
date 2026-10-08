@@ -104,7 +104,7 @@ Stakeholders: the director (only operational user), the developer (dev access, o
   - **`planHouseTransfer`:** composes SPEC-001's close/open membership rule with closing the source assignment crossing D on D-1 and an optional destination assignment starting D. It rejects a future source assignment starting on or after D, a same-House transfer, D on or before the source start, and a non-ongoing source.
   - **`planToken(plan)`.**
 
-  `StaffingError(reason)` replaces `TransferError`. Its reasons: `invalid-dates`, `not-ongoing`, `same-house`, `starts-too-early`, `membership-overlap`, `employee-has-position`, `position-occupied`, `outside-membership`, `future-assignment-blocks`, `label-taken`, `stale`, `not-found`, `operation-conflict`. `planTransfer` keeps its behaviour but throws `StaffingError`, and its existing tests are updated. `src/lib/staffing-messages.ts` maps each reason to Catalan copy with its context (names, dates). The store maps Postgres errors to the same reasons: 23P01 by constraint name, 23505 by constraint name, `CI001` → `outside-membership`, `CI002` → `not-found` (immutable fields are never sent by the app), 23503 → `not-found`.
+  `StaffingError(reason)` replaces `TransferError`. Its reasons: `invalid-dates`, `not-ongoing`, `same-house`, `starts-too-early`, `membership-overlap`, `employee-has-position`, `position-occupied`, `outside-membership`, `future-assignment-blocks`, `label-taken`, `stale`, `not-found`, `operation-conflict`. `planTransfer` keeps its behaviour but throws `StaffingError`, and its existing tests are updated. `src/lib/staffing-messages.ts` maps each reason to one Catalan sentence and renders plan previews as Catalan lines (who, which position and House, which date closes or opens). Error messages do not name the conflicting person, to keep the store's error type free of personal data. The store maps Postgres errors to the same reasons: 23P01 by constraint name, 23505 by constraint name, `CI001` → `outside-membership`, `CI002` → `not-found` (immutable fields are never sent by the app), 23503 → `not-found`.
 - **Why:** The previews, the friendly errors and the database share one vocabulary, and the rules are unit-testable without a database.
 
 ### D9: Grant-based `requireDirector()` with a per-request cache only
@@ -150,8 +150,8 @@ Stakeholders: the director (only operational user), the developer (dev access, o
     Two-step actions also accept `intent: 'preview' | 'confirm'`; a preview returns `{ status: 'preview', summary, planToken }`.
   - **Client forms:** react-hook-form with `zodResolver`; `useActionState` gives pending state; the submit is disabled while pending. The operation ID comes from `useState(() => crypto.randomUUID())`. The confirmation step renders the server summary with `Confirma` and `Cancel·la`, where `Cancel·la` returns to the form without writing.
   - **Feedback:** errors use an `Alert` with an icon. A `?done` value shows a neutral success note.
-  - **shadcn primitives added:** input, label, select, radio-group, alert, tabs (styled with our tokens).
-  - **Switcher:** `switchHousePath` maps `/<house>/team/<anything>` to `/<other>/team`.
+  - **UI primitives added** in the shadcn style (`src/components/ui/`): `Input`, `Label`, `NativeSelect` and `Alert`, styled with our tokens. Native `<select>` replaces the Radix select (mobile-native pickers, no portal, testable in jsdom). The view switcher on the Equip page and the "Persona nova / Persona existent" choice on `/team/new` are links (`?view=`, `?mode=existing`), so they work without client state and keep the choice in the URL.
+  - **Switcher:** `switchHousePath` keeps `/<house>/team`, `/<house>/team/new` and `/<house>/team/positions` (no record in the path) and maps every other path below `/<house>/team/` (employee and position pages) to `/<other>/team`.
 - **Why:** Pages per action keep each form small, keyboard- and mobile-friendly, and testable. Binding the slug server-side keeps the House out of client control.
 
 ### D12: Team data loading
@@ -171,8 +171,8 @@ Stakeholders: the director (only operational user), the developer (dev access, o
 - **Why:** Real constraint, rollback and concurrency evidence (SPEC-002 §9; SPEC-001 retrospective miss). The `en_US.UTF-8` locale matches Supabase for `lower()`.
 - **Alternatives:** Testcontainers (needs Docker running). Supabase branches (paid, network). PGlite (single connection, no real concurrency).
 
-### D14: Dev seed with a swappable inventory
-- **Choice:** `prisma/seed-data.ts` exports `SEED_INVENTORY` (per House: positions with label, role and simulated occupants with start dates, plus scripted events: a handover, a vacancy, a future occupant, Ana's transfer with a destination position, a former member). `prisma/seed.ts` builds everything through `staffing-store.ts` (the real paths) with a fixed actor `seed`, and keeps its production guard and its "skip if employees exist" rule. Until the product owner's list arrives, `SEED_INVENTORY` holds a placeholder marked `// PLACEHOLDER: replace with the product owner's inventory`. The dev DB is refreshed with `npx prisma migrate reset` (fictional data only), followed by re-running the developer's grant.
+### D14: Dev seed from the product owner's inventory
+- **Choice:** `prisma/seed-data.ts` exports `SEED_START` (`2025-09-01`) and `SEED_INVENTORY`: the product owner's two lists of fictional staff (list 1 = Paulo Freire, list 2 = Carme Aymerich), 10 positions per House with labels `PDG`, `PSI`, `ER`, `TFM`, `TFT`, `ET`, `ECS`, `EN 1`, `EN 2`, `CT` and one occupant each. `prisma/seed.ts` creates every position and every person (membership plus assignment from `SEED_START`) through `staffing-store.ts` (the real paths) with the actor `seed`, keeps its production guard and its "skip if employees exist" rule. No scripted events: handovers, transfers, vacancies and former members are produced through the UI during browser acceptance, so the seed stays a faithful copy of the lists. The dev DB is refreshed with `npx prisma migrate reset --force` then `npx prisma db seed` (fictional data only), followed by re-granting the developer.
 - **Why:** A realistic dev scenario (D1) without hard-coding real data into production paths.
 
 ## Risks / Trade-offs
@@ -200,6 +200,5 @@ Stakeholders: the director (only operational user), the developer (dev access, o
 
 ## Open Questions
 
-- **Dev position inventory:** the product owner will supply a real list of positions per House with simulated names. Until then, `SEED_INVENTORY` is a marked placeholder. Not blocking.
 - **Retention and erasure** of staffing history, receipts and backups: the GDPR review after the first deliverable. Not blocking.
 - **Production Supabase project and production Clerk instance:** not yet created; the cutover steps are documented only.

@@ -7,11 +7,11 @@
 
 - [ ] 2.1 Add `src/lib/roles.ts` (`ROLES`, `RoleCode`, `findRole`) with unit tests
 - [ ] 2.2 Replace `TransferError` with `StaffingError` (all reasons from design D8) in a new `src/lib/staffing.ts`; keep `planTransfer` behaviour and update its tests
-- [ ] 2.3 Add assignment queries: `isAssignmentActiveOn`, `occupancyOn`, `teamOn`, `formerMembers`, `ctOccupantsOn`, `findAssignmentOverlap`, `checkContainment`, with tests (vacancy, future occupant, returning employee once, CT per House, transferred CT)
+- [ ] 2.3 Add assignment queries: `occupancyOn`, `teamOn`, `formerMembers`, `ctOccupantsOn`, `findAssignmentConflict`, `findContainingMembership`, with tests (vacancy, future occupant, returning employee once, CT per House, transferred CT)
 - [ ] 2.4 Add `planHandover` and `planEndAssignment` with tests (replacement, move within House, vacant assign, future-assignment conflict, start on/after D, end before start)
 - [ ] 2.5 Add `planNewMembership` and `planEndMembership` with tests (overlap, return after gap, crossing assignment closed, future assignment blocks)
 - [ ] 2.6 Add `planHouseTransfer` with tests (close/open with and without destination position, advance transfer, same House, too early, not ongoing, future source assignment)
-- [ ] 2.7 Add `planToken(plan)` (stable sha256 of canonical plan JSON) with tests
+- [ ] 2.7 Add `planToken(plan)` in `src/server/plan-token.ts` (stable sha256 of canonical plan JSON) with tests
 - [ ] 2.8 Add `src/lib/staffing-schemas.ts` (zod schemas for every form, `IsoDate` and UUID validation, trimmed non-blank names and labels, no permission fields) and `src/lib/staffing-messages.ts` (Catalan copy per reason) with tests
 
 ## 3. Schema and migration
@@ -43,8 +43,8 @@
 
 ## 7. UI
 
-- [ ] 7.1 Add shadcn primitives (input, label, select, radio-group, alert, tabs) themed with project tokens, plus shared form pieces (field error with icon, pending submit button, operation ID hook, confirmation summary, success note)
-- [ ] 7.2 Update `switchHousePath` so paths below `/<house>/team/` switch to `/<other>/team`, with tests
+- [ ] 7.1 Add UI primitives in the shadcn style (`Input`, `Label`, `NativeSelect`, `Alert`) themed with project tokens, plus shared form pieces (field error with icon, pending submit button, operation ID hook, confirmation summary, success note)
+- [ ] 7.2 Update `switchHousePath` so employee and position pages switch to `/<other>/team` (team, new and positions keep their path), with tests
 - [ ] 7.3 Rebuild the Equip page: Persones / Llocs / Membres anteriors views, date control and "not today" banner, actions; component tests (no honey, `Sense lloc assignat`, `Vacant`)
 - [ ] 7.4 Add `/[house]/team/new` (Persona nova / Persona existent, optional position) with component tests
 - [ ] 7.5 Add the employee history page and its action pages (edit name, assign/change position, end position, add period, end membership with confirmation, transfer with confirmation), with component tests
@@ -52,7 +52,7 @@
 
 ## 8. Seed, docs and acceptance
 
-- [ ] 8.1 Add `prisma/seed-data.ts` (`SEED_INVENTORY`, placeholder until the product owner's list arrives) and rebuild `prisma/seed.ts` on the staffing store (handover, vacancy, future occupant, Ana's transfer with destination position, former member)
+- [ ] 8.1 Add `prisma/seed-data.ts` (`SEED_INVENTORY` from the product owner's two lists: 10 fictional people and positions per House) and rebuild `prisma/seed.ts` on the staffing store
 - [ ] 8.2 Apply the migration to the dev Supabase DB (reset and reseed only with the user's go-ahead), grant the developer, and record a manual check that a direct overlapping assignment is rejected there
 - [ ] 8.3 Update README (test:db prerequisites, operator scripts, first-deploy cutover and recovery, dev reset), AGENTS.md (models, auth, layout) and DESIGN.md if any new pattern needs recording
 - [ ] 8.4 Run `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:db` and `npm run build`
