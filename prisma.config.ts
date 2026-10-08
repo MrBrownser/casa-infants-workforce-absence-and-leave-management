@@ -7,6 +7,8 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    // Dev only: fictional people. Run with `npx prisma db seed`.
+    seed: "tsx prisma/seed.ts",
   },
   datasource: {
     // CLI commands (migrate / db push / studio) use the DIRECT connection

@@ -1,21 +1,12 @@
-import type { Metadata } from 'next';
-import { requireUser } from '@/lib/auth';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { ACTIVE_HOUSE_COOKIE, resolveDashboardRedirect } from '@/lib/active-house';
+import { requireDirector } from '@/lib/auth';
 
-export const metadata: Metadata = {
-  title: "Inici · Casa d'Infants",
-};
-
+// Clerk's after-sign-in redirect lands here: send the director to the last
+// House they visited, or to Paulo Freire.
 export default async function DashboardPage() {
-  const { name } = await requireUser();
-
-  return (
-    <main className="mx-auto flex max-w-[1280px] flex-col gap-3 px-8 py-16">
-      <h1 className="text-[1.875rem] tracking-[-0.015em]">
-        {name ? `Hola, ${name}` : 'Hola!'}
-      </h1>
-      <p className="max-w-xl text-[0.9375rem] leading-[1.65] text-muted-foreground">
-        Encara no hi ha res. Aviat hi trobaràs la gestió de vacances i absències.
-      </p>
-    </main>
-  );
+  await requireDirector();
+  const cookieStore = await cookies();
+  redirect(resolveDashboardRedirect(cookieStore.get(ACTIVE_HOUSE_COOKIE)?.value));
 }

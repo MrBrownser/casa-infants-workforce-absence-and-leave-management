@@ -101,6 +101,18 @@ npm run db:migrate    # create a migration (uses DIRECT_URL)
 npm run db:studio     # browse data
 ```
 
+### Dev data and access
+
+1. Apply migrations: `npm run db:migrate` (creates the two Houses).
+2. Seed fictional employees (dev only): `npx prisma db seed`. Re-running does nothing once employees exist.
+3. In the Clerk dashboard, open your user → **Metadata** → **Public** and set:
+
+   ```json
+   { "role": "director" }
+   ```
+
+   Without it you will land on the "Sense accés" page.
+
 ## Spec-Driven Development
 
 This repo is configured for OpenSpec with the **superpowers-bridge** schema
