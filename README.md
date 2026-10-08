@@ -2,8 +2,9 @@
 
 A web app to manage time off, absences and leave for the Casa d'Infants team.
 
-> Status: SPEC-001 implemented. Two House contexts, minimal employees, dated
-> membership, a read-only team page and a temporary director access gate are in
+> Status: SPEC-001 and SPEC-002 implemented. Two House contexts, employees, dated
+> membership, roles, positions, dated position assignments, staffing management
+> (people, handovers, transfers, history) and database-backed director grants are in
 > place. `/dashboard` redirects to the last visited House. APs, calendars,
 > vacations and absences are not built yet. The UI is in Catalan; code is in English.
 
@@ -73,12 +74,11 @@ npm run dev            # http://localhost:3000
 ```
 
 Routes: `/` landing page, `/sign-in`, `/sign-up`, `/dashboard` (director redirect),
-`/paulo-freire` and `/carme-aymerich` (House home), `/<house>/team` (current team),
-and `/no-access` (signed-in users without the temporary director flag).
+`/paulo-freire` and `/carme-aymerich` (House home), `/<house>/team` (views and date),
+`/<house>/team/new`, `/<house>/team/<employeeId>` (history and actions),
+`/<house>/team/positions`, and `/no-access` (signed-in users without a director grant).
 
-Membership history and atomic transfers exist in domain/server logic; employee
-editing, transfer forms, position assignments and historical-team UI are future
-work for SPEC-002. Business dates use Europe/Madrid. The URL scopes House data;
+Business dates use Europe/Madrid. The URL scopes House data;
 the remembering cookie never authorises a request or filters data.
 
 If you edit `prisma/schema.prisma`, re-run `npm run db:generate` to refresh the
@@ -112,15 +112,10 @@ npm run db:studio     # browse data
 
 ### Dev data and access
 
-1. Apply migrations: `npm run db:migrate` (creates the two Houses).
-2. Seed fictional employees (dev only): `npx prisma db seed`. Re-running does nothing once employees exist.
-3. In the Clerk dashboard, open your user → **Metadata** → **Public** and set:
-
-   ```json
-   { "role": "director" }
-   ```
-
-   Without it you will land on the "Sense accés" page.
+1. Apply migrations: `npx prisma migrate deploy` (creates the two Houses and the staffing schema).
+2. Seed the fictional inventory (dev only): `npx prisma db seed`.
+3. Grant yourself director access: `npm run access -- grant <your Clerk user ID>` (see
+   "Access: director grants" below). Without a grant you land on the "Sense accés" page.
 
 ## Spec-Driven Development
 
@@ -131,10 +126,9 @@ SPEC-001's as-built requirements are in
 records scope and implementation differences. Its requirement IDs refer to an
 earlier product-spec version; reconcile by content rather than copying those IDs.
 
-The local product documentation's SPEC-002 is the next review input: roles,
-dated positions, employee management, transfer/history UI and explicit application
-access. It is not implemented. After product review, create its OpenSpec change
-before coding; keep schedules and temporary coverage in their later specs.
+SPEC-002 (roles, positions, staffing management, director grants) is implemented; its
+change lives in `openspec/changes/roles-and-position-assignments/`. Keep schedules and
+temporary coverage in their later specs.
 
 This repo is configured for OpenSpec with the **superpowers-bridge** schema
 (`openspec/config.yaml`). Build features through the workflow rather than ad hoc:
@@ -142,6 +136,53 @@ This repo is configured for OpenSpec with the **superpowers-bridge** schema
 ```
 /opsx:propose   →  brainstorm → proposal → design → specs → tasks → plan → apply → verify
 ```
+
+## Operations
+
+### Database tests
+
+`npm run test:db` runs the real-database suite (`src/**/*.db.test.ts`) on a throwaway
+local Postgres: it runs `initdb` in a temp directory, starts the server on a free
+localhost port (TCP only), applies `prisma migrate deploy`, runs the tests and deletes
+everything. It never touches Supabase.
+
+Prerequisite: Postgres server binaries, 14 or newer (`brew install postgresql@14`). The
+harness uses the `initdb` and `pg_ctl` next to the `postgres` binary; set `PG_BIN` to
+choose another directory. It uses the `en_US.UTF-8` locale and falls back to `C.UTF-8`
+when that is missing (minimal containers). `npm test` does not run these tests; run both
+before a PR.
+
+### Access: director grants
+
+Access to the Houses depends only on an enabled director grant in the database
+(`access_grants`). Clerk metadata is ignored. Grants are managed by the operator, never
+in the app:
+
+    npm run access -- grant <clerkUserId>     # verifies the user in the Clerk instance of CLERK_SECRET_KEY
+    npm run access -- revoke <clerkUserId>
+    npm run access -- list
+
+Each command prints the target Clerk instance (development or production) and the
+database host, and asks for `yes` (or pass `--yes`). Changes apply on the user's next
+request. **Lost director access:** run `grant` again for their Clerk user ID (Clerk
+dashboard → Users → user ID, `user_...`).
+
+Optional employee ↔ Clerk account links (they grant nothing):
+
+    npm run account-link -- link <employeeId> <clerkUserId>
+    npm run account-link -- unlink <employeeId>
+
+### First deploy to an environment (and production cutover)
+
+1. `npx prisma migrate deploy` with that environment's `DIRECT_URL`.
+2. `npm run access -- grant <director's Clerk user ID>` with that environment's keys.
+   In production only the director gets a grant; never copy the developer's dev grant.
+3. Verify: the director can open `/paulo-freire/team`; a signed-in user without a grant
+   lands on "Sense accés".
+4. The dev seed (`npx prisma db seed`) is for development only (fictional inventory).
+
+To refresh the dev database with the fictional inventory: `npx prisma migrate reset --force`,
+then `npx prisma db seed`, then re-grant yourself (the reset deletes grants).
 
 ## Deployment (Vercel)
 

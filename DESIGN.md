@@ -158,3 +158,4 @@ Do not apply 20px radii to dense elements (table cells, calendar bars): it reads
 | 2026-10-04 | Honey reserved for "needs a decision" | Keeps the pending queue unmistakable for the coordinator. |
 | 2026-10-04 | Clay tactility (soft radii, modelled shadows, pressing buttons) | Makes "warm, like home" felt, not just seen. |
 | 2026-10-04 | Coordinator-first, desktop + mobile approvals | First release targets the director; educator views come later. |
+| 2026-10-08 | Native <select>, links for view switches, one page per staffing action, two-step confirmation panels | Mobile-native pickers and keyboard use; state in the URL; previews state the D-1 / D boundary before any write. |
