@@ -53,7 +53,10 @@
 ## 8. Seed, docs and acceptance
 
 - [x] 8.1 Add `prisma/seed-data.ts` (`SEED_INVENTORY` from the product owner's two lists: 10 fictional people and positions per House) and rebuild `prisma/seed.ts` on the staffing store
-- [ ] 8.2 Apply the migration to the dev Supabase DB (reset and reseed only with the user's go-ahead), grant the developer, and record a manual check that a direct overlapping assignment is rejected there
+- [x] 8.2 Apply the migration to the dev Supabase DB (reset and reseed only with the user's go-ahead), grant the developer, and record a manual check that a direct overlapping assignment is rejected there
+  - 2026-10-08, dev Supabase (eu-west-1, Postgres 17.11): `prisma migrate reset --force` with the user's consent applied `house_context` and `staffing`; `prisma db seed` loaded 20 fictional employees; `npm run access -- grant` gave the developer an enabled director grant (Clerk development instance).
+  - Direct duplicate assignment insert (rolled back): `ERROR: conflicting key value violates exclusion constraint "position_assignments_employee_no_overlap"`.
+  - Locale: database ctype `en_US.UTF-8`, ICU provider; `lower('ÀREA')` = `àrea`. Labels "Àrea check" and " àrea CHECK " in the same House were rejected by `positions_house_id_label_key_key` (rolled back, nothing left behind).
 - [x] 8.3 Update README (test:db prerequisites, operator scripts, first-deploy cutover and recovery, dev reset), AGENTS.md (models, auth, layout) and DESIGN.md if any new pattern needs recording
 - [ ] 8.4 Run `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:db` and `npm run build`
 - [ ] 8.5 Browser acceptance with `/browse` on `npm run build && npm start` at desktop and mobile widths: add/edit, handover, future transfer, date view, former members, a rejected operation, denied access without grant; save screenshots as evidence
