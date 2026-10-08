@@ -46,3 +46,10 @@ const catalanDate = new Intl.DateTimeFormat('ca', {
 export function formatDateCa(date: IsoDate): string {
   return catalanDate.format(isoDateToDate(date));
 }
+
+/** "Del 1 de gener del 2026 al 30 de juny del 2026" or "Des del 1 de juliol del 2026". */
+export function formatPeriodCa(period: { startsOn: IsoDate; endsOn: IsoDate | null }): string {
+  return period.endsOn
+    ? `Del ${formatDateCa(period.startsOn)} al ${formatDateCa(period.endsOn)}`
+    : `Des del ${formatDateCa(period.startsOn)}`;
+}

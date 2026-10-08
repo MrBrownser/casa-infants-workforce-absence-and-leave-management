@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, dateToIsoDate, formatDateCa, isIsoDate, isoDateToDate, todayInMadrid } from './dates';
+import { addDays, dateToIsoDate, formatDateCa, formatPeriodCa, isIsoDate, isoDateToDate, todayInMadrid } from './dates';
 
 describe('todayInMadrid', () => {
   it('flips at Madrid midnight in summer (UTC+2)', () => {
@@ -42,5 +42,12 @@ describe('Date conversion', () => {
 describe('formatDateCa', () => {
   it('formats in Catalan', () => {
     expect(formatDateCa('2026-07-01')).toBe('1 de juliol del 2026');
+  });
+});
+
+describe('formatPeriodCa', () => {
+  it('writes closed and open periods in Catalan', () => {
+    expect(formatPeriodCa({ startsOn: '2026-01-01', endsOn: '2026-06-30' })).toBe('Del 1 de gener del 2026 al 30 de juny del 2026');
+    expect(formatPeriodCa({ startsOn: '2026-07-01', endsOn: null })).toBe('Des del 1 de juliol del 2026');
   });
 });
