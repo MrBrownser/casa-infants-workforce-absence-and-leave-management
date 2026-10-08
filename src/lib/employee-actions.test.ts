@@ -15,7 +15,19 @@ const history: EmployeeHistory = {
 
 describe('employeeActionState', () => {
   it('finds the ongoing membership and open assignment of the page House only', () => {
-    expect(employeeActionState(history, 'ca')).toMatchObject({ ongoingHere: { id: 'm2' }, openAssignmentHere: { id: 'a2' }, hasOngoingMembership: true });
-    expect(employeeActionState(history, 'pf')).toEqual({ ongoingHere: null, openAssignmentHere: null, hasOngoingMembership: true });
+    expect(employeeActionState(history, 'ca', '2026-10-08')).toMatchObject({ ongoingHere: { id: 'm2' }, canAssignHere: true, openAssignmentHere: { id: 'a2' }, hasOngoingMembership: true });
+    expect(employeeActionState(history, 'pf', '2026-10-08')).toEqual({ ongoingHere: null, canAssignHere: false, openAssignmentHere: null, hasOngoingMembership: true });
+  });
+
+  it('lets an end-dated or future membership here assign, but not end or transfer', () => {
+    const fixedTerm: EmployeeHistory = {
+      ...history,
+      memberships: [{ ...history.memberships[0], endsOn: '2026-12-31', startsOn: '2026-01-01' }],
+    };
+    expect(employeeActionState(fixedTerm, 'pf', '2026-10-08')).toMatchObject({ ongoingHere: null, canAssignHere: true });
+    expect(employeeActionState(fixedTerm, 'pf', '2026-12-31').canAssignHere).toBe(true);
+    expect(employeeActionState(fixedTerm, 'pf', '2027-01-01').canAssignHere).toBe(false);
+    const future: EmployeeHistory = { ...history, memberships: [{ ...history.memberships[0], startsOn: '2027-01-01', endsOn: '2027-06-30' }] };
+    expect(employeeActionState(future, 'pf', '2026-10-08').canAssignHere).toBe(true);
   });
 });

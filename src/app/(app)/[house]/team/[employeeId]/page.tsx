@@ -19,11 +19,11 @@ export default async function EmployeePage({
 }: Readonly<{ params: Promise<{ house: string; employeeId: string }>; searchParams: Promise<SearchParams> }>) {
   const { slug, house, today, history } = await employeeContext(params);
   const { done, repeat } = parseDone(await searchParams);
-  const { ongoingHere, openAssignmentHere, hasOngoingMembership } = employeeActionState(history, house.id);
+  const { ongoingHere, canAssignHere, openAssignmentHere, hasOngoingMembership } = employeeActionState(history, house.id, today);
   const base = `/${slug}/team/${history.employee.id}`;
   const actions = [
     { href: `${base}/edit-name`, label: 'Editar nom', show: true },
-    { href: `${base}/assign`, label: openAssignmentHere ? 'Canviar de lloc' : 'Assignar lloc', show: ongoingHere !== null },
+    { href: `${base}/assign`, label: openAssignmentHere ? 'Canviar de lloc' : 'Assignar lloc', show: canAssignHere },
     { href: `${base}/assignment/end`, label: 'Finalitzar lloc', show: openAssignmentHere !== null },
     { href: `${base}/membership/end`, label: 'Finalitzar pertinença', show: ongoingHere !== null },
     { href: `${base}/transfer`, label: 'Traslladar', show: ongoingHere !== null },

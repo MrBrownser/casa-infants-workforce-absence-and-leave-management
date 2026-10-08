@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default async function EndMembershipPage({ params }: Readonly<{ params: Promise<{ house: string; employeeId: string }> }>) {
   const { slug, house, today, history } = await employeeContext(params);
-  const { ongoingHere } = employeeActionState(history, house.id);
+  const { ongoingHere } = employeeActionState(history, house.id, today);
   if (!ongoingHere) notFound();
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10 sm:px-8">

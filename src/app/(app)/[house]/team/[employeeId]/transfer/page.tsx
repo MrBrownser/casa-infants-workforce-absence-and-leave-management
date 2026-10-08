@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default async function TransferPage({ params }: Readonly<{ params: Promise<{ house: string; employeeId: string }> }>) {
   const { slug, house, today, history } = await employeeContext(params);
-  const { ongoingHere } = employeeActionState(history, house.id);
+  const { ongoingHere } = employeeActionState(history, house.id, today);
   if (!ongoingHere) notFound();
   const other = HOUSES.find((h) => h.slug !== slug);
   const destination = other ? await getHouseBySlug(other.slug) : null;

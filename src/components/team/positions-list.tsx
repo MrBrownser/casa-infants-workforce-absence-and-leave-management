@@ -21,11 +21,11 @@ export function PositionsList({
           <ul className="divide-y divide-border">
             {items.map((row) => (
               <li key={row.positionId} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3">
-                <Link href={`/${houseSlug}/team/positions/${row.positionId}`} className="font-semibold text-foreground underline-offset-4 hover:underline">
+                <Link href={`/${houseSlug}/team/positions/${row.positionId}`} className="inline-flex min-h-11 items-center font-semibold text-foreground underline-offset-4 hover:underline md:min-h-0">
                   {row.label}
                 </Link>
                 {row.occupant ? (
-                  <Link href={`/${houseSlug}/team/${row.occupant.employeeId}`} className="text-sm text-foreground underline-offset-4 hover:underline">
+                  <Link href={`/${houseSlug}/team/${row.occupant.employeeId}`} className="inline-flex min-h-11 items-center text-sm text-foreground underline-offset-4 hover:underline md:min-h-0">
                     {row.occupant.fullName}
                   </Link>
                 ) : (

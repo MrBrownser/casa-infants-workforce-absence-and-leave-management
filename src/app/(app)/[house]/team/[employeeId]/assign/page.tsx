@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { BackLink } from '@/components/back-link';
 import { FormCard } from '@/components/forms/form-card';
 import { HandoverForm } from '@/components/forms/handover-form';
@@ -14,7 +15,8 @@ export const metadata: Metadata = {
 
 export default async function AssignPositionPage({ params }: Readonly<{ params: Promise<{ house: string; employeeId: string }> }>) {
   const { slug, house, today, history } = await employeeContext(params);
-  const { openAssignmentHere } = employeeActionState(history, house.id);
+  const { openAssignmentHere, canAssignHere } = employeeActionState(history, house.id, today);
+  if (!canAssignHere) notFound();
   const positions = await loadPositionRows(house.id, today);
   const title = openAssignmentHere ? 'Canviar de lloc' : 'Assignar lloc';
   const intro = openAssignmentHere

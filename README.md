@@ -162,8 +162,9 @@ in the app:
     npm run access -- revoke <clerkUserId>
     npm run access -- list
 
-Each command prints the target Clerk instance (development or production) and the
-database host, and asks for `yes` (or pass `--yes`). Changes apply on the user's next
+`grant`, `revoke`, `link` and `unlink` print the target Clerk instance (development or
+production) and the database host, and ask for `yes` (or pass `--yes`); `list` only reads and
+does not ask. Changes apply on the user's next
 request. **Lost director access:** run `grant` again for their Clerk user ID (Clerk
 dashboard → Users → user ID, `user_...`).
 

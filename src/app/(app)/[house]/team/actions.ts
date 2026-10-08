@@ -28,7 +28,7 @@ import * as store from '@/server/staffing-store';
 // bound route slug (never a cookie or a form field), then zod (which drops
 // unknown fields such as role or clerkUserId), then the store. Success
 // redirects with ?done=...; failures return a Catalan message. Logs carry
-// the operation kind only.
+// the operation kind and, for known rejections, the fixed reason only.
 
 const INVALID: ActionState = { status: 'error', message: INVALID_FORM };
 const NOT_FOUND: ActionState = { status: 'error', message: errorMessage('not-found') };
@@ -61,7 +61,11 @@ async function houseFor(slug: string) {
 }
 
 function failure(kind: string, error: unknown): ActionState {
-  if (error instanceof StaffingError) return { status: 'error', message: errorMessage(error.reason) };
+  if (error instanceof StaffingError) {
+    // The reason is a fixed vocabulary; never log the error message, names or IDs.
+    console.warn(`[staffing] ${kind} rejected: ${error.reason}`);
+    return { status: 'error', message: errorMessage(error.reason) };
+  }
   console.error(`[staffing] ${kind} failed: unexpected`);
   return { status: 'error', message: UNEXPECTED_ERROR };
 }

@@ -86,16 +86,33 @@ describe('createPersonAction', () => {
   });
 
   it('returns Catalan messages for rule failures, invalid input and unexpected errors', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.mocked(store.createEmployee).mockRejectedValueOnce(new StaffingError('position-occupied'));
     await expect(createPersonAction('paulo-freire', IDLE, person)).resolves.toEqual({
       status: 'error', message: 'Aquest lloc ja està ocupat en aquestes dates.',
     });
+    expect(warn.mock.calls).toEqual([['[staffing] create-employee rejected: position-occupied']]);
+    warn.mockRestore();
     await expect(createPersonAction('paulo-freire', IDLE, { ...person, fullName: '' })).resolves.toMatchObject({ status: 'error' });
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(store.createEmployee).mockRejectedValueOnce(new Error('duplicate key value ... Ana Puig'));
     await expect(createPersonAction('paulo-freire', IDLE, person)).resolves.toMatchObject({ status: 'error' });
-    expect(log).toHaveBeenCalledWith('[staffing] create-employee failed: unexpected');
+    expect(log.mock.calls).toEqual([['[staffing] create-employee failed: unexpected']]);
     log.mockRestore();
+  });
+});
+
+describe('rejection logging', () => {
+  it('logs only the fixed reason, never a name carried by the error', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const error = new StaffingError('label-taken');
+    error.message = 'label taken for Ana Puig';
+    vi.mocked(store.createEmployee).mockRejectedValueOnce(error);
+    await createPersonAction('paulo-freire', IDLE, person);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('[staffing] create-employee rejected: label-taken');
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('Ana Puig');
+    warn.mockRestore();
   });
 });
 
