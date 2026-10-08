@@ -7,8 +7,11 @@
 import type { PrismaClient } from '@/generated/prisma/client';
 import { isoDateToDate, type IsoDate } from '@/lib/dates';
 import type { RoleCode } from '@/lib/roles';
-import { planNewMembership, type PlanOpen, type StaffingPlan } from '@/lib/staffing';
+import type { PlanNames } from '@/lib/staffing-messages';
+import { planEndAssignment, planHandover, planNewMembership, type PlanClose, type PlanOpen, type StaffingPlan } from '@/lib/staffing';
 import { StaffingError } from '@/lib/staffing-error';
+import { toStaffingError } from './db-errors';
+import { planToken } from './plan-token';
 import { runOperation, type OperationContext, type Outcome, type Tx } from './operation';
 import { toAssignment, toMembership, toPosition } from './rows';
 
@@ -63,6 +66,42 @@ async function applyPlan(tx: Tx, plan: StaffingPlan): Promise<{ membershipIds: s
     assignmentIds.push(row.id);
   }
   return { membershipIds, assignmentIds };
+}
+
+/** Database errors from reads outside runOperation become StaffingErrors too. */
+async function mapped<T>(work: () => Promise<T>): Promise<T> {
+  try {
+    return await work();
+  } catch (error) {
+    throw toStaffingError(error);
+  }
+}
+
+// ── Previews ─────────────────────────────────────────────────────────────────
+
+export type Preview = { plan: StaffingPlan; planToken: string; names: PlanNames };
+
+function positionIdOf(item: PlanClose | PlanOpen): string | null {
+  return 'positionId' in item ? item.positionId : null;
+}
+
+async function previewOf(db: PrismaClient, plan: StaffingPlan): Promise<Preview> {
+  const items = [...plan.closes, ...plan.opens];
+  const unique = (values: (string | null)[]) => [...new Set(values.filter((v): v is string => v !== null))];
+  const [employees, positions, houses] = await Promise.all([
+    db.employee.findMany({ where: { id: { in: unique(items.map((i) => i.employeeId)) } } }),
+    db.position.findMany({ where: { id: { in: unique(items.map(positionIdOf)) } } }),
+    db.house.findMany({ where: { id: { in: unique(items.map((i) => i.houseId)) } } }),
+  ]);
+  return {
+    plan,
+    planToken: planToken(plan),
+    names: {
+      employees: Object.fromEntries(employees.map((e) => [e.id, e.fullName])),
+      positions: Object.fromEntries(positions.map((p) => [p.id, p.label])),
+      houses: Object.fromEntries(houses.map((h) => [h.id, h.name])),
+    },
+  };
 }
 
 // ── Positions ────────────────────────────────────────────────────────────────
@@ -160,5 +199,80 @@ export function editEmployeeName(
     if (employee.updatedAt.toISOString() !== input.expectedUpdatedAt) throw new StaffingError('stale');
     await tx.employee.update({ where: { id: employee.id }, data: { fullName: input.fullName.trim() } });
     return { employeeId: employee.id };
+  });
+}
+
+// ── Positions over time ──────────────────────────────────────────────────────
+
+export type HandoverRequest = { positionId: string; employeeId: string; startsOn: IsoDate; endsOn: IsoDate | null };
+
+async function handoverPlan(db: Tx, houseId: string, input: HandoverRequest): Promise<StaffingPlan> {
+  const position = await positionInHouse(db, input.positionId, houseId);
+  return planHandover({
+    position,
+    incomingEmployeeId: input.employeeId,
+    startsOn: input.startsOn,
+    endsOn: input.endsOn,
+    positionAssignments: await positionAssignments(db, position.id),
+    incomingAssignments: await employeeAssignments(db, input.employeeId),
+    incomingMemberships: await employeeMemberships(db, input.employeeId),
+  });
+}
+
+export function previewHandover(db: PrismaClient, houseId: string, input: HandoverRequest): Promise<Preview> {
+  return mapped(async () => previewOf(db, await handoverPlan(db, houseId, input)));
+}
+
+/**
+ * Assign, replace or move (FR-004). Locks the incoming employee and everyone
+ * whose period on the position the handover can touch (design D4), recomputes
+ * the plan under the lock and applies it only if it matches the previewed
+ * token; any change since the preview is `stale` (design D6).
+ */
+export function handover(
+  db: PrismaClient,
+  ctx: OperationContext,
+  houseId: string,
+  input: HandoverRequest & { planToken: string },
+): Promise<Outcome<{ positionId: string; employeeId: string; assignmentId: string }>> {
+  return mapped(async () => {
+    await positionInHouse(db, input.positionId, houseId);
+    const affected = await db.positionAssignment.findMany({
+      where: { positionId: input.positionId, OR: [{ endsOn: null }, { endsOn: { gte: isoDateToDate(input.startsOn) } }] },
+      select: { employeeId: true },
+    });
+    const lockIds = [input.employeeId, ...affected.map((a) => a.employeeId)];
+    return runOperation(db, ctx, 'handover', lockIds, async (tx) => {
+      let plan: StaffingPlan;
+      try {
+        plan = await handoverPlan(tx, houseId, input);
+      } catch (error) {
+        // The preview succeeded, so a rule failure now means the state moved.
+        if (error instanceof StaffingError && error.reason !== 'not-found') throw new StaffingError('stale');
+        throw error;
+      }
+      if (planToken(plan) !== input.planToken) throw new StaffingError('stale');
+      const ids = await applyPlan(tx, plan);
+      return { positionId: input.positionId, employeeId: input.employeeId, assignmentId: ids.assignmentIds[0] };
+    });
+  });
+}
+
+/** Ends an ongoing assignment of this House. An already closed one is `not-ongoing`. */
+export async function endAssignment(
+  db: PrismaClient,
+  ctx: OperationContext,
+  houseId: string,
+  input: { assignmentId: string; endsOn: IsoDate },
+): Promise<Outcome<{ assignmentId: string; employeeId: string }>> {
+  const owner = await mapped(() =>
+    db.positionAssignment.findFirst({ where: { id: input.assignmentId, houseId }, select: { employeeId: true } }),
+  );
+  if (!owner) throw new StaffingError('not-found');
+  return runOperation(db, ctx, 'end-assignment', [owner.employeeId], async (tx) => {
+    const row = await tx.positionAssignment.findFirst({ where: { id: input.assignmentId, houseId } });
+    if (!row) throw new StaffingError('not-found');
+    await applyPlan(tx, planEndAssignment(toAssignment(row), input.endsOn));
+    return { assignmentId: row.id, employeeId: row.employeeId };
   });
 }
