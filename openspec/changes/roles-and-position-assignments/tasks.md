@@ -9,8 +9,8 @@
 - [x] 2.2 Replace `TransferError` with `StaffingError` (all reasons from design D8) in a new `src/lib/staffing.ts`; keep `planTransfer` behaviour and update its tests
 - [x] 2.3 Add assignment queries: `occupancyOn`, `teamOn`, `formerMembers`, `ctOccupantsOn`, `findAssignmentConflict`, `findContainingMembership`, with tests (vacancy, future occupant, returning employee once, CT per House, transferred CT)
 - [x] 2.4 Add `planHandover` and `planEndAssignment` with tests (replacement, move within House, vacant assign, future-assignment conflict, start on/after D, end before start)
-- [ ] 2.5 Add `planNewMembership` and `planEndMembership` with tests (overlap, return after gap, crossing assignment closed, future assignment blocks)
-- [ ] 2.6 Add `planHouseTransfer` with tests (close/open with and without destination position, advance transfer, same House, too early, not ongoing, future source assignment)
+- [x] 2.5 Add `planNewMembership` and `planEndMembership` with tests (overlap, return after gap, crossing assignment closed, future assignment blocks)
+- [x] 2.6 Add `planHouseTransfer` with tests (close/open with and without destination position, advance transfer, same House, too early, not ongoing, future source assignment)
 - [ ] 2.7 Add `planToken(plan)` in `src/server/plan-token.ts` (stable sha256 of canonical plan JSON) with tests
 - [ ] 2.8 Add `src/lib/staffing-schemas.ts` (zod schemas for every form, `IsoDate` and UUID validation, trimmed non-blank names and labels, no permission fields) and `src/lib/staffing-messages.ts` (Catalan copy per reason) with tests
 

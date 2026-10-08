@@ -5,7 +5,7 @@
 // The database enforces the same rules (staffing migration) and
 // src/server/staffing-store.ts runs these plans inside transactions.
 import { addDays, type IsoDate } from './dates';
-import { isActiveOn, type Membership } from './house-membership';
+import { isActiveOn, planTransfer, type Membership } from './house-membership';
 import type { RoleCode } from './roles';
 import { StaffingError } from './staffing-error';
 
@@ -166,6 +166,17 @@ function closeAssignment(assignment: Assignment, endsOn: IsoDate): PlanClose {
   };
 }
 
+function closeMembership(membership: Membership, endsOn: IsoDate): PlanClose {
+  return {
+    kind: 'membership',
+    id: membership.id,
+    employeeId: membership.employeeId,
+    houseId: membership.houseId,
+    positionId: null,
+    endsOn,
+  };
+}
+
 /**
  * Assignments overlapping a period that starts on D are closed on D-1. One
  * that starts on or after D could only be cancelled, so the whole operation is
@@ -226,4 +237,107 @@ export function planEndAssignment(assignment: Assignment, endsOn: IsoDate): Staf
   if (assignment.endsOn !== null) throw new StaffingError('not-ongoing');
   if (endsOn < assignment.startsOn) throw new StaffingError('invalid-dates');
   return { closes: [closeAssignment(assignment, endsOn)], opens: [] };
+}
+
+export type NewMembershipInput = {
+  employeeId: string;
+  houseId: string;
+  startsOn: IsoDate;
+  endsOn: IsoDate | null;
+  /** Optional position for the same interval; must belong to `houseId`. */
+  position: Position | null;
+  employeeMemberships: readonly Membership[];
+  employeeAssignments: readonly Assignment[];
+  positionAssignments: readonly Assignment[];
+};
+
+/** A new membership period (past, current or future) with an optional position (FR-002, FR-003). */
+export function planNewMembership(input: NewMembershipInput): StaffingPlan {
+  const period: Period = { startsOn: input.startsOn, endsOn: input.endsOn };
+  assertValidPeriod(period);
+  if (input.employeeMemberships.some((m) => periodsOverlap(m, period))) throw new StaffingError('membership-overlap');
+  const opens: PlanOpen[] = [{ kind: 'membership', employeeId: input.employeeId, houseId: input.houseId, ...period }];
+  if (input.position) {
+    if (input.position.houseId !== input.houseId) throw new StaffingError('not-found');
+    const conflict = findAssignmentConflict([...input.positionAssignments, ...input.employeeAssignments], {
+      ...period,
+      employeeId: input.employeeId,
+      positionId: input.position.id,
+    });
+    if (conflict) throw new StaffingError(conflict.reason);
+    opens.push({ kind: 'assignment', employeeId: input.employeeId, positionId: input.position.id, houseId: input.houseId, ...period });
+  }
+  return { closes: [], opens };
+}
+
+export type EndMembershipInput = {
+  membership: Membership;
+  endsOn: IsoDate;
+  /** Every assignment of the employee. */
+  assignments: readonly Assignment[];
+};
+
+/**
+ * Ends an ongoing membership (FR-003). Its assignments that run past the end
+ * close on the same day; one that starts after the end blocks the operation
+ * rather than being deleted.
+ */
+export function planEndMembership(input: EndMembershipInput): StaffingPlan {
+  const { membership, endsOn } = input;
+  if (membership.endsOn !== null) throw new StaffingError('not-ongoing');
+  if (endsOn < membership.startsOn) throw new StaffingError('invalid-dates');
+  const closes = input.assignments
+    .filter(
+      (a) =>
+        a.employeeId === membership.employeeId &&
+        a.houseId === membership.houseId &&
+        a.startsOn >= membership.startsOn &&
+        lastDay(a) > endsOn,
+    )
+    .map((a) => {
+      if (a.startsOn > endsOn) throw new StaffingError('future-assignment-blocks');
+      return closeAssignment(a, endsOn);
+    });
+  return { closes: [...closes, closeMembership(membership, endsOn)], opens: [] };
+}
+
+export type HouseTransferInput = {
+  /** The employee's ongoing membership in the House the transfer starts from. */
+  source: Membership;
+  toHouseId: string;
+  startsOn: IsoDate;
+  destinationPosition: Position | null;
+  employeeMemberships: readonly Membership[];
+  employeeAssignments: readonly Assignment[];
+  destinationPositionAssignments: readonly Assignment[];
+};
+
+/**
+ * House transfer (FR-006): SPEC-001's rule (close the membership on D-1, open
+ * the destination on D) plus the source assignment crossing D closed on D-1
+ * and an optional destination assignment from D, as one plan.
+ */
+export function planHouseTransfer(input: HouseTransferInput): StaffingPlan {
+  const membershipPlan = planTransfer(input.source, input.toHouseId, input.startsOn);
+  const fromD: Period = { startsOn: input.startsOn, endsOn: null };
+  if (input.employeeMemberships.some((m) => m.id !== input.source.id && periodsOverlap(m, fromD))) {
+    throw new StaffingError('membership-overlap');
+  }
+  const sourceAssignments = input.employeeAssignments.filter((a) => a.houseId === input.source.houseId);
+  const closes = [...closeBefore(sourceAssignments, fromD), closeMembership(input.source, membershipPlan.close.endsOn)];
+  const opens: PlanOpen[] = [
+    { kind: 'membership', employeeId: input.source.employeeId, houseId: input.toHouseId, startsOn: input.startsOn, endsOn: null },
+  ];
+  if (input.destinationPosition) {
+    if (input.destinationPosition.houseId !== input.toHouseId) throw new StaffingError('not-found');
+    if (input.destinationPositionAssignments.some((a) => periodsOverlap(a, fromD))) throw new StaffingError('position-occupied');
+    opens.push({
+      kind: 'assignment',
+      employeeId: input.source.employeeId,
+      positionId: input.destinationPosition.id,
+      houseId: input.toHouseId,
+      ...fromD,
+    });
+  }
+  return { closes, opens };
 }
