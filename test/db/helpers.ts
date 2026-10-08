@@ -1,7 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { expect, inject } from 'vitest';
 import { PrismaClient } from '@/generated/prisma/client';
 import { isoDateToDate, type IsoDate } from '@/lib/dates';
+import { pgErrorOf } from '@/server/db-errors';
 
 const LOCAL_TEST_URL = /^postgresql:\/\/postgres@localhost:\d+\/casa_test$/;
 
@@ -50,8 +52,11 @@ export async function insertMembership(
 
 /** The Postgres SQLSTATE behind a Prisma 7 driver-adapter error, if any. */
 export function pgCodeOf(error: unknown): string | undefined {
-  const e = error as { name?: string; cause?: { originalCode?: string }; meta?: { driverAdapterError?: { cause?: { originalCode?: string } } } };
-  return e?.name === 'DriverAdapterError' ? e.cause?.originalCode : e?.meta?.driverAdapterError?.cause?.originalCode;
+  return pgErrorOf(error)?.code;
+}
+
+export function ctx(operationId: string = randomUUID()): { operationId: string; actor: string } {
+  return { operationId, actor: 'user_test' };
 }
 
 export async function expectPgError(promise: Promise<unknown>, code: string): Promise<void> {

@@ -11,7 +11,7 @@
 - [x] 2.4 Add `planHandover` and `planEndAssignment` with tests (replacement, move within House, vacant assign, future-assignment conflict, start on/after D, end before start)
 - [x] 2.5 Add `planNewMembership` and `planEndMembership` with tests (overlap, return after gap, crossing assignment closed, future assignment blocks)
 - [x] 2.6 Add `planHouseTransfer` with tests (close/open with and without destination position, advance transfer, same House, too early, not ongoing, future source assignment)
-- [ ] 2.7 Add `planToken(plan)` in `src/server/plan-token.ts` (stable sha256 of canonical plan JSON) with tests
+- [x] 2.7 Add `planToken(plan)` in `src/server/plan-token.ts` (stable sha256 of canonical plan JSON) with tests
 - [x] 2.8 Add `src/lib/staffing-schemas.ts` (zod schemas for every form, `IsoDate` and UUID validation, trimmed non-blank names and labels, no permission fields) and `src/lib/staffing-messages.ts` (Catalan copy per reason) with tests
 
 ## 3. Schema and migration
@@ -23,7 +23,7 @@
 
 ## 4. Staffing store (Prisma, no auth)
 
-- [ ] 4.1 Add `runOperation` in `src/server/staffing-store.ts` (receipt insert first, sorted employee locks, receipt result update, 23505-on-receipt → already-applied or `operation-conflict`) and the Postgres error mapper, with DB tests for double submit and concurrent duplicates
+- [x] 4.1 Add `runOperation` in `src/server/staffing-store.ts` (receipt insert first, sorted employee locks, receipt result update, 23505-on-receipt → already-applied or `operation-conflict`) and the Postgres error mapper, with DB tests for double submit and concurrent duplicates
 - [ ] 4.2 Add position operations (`createPosition`, `relabelPosition`) with House scoping, with DB tests
 - [ ] 4.3 Add `createEmployee` (with initial membership and optional assignment), `addMembership` and `editEmployeeName` (stale `updatedAt`), with DB tests (AC-001, AC-002, AC-003, AC-024)
 - [ ] 4.4 Add `handover` and `endAssignment` with preview/confirm plan tokens, with DB tests (AC-004, AC-005, stale confirm, concurrent race AC-006)
