@@ -4,7 +4,7 @@
 // occupancy on a date, and the plans for every staffing write. No Prisma here.
 // The database enforces the same rules (staffing migration) and
 // src/server/staffing-store.ts runs these plans inside transactions.
-import type { IsoDate } from './dates';
+import { addDays, type IsoDate } from './dates';
 import { isActiveOn, type Membership } from './house-membership';
 import type { RoleCode } from './roles';
 import { StaffingError } from './staffing-error';
@@ -120,4 +120,110 @@ export function findContainingMembership(
   return memberships.find(
     (m) => m.employeeId === candidate.employeeId && m.houseId === candidate.houseId && periodContains(m, candidate),
   );
+}
+
+// ── Plans ─────────────────────────────────────────────────────────────────────
+
+export type PlanClose = {
+  kind: 'assignment' | 'membership';
+  id: string;
+  employeeId: string;
+  houseId: string;
+  positionId: string | null;
+  endsOn: IsoDate;
+};
+
+export type PlanOpenMembership = {
+  kind: 'membership';
+  employeeId: string;
+  houseId: string;
+  startsOn: IsoDate;
+  endsOn: IsoDate | null;
+};
+
+export type PlanOpenAssignment = {
+  kind: 'assignment';
+  employeeId: string;
+  positionId: string;
+  houseId: string;
+  startsOn: IsoDate;
+  endsOn: IsoDate | null;
+};
+
+export type PlanOpen = PlanOpenMembership | PlanOpenAssignment;
+
+/** Closes run first, then new memberships, then new assignments. Nothing is ever deleted. */
+export type StaffingPlan = { closes: PlanClose[]; opens: PlanOpen[] };
+
+function closeAssignment(assignment: Assignment, endsOn: IsoDate): PlanClose {
+  return {
+    kind: 'assignment',
+    id: assignment.id,
+    employeeId: assignment.employeeId,
+    houseId: assignment.houseId,
+    positionId: assignment.positionId,
+    endsOn,
+  };
+}
+
+/**
+ * Assignments overlapping a period that starts on D are closed on D-1. One
+ * that starts on or after D could only be cancelled, so the whole operation is
+ * rejected instead (FR-004, AC-013).
+ */
+function closeBefore(assignments: readonly Assignment[], period: Period): PlanClose[] {
+  return assignments
+    .filter((assignment) => periodsOverlap(assignment, period))
+    .map((assignment) => {
+      if (assignment.startsOn >= period.startsOn) throw new StaffingError('future-assignment-blocks');
+      return closeAssignment(assignment, addDays(period.startsOn, -1));
+    });
+}
+
+export type HandoverInput = {
+  position: Position;
+  incomingEmployeeId: string;
+  startsOn: IsoDate;
+  endsOn: IsoDate | null;
+  /** Every assignment of the position. */
+  positionAssignments: readonly Assignment[];
+  /** Every assignment of the incoming employee, in any House. */
+  incomingAssignments: readonly Assignment[];
+  /** Every membership of the incoming employee. */
+  incomingMemberships: readonly Membership[];
+};
+
+/**
+ * Assign a vacant position, replace its occupant, or move someone to another
+ * position (FR-004). On D the position's occupant and the incoming employee's
+ * own position are both closed on D-1, then the incoming assignment opens.
+ * Membership never changes.
+ */
+export function planHandover(input: HandoverInput): StaffingPlan {
+  const period: Period = { startsOn: input.startsOn, endsOn: input.endsOn };
+  assertValidPeriod(period);
+  const candidate = {
+    ...period,
+    employeeId: input.incomingEmployeeId,
+    positionId: input.position.id,
+    houseId: input.position.houseId,
+  };
+  const holdsIt = input.positionAssignments.some(
+    (a) => a.employeeId === input.incomingEmployeeId && periodsOverlap(a, period),
+  );
+  if (holdsIt) throw new StaffingError('employee-has-position');
+  if (!findContainingMembership(input.incomingMemberships, candidate)) throw new StaffingError('outside-membership');
+
+  const closes = [
+    ...closeBefore(input.positionAssignments, period),
+    ...closeBefore(input.incomingAssignments.filter((a) => a.positionId !== input.position.id), period),
+  ];
+  return { closes, opens: [{ kind: 'assignment', ...candidate }] };
+}
+
+/** Ends an ongoing assignment; closed assignments are never edited. */
+export function planEndAssignment(assignment: Assignment, endsOn: IsoDate): StaffingPlan {
+  if (assignment.endsOn !== null) throw new StaffingError('not-ongoing');
+  if (endsOn < assignment.startsOn) throw new StaffingError('invalid-dates');
+  return { closes: [closeAssignment(assignment, endsOn)], opens: [] };
 }
