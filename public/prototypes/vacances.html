@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Vacances 2027 · Casa d'Infants (prototip)</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="../brand/casa-plastelina-256.webp" />
+  <link rel="stylesheet" href="shared/fonts.css" />
+  <script src="shared/theme.js"></script>
+  <script src="vendor/tailwindcss-browser-4.1.11.js"></script>
+  <script src="vendor/lucide-0.469.0.min.js"></script>
+  <script src="shared/data.js"></script>
+  <script src="shared/ui.js"></script>
+  <style>
+    /* Pending = dashed honey outline with a dot (DESIGN.md). Conflict = honey hatch. */
+    .bar-pending { background: rgb(233 180 76 / .14); border: 2px dashed #E9B44C; color: #3A2A06; }
+    .bar-accepted { background: #F2D3C6; border: 2px solid #F2D3C6; color: #8A3015; }
+    .bar-accepted.bar-clash { border-color: #E9B44C; }
+    .hatch { background: repeating-linear-gradient(135deg, rgb(233 180 76 / .22) 0 6px, rgb(233 180 76 / .06) 6px 12px); }
+    /* Once the plan is closed nothing waits for a decision: conflicts turn into plain warnings. */
+    .is-closed .hatch { background: repeating-linear-gradient(135deg, rgb(201 138 27 / .14) 0 6px, rgb(201 138 27 / .04) 6px 12px); }
+    .is-closed .bar-accepted.bar-clash { border-color: #F2D3C6; }
+    .dragging { cursor: grabbing !important; box-shadow: 0 8px 20px -8px rgb(46 33 27 / .35); z-index: 5; }
+    @media print {
+      header, nav, .no-print { display: none !important; }
+      body { background: white; padding: 0; }
+      .print-wide { overflow: visible !important; }
+    }
+  </style>
+</head>
+<body class="min-h-dvh pb-24 md:pb-10">
+  <div id="shell-top"></div>
+
+  <main x-data="plan()" x-cloak :class="st.closedAt && 'is-closed'" class="max-w-[1280px] mx-auto px-4 md:px-6 pt-6 md:pt-10">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end gap-4 md:gap-6">
+      <div class="flex-1 min-w-0">
+        <p class="eyebrow" x-text="house.name"></p>
+        <h1 class="text-[1.875rem] tracking-[-0.015em] mt-1">Vacances <span class="num" x-text="YEAR"></span></h1>
+        <p class="text-muted-foreground mt-1.5 max-w-prose">
+          Apunta el que demana cada persona, resol les setmanes amb massa gent fora i tanca el pla.
+          Un cop tancat, queda fix per a tot l'any.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2 no-print" x-show="!st.closedAt">
+        <button class="btn btn-outline" @click="openNew()"><span x-icon="'plus'"></span> Apunta una petició</button>
+        <button class="btn btn-primary" @click="askClose()"><span x-icon="'lock'"></span> Tanca el pla</button>
+      </div>
+    </div>
+
+    <!-- Closed banner -->
+    <div x-show="st.closedAt" class="mt-6 rounded-2xl bg-success-bg text-success p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
+      <span x-icon="'lock'" data-icon-class="size-5"></span>
+      <div class="flex-1">
+        <p class="font-semibold">Pla de vacances tancat</p>
+        <p class="text-[0.875rem]" x-text="st.closedAt ? `Tancat el ${fmtDate(st.closedAt)}. És el calendari fix per a tot el ${YEAR}.` : ''"></p>
+      </div>
+      <div class="flex gap-2 no-print">
+        <button class="btn btn-outline btn-sm bg-card" @click="window.print()"><span x-icon="'printer'"></span>Imprimeix</button>
+        <button class="btn btn-ghost btn-sm" @click="reopen()">Reobre</button>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <ol x-show="!st.closedAt" class="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[0.875rem] no-print">
+      <li class="flex items-center gap-2"><span class="size-6 rounded-full bg-secondary grid place-items-center text-[0.75rem] font-semibold">1</span>Apunta les peticions</li>
+      <li class="flex items-center gap-2"><span class="size-6 rounded-full bg-secondary grid place-items-center text-[0.75rem] font-semibold">2</span>Decideix i ajusta les dates</li>
+      <li class="flex items-center gap-2"><span class="size-6 rounded-full bg-secondary grid place-items-center text-[0.75rem] font-semibold">3</span>Tanca el pla</li>
+    </ol>
+
+    <!-- Stats + rules -->
+    <section class="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1.2fr] gap-2.5 md:gap-4 mt-5 no-print">
+      <div class="card rounded-xl p-4 relative overflow-hidden" :class="pending.length && !st.closedAt && 'border-l-4 border-l-accent'">
+        <p class="text-[0.8125rem] font-medium text-muted-foreground">Per decidir</p>
+        <p class="mt-1 text-[1.5rem] sm:text-[1.875rem] font-[650] leading-tight num" x-text="pending.length ? `${pending.length} ${pending.length === 1 ? 'petició' : 'peticions'}` : 'Cap'"></p>
+        <p class="text-[0.8125rem] text-muted-foreground" x-text="pending.length ? `${acceptable.length} no tenen cap conflicte` : 'Totes les peticions estan decidides'"></p>
+      </div>
+      <div class="card rounded-xl p-4" :class="clashWeeks.length && !st.closedAt && 'border-l-4 border-l-accent'">
+        <p class="text-[0.8125rem] font-medium text-muted-foreground">Setmanes amb conflicte</p>
+        <p class="mt-1 text-[1.5rem] sm:text-[1.875rem] font-[650] leading-tight num" x-text="clashWeeks.length || 'Cap'"></p>
+        <p class="text-[0.8125rem] text-muted-foreground truncate" x-text="clashWeeks.length ? clashWeeks.slice(0, 3).map((w) => fmtShort(w.start)).join(', ') + (clashWeeks.length > 3 ? '…' : '') : 'La cobertura és correcta tot l\'any'"></p>
+      </div>
+      <div class="card rounded-xl p-4">
+        <p class="text-[0.8125rem] font-medium text-muted-foreground">Dies per demanar</p>
+        <p class="mt-1 text-[1.5rem] sm:text-[1.875rem] font-[650] leading-tight num" x-text="short.length ? `${short.length} ${short.length === 1 ? 'persona' : 'persones'}` : 'Cap'"></p>
+        <p class="text-[0.8125rem] text-muted-foreground truncate" x-text="short.length ? short.map((p) => p.name.split(' ')[0]).join(', ') : 'Tothom ha demanat tots els dies'"></p>
+      </div>
+      <div class="card rounded-xl p-4">
+        <p class="text-[0.8125rem] font-medium text-muted-foreground flex items-center gap-1.5"><span x-icon="'shield-check'"></span> Regles de cobertura</p>
+        <div class="flex items-center gap-3 mt-2">
+          <span class="text-[0.875rem] flex-1">Màxim de persones fora alhora</span>
+          <div class="inline-flex items-center rounded-lg border border-border">
+            <button class="size-8 grid place-items-center hover:bg-hover rounded-l-lg cursor-pointer disabled:opacity-40" :disabled="st.maxOff <= 1 || !!st.closedAt" @click="st.maxOff--; persist()" aria-label="Menys"><span x-icon="'minus'"></span></button>
+            <span class="w-8 text-center font-semibold num" x-text="st.maxOff"></span>
+            <button class="size-8 grid place-items-center hover:bg-hover rounded-r-lg cursor-pointer disabled:opacity-40" :disabled="st.maxOff >= 6 || !!st.closedAt" @click="st.maxOff++; persist()" aria-label="Més"><span x-icon="'plus'"></span></button>
+          </div>
+        </div>
+        <label class="flex items-start gap-2 mt-2 text-[0.875rem] cursor-pointer">
+          <input type="checkbox" class="mt-1 accent-primary" x-model="st.roleRule" @change="persist()" :disabled="!!st.closedAt" />
+          <span>Avisa si coincideixen dues persones del mateix lloc (p. ex. les de nit)</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Toolbar -->
+    <div class="flex flex-col lg:flex-row lg:items-center gap-3 mt-8 mb-3 no-print">
+      <div class="flex items-center gap-3">
+        <h2 class="text-xl">Equip</h2>
+        <div class="segmented">
+          <button :aria-pressed="view === 'cal'" @click="view = 'cal'"><span x-icon="'chart-gantt'" class="mr-1.5"></span>Calendari</button>
+          <button :aria-pressed="view === 'list'" @click="view = 'list'"><span x-icon="'list'" class="mr-1.5"></span>Per persona</button>
+        </div>
+      </div>
+      <div class="segmented self-start" x-show="view === 'cal'">
+        <button :aria-pressed="zoom === 'year'" @click="zoom = 'year'">Tot l'any</button>
+        <button :aria-pressed="zoom === 'summer'" @click="zoom = 'summer'">Estiu</button>
+        <button :aria-pressed="zoom === 'xmas'" @click="zoom = 'xmas'">Nadal</button>
+      </div>
+      <div class="lg:ml-auto flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.8125rem] text-muted-foreground">
+        <span class="inline-flex items-center gap-1.5"><span class="w-6 h-3 rounded-sm bar-accepted"></span>Acceptades</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-6 h-3 rounded-sm bar-pending"></span>Demanades, per decidir</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-6 h-3 rounded-sm hatch"></span>Massa gent fora</span>
+      </div>
+    </div>
+
+    <!-- Bulk accept -->
+    <div x-show="!st.closedAt && acceptable.length" class="mb-3 rounded-xl bg-secondary/60 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 no-print">
+      <p class="flex-1 text-[0.875rem]">
+        <span class="font-semibold num" x-text="`${acceptable.length} ${acceptable.length === 1 ? 'petició no té' : 'peticions no tenen'} cap conflicte.`"></span>
+        Les pots acceptar totes d'una vegada i centrar-te en les que xoquen.
+      </p>
+      <button class="btn btn-secondary btn-sm" @click="acceptAllClean()"><span x-icon="'check-check'"></span><span x-text="`Accepta-les (${acceptable.length})`"></span></button>
+    </div>
+
+    <!-- ═════════ Calendar view ═════════ -->
+    <div x-show="view === 'cal'" class="card overflow-hidden">
+      <div class="overflow-x-auto print-wide">
+        <div class="grid grid-cols-[136px_1fr] md:grid-cols-[230px_1fr]" :style="`min-width:${zoomCfg.minWidth}px`">
+          <!-- Names column -->
+          <div class="sticky left-0 z-10 bg-card border-r border-border">
+            <div class="h-[76px] border-b border-border px-4 flex items-end pb-2 text-[0.75rem] text-muted-foreground">
+              <span>Fora cada setmana ↗</span>
+            </div>
+            <template x-for="p in people" :key="p.id">
+              <div class="h-14 border-b border-border last:border-0 px-3 md:px-4 flex items-center gap-2.5 group">
+                <span class="size-7 rounded-full hidden md:grid place-items-center text-[0.6875rem] font-semibold text-white shrink-0" :style="`background:${p.color}`" x-text="initials(p.name)"></span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-[0.875rem] font-semibold leading-tight truncate" x-text="p.name"></p>
+                  <p class="text-[0.75rem] leading-tight num truncate" :class="daysInfo(p).tone" :title="daysInfo(p).title" x-text="daysInfo(p).text"></p>
+                </div>
+                <button x-show="!st.closedAt" class="no-print size-7 rounded-md hidden md:grid place-items-center text-muted-foreground hover:bg-hover hover:text-foreground opacity-60 group-hover:opacity-100 cursor-pointer" @click="openNew(p.id)" :aria-label="`Apunta una petició per a ${p.name}`"><span x-icon="'plus'"></span></button>
+              </div>
+            </template>
+          </div>
+
+          <!-- Track -->
+          <div class="relative" data-track>
+            <!-- Month header -->
+            <div class="h-[40px] relative border-b border-border">
+              <template x-for="m in months" :key="m.key">
+                <div class="absolute top-0 bottom-0 border-l border-border px-2 flex items-center text-[0.8125rem] font-medium overflow-hidden whitespace-nowrap" :style="`left:${m.left}%;width:${m.width}%`">
+                  <span x-text="m.width > 6 ? m.name : m.short"></span>
+                </div>
+              </template>
+            </div>
+            <!-- Coverage strip: max people off per week -->
+            <div class="h-[36px] relative border-b border-border bg-background/50">
+              <template x-for="w in weeks" :key="w.start">
+                <div class="absolute top-1 bottom-1 px-px" :style="`left:${w.left}%;width:${w.width}%`">
+                  <div class="h-full rounded-[5px] grid place-items-center text-[0.75rem] font-semibold num"
+                       :class="w.clash ? (st.closedAt ? 'bg-warning-bg text-warning-fg' : 'bg-accent text-accent-foreground') : w.max ? 'bg-secondary text-sage-foreground' : ''"
+                       :title="w.title">
+                    <span x-show="w.max" x-text="w.max"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Rows -->
+            <div class="relative">
+              <!-- month grid lines + conflict bands -->
+              <template x-for="m in months" :key="'g' + m.key">
+                <div class="absolute top-0 bottom-0 border-l border-border/70" :style="`left:${m.left}%`"></div>
+              </template>
+              <template x-for="b in clashBands" :key="b.from">
+                <div class="absolute top-0 bottom-0 hatch" :style="`left:${b.left}%;width:${b.width}%`"></div>
+              </template>
+
+              <template x-for="p in people" :key="p.id">
+                <div class="h-14 border-b border-border last:border-0 relative">
+                  <template x-for="r in reqs(p)" :key="r.id">
+                    <button x-show="inRange(r)"
+                            class="absolute top-2 bottom-2 rounded-md px-1.5 text-left overflow-hidden whitespace-nowrap text-[0.75rem] font-semibold num leading-none flex items-center gap-1 touch-none select-none transition-shadow duration-150 hover:shadow-md"
+                            :class="[r.state === 'a' ? 'bar-accepted' : 'bar-pending', clashOf(p, r).any && 'bar-clash', st.closedAt ? 'cursor-pointer' : 'cursor-grab', drag?.rid === r.id && 'dragging']"
+                            :style="barStyle(r)"
+                            :title="barTitle(p, r)"
+                            @pointerdown="startDrag($event, p, r)">
+                      <span x-show="r.state === 'p' && barPx(r) > 22" class="size-1.5 rounded-full bg-accent shrink-0"></span>
+                      <span x-show="clashOf(p, r).any && barPx(r) > 40" x-icon="'triangle-alert'" data-icon-class="size-3.5"></span>
+                      <span x-text="barLabel(r)"></span>
+                    </button>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="px-4 py-2.5 text-[0.8125rem] text-muted-foreground border-t border-border flex items-center gap-1.5 no-print">
+        <span x-icon="'move-horizontal'"></span>
+        <span x-text="st.closedAt ? 'Pla tancat: només lectura.' : 'Arrossega una barra per moure-la de dates. Fes-hi clic per acceptar-la, canviar-la o esborrar-la.'"></span>
+      </p>
+    </div>
+
+    <!-- ═════════ List view ═════════ -->
+    <div x-show="view === 'list'" class="grid md:grid-cols-2 gap-3">
+      <template x-for="p in people" :key="p.id">
+        <section class="card rounded-xl p-4">
+          <div class="flex items-center gap-3">
+            <span class="size-9 rounded-full grid place-items-center text-[0.8125rem] font-semibold text-white shrink-0" :style="`background:${p.color}`" x-text="initials(p.name)"></span>
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold leading-tight" x-text="p.name"></p>
+              <p class="text-[0.8125rem] text-muted-foreground truncate" x-text="p.role"></p>
+            </div>
+            <p class="text-[0.8125rem] num text-right" :class="daysInfo(p).tone" x-text="daysInfo(p).text"></p>
+          </div>
+          <ul class="mt-3 space-y-2">
+            <template x-for="r in sortedReqs(p)" :key="r.id">
+              <li class="rounded-lg border border-border overflow-hidden" :class="r.state === 'p' ? 'border-l-4 border-l-accent border-dashed' : 'border-l-4 border-l-[#F2D3C6]'">
+                <button class="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-hover cursor-pointer" @click="openEdit(p, r)">
+                  <div class="flex-1 min-w-0">
+                    <p class="font-medium num" x-text="fmtRange(r.from, r.to)"></p>
+                    <p class="text-[0.8125rem] text-muted-foreground num" x-text="`${days(r.from, r.to)} dies · ${r.state === 'a' ? 'acceptada' : 'demanada'}`"></p>
+                  </div>
+                  <span x-show="!st.closedAt && r.state === 'p' && !clashOf(p, r).any" class="btn btn-secondary btn-sm" @click.stop="accept(r)">Accepta</span>
+                  <span class="text-muted-foreground" x-icon="'chevron-right'"></span>
+                </button>
+                <template x-for="msg in clashOf(p, r).messages">
+                  <p class="px-3 pb-2.5 -mt-1 text-[0.8125rem] flex gap-1.5 text-accent-foreground"><span x-icon="'triangle-alert'" class="mt-0.5 text-[#B07A12]"></span><span x-text="msg"></span></p>
+                </template>
+              </li>
+            </template>
+            <li x-show="p && reqs(p).length === 0" class="text-[0.875rem] text-muted-foreground">Encara no ha demanat res.</li>
+          </ul>
+          <button x-show="!st.closedAt" class="btn btn-ghost btn-sm mt-2 -ml-2 text-primary" @click="openNew(p.id)"><span x-icon="'plus'"></span>Petició</button>
+        </section>
+      </template>
+    </div>
+
+    <p class="text-[0.8125rem] text-muted-foreground mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 no-print">
+      <span class="inline-flex items-center gap-1.5"><span x-icon="'flask-conical'"></span> Prototip amb dades inventades. El que canviïs es guarda només en aquest navegador.</span>
+      <button class="underline underline-offset-2 hover:text-foreground cursor-pointer" @click="reset()">Torna a les dades d'exemple</button>
+    </p>
+
+    <!-- ═════════ Request panel ═════════ -->
+    <div x-show="panel.open" class="fixed inset-0 z-40" @keydown.escape.window="panel.open = false" role="dialog" aria-modal="true" aria-labelledby="panel-title">
+      <div x-show="panel.open" x-transition.opacity.duration.200ms class="absolute inset-0 bg-foreground/30" @click="panel.open = false"></div>
+      <aside x-show="panel.open"
+             x-transition:enter="transition ease-out duration-250" x-transition:enter-start="translate-y-full md:translate-y-0 md:translate-x-full" x-transition:enter-end="translate-y-0 md:translate-x-0"
+             x-transition:leave="transition ease-in duration-200" x-transition:leave-start="translate-y-0 md:translate-x-0" x-transition:leave-end="translate-y-full md:translate-y-0 md:translate-x-full"
+             class="absolute bottom-0 inset-x-0 max-h-[92dvh] rounded-t-2xl md:rounded-none md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[460px] bg-card shadow-sheet flex flex-col">
+        <div class="px-5 pt-5 pb-4 border-b border-border flex items-start gap-3">
+          <div class="flex-1 min-w-0">
+            <p class="eyebrow" x-text="panel.mode === 'new' ? 'Nova petició' : (panelReq?.state === 'a' ? 'Acceptada' : 'Demanada, per decidir')"></p>
+            <h2 id="panel-title" class="text-xl mt-1" x-text="panelPerson ? panelPerson.name : 'Apunta una petició'"></h2>
+            <p class="text-[0.8125rem] text-muted-foreground" x-show="panelPerson" x-text="panelPerson?.role"></p>
+          </div>
+          <button class="btn btn-ghost btn-icon -mr-2 -mt-1" @click="panel.open = false" aria-label="Tanca"><span x-icon="'x'"></span></button>
+        </div>
+
+        <div class="overflow-y-auto px-5 py-5 space-y-5 flex-1">
+          <div x-show="panel.mode === 'new'">
+            <label class="label" for="p-person">Persona</label>
+            <select id="p-person" class="input" x-model="panel.personId">
+              <option value="" disabled>Tria una persona</option>
+              <template x-for="p in people" :key="p.id"><option :value="p.id" x-text="p.name" :selected="p.id === panel.personId"></option></template>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="label" for="p-from">Primer dia</label>
+              <input id="p-from" type="date" class="input num" x-model="panel.from" :min="`${YEAR}-01-01`" :max="`${YEAR}-12-31`" :disabled="!!st.closedAt" :aria-invalid="!!panelError" />
+            </div>
+            <div>
+              <label class="label" for="p-to">Últim dia</label>
+              <input id="p-to" type="date" class="input num" x-model="panel.to" :min="panel.from || `${YEAR}-01-01`" :max="`${YEAR}-12-31`" :disabled="!!st.closedAt" :aria-invalid="!!panelError" />
+            </div>
+          </div>
+
+          <div class="space-y-2" aria-live="polite">
+            <template x-if="panelError">
+              <p class="flex gap-2 text-[0.875rem] rounded-lg bg-error-bg text-error p-3"><span x-icon="'circle-alert'" class="mt-0.5"></span><span x-text="panelError"></span></p>
+            </template>
+            <template x-if="!panelError && panelDays">
+              <p class="flex gap-2 text-[0.875rem] rounded-lg bg-background p-3">
+                <span x-icon="'calendar-range'" class="mt-0.5 text-muted-foreground"></span>
+                <span x-text="panelSummary"></span>
+              </p>
+            </template>
+            <template x-if="!panelError && panelDays && panelClash.any">
+              <div class="rounded-lg border-2 border-dashed border-accent bg-accent/10 p-3 text-[0.875rem] text-accent-foreground space-y-1.5">
+                <p class="font-semibold flex items-center gap-1.5"><span x-icon="'triangle-alert'"></span>Cal que ho decideixis</p>
+                <template x-for="msg in panelClash.messages"><p x-text="msg"></p></template>
+                <div x-show="!st.closedAt && panelSuggestions.length" class="pt-2">
+                  <p class="text-[0.8125rem] font-semibold mb-1.5">Dates sense conflicte, amb els mateixos dies:</p>
+                  <div class="flex flex-wrap gap-2">
+                    <template x-for="sg in panelSuggestions" :key="sg.from">
+                      <button type="button" class="btn btn-sm bg-card border border-border hover:bg-hover text-foreground num" @click="panel.from = sg.from; panel.to = sg.to">
+                        <span x-icon="sg.shift < 0 ? 'arrow-left' : 'arrow-right'"></span>
+                        <span x-text="`${fmtRange(sg.from, sg.to)} (${Math.abs(sg.shift)} ${Math.abs(sg.shift) === 1 ? 'dia' : 'dies'} ${sg.shift < 0 ? 'abans' : 'després'})`"></span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template x-if="!panelError && panelDays && !panelClash.any">
+              <p class="flex gap-2 text-[0.875rem] rounded-lg bg-success-bg text-success p-3"><span x-icon="'circle-check'" class="mt-0.5"></span>Cap conflicte de cobertura amb aquestes dates.</p>
+            </template>
+          </div>
+
+          <template x-if="panelPerson && panelDays">
+            <div>
+              <p class="label">Qui més és fora aquells dies</p>
+              <p class="text-[0.875rem] text-muted-foreground" x-text="panelOthers.length ? panelOthers.join(' · ') : 'Ningú més.'"></p>
+            </div>
+          </template>
+        </div>
+
+        <div x-show="!st.closedAt" class="px-5 py-4 border-t border-border flex flex-col gap-2 bg-background/50">
+          <template x-if="panel.mode === 'new'">
+            <div class="flex flex-col sm:flex-row gap-2">
+              <button class="btn btn-outline flex-1" :disabled="!panelValid" @click="saveNew('p')">Apunta com a demanada</button>
+              <button class="btn btn-primary flex-1" :disabled="!panelValid" @click="saveNew('a')"><span x-icon="'check'"></span>Apunta i accepta</button>
+            </div>
+          </template>
+          <template x-if="panel.mode === 'edit' && panelReq?.state === 'p'">
+            <div class="flex flex-col gap-2">
+              <button class="btn btn-primary" :disabled="!panelValid" @click="saveEdit('a')"><span x-icon="'check'"></span><span x-text="panelChanged ? 'Accepta amb aquestes dates' : 'Accepta'"></span></button>
+              <div class="flex gap-2">
+                <button class="btn btn-outline flex-1" x-show="panelChanged" :disabled="!panelValid" @click="saveEdit('p')">Desa sense acceptar</button>
+                <button class="btn btn-destructive flex-1" @click="removeReq()"><span x-icon="'trash-2'"></span>Esborra</button>
+              </div>
+            </div>
+          </template>
+          <template x-if="panel.mode === 'edit' && panelReq?.state === 'a'">
+            <div class="flex flex-col gap-2">
+              <button class="btn btn-primary" x-show="panelChanged" :disabled="!panelValid" @click="saveEdit('a')">Desa els canvis</button>
+              <div class="flex gap-2">
+                <button class="btn btn-outline flex-1" @click="saveEdit('p')">Torna-la a pendent</button>
+                <button class="btn btn-destructive flex-1" @click="removeReq()"><span x-icon="'trash-2'"></span>Esborra</button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ═════════ Close confirmation ═════════ -->
+    <div x-show="closing" class="fixed inset-0 z-50 grid md:place-items-center items-end" @keydown.escape.window="closing = false" role="dialog" aria-modal="true" aria-labelledby="close-title">
+      <div x-show="closing" x-transition.opacity.duration.200ms class="absolute inset-0 bg-foreground/35" @click="closing = false"></div>
+      <div x-show="closing" x-transition class="relative w-full md:w-[480px] bg-card rounded-t-2xl md:rounded-2xl shadow-sheet p-6">
+        <h2 id="close-title" class="text-xl">Tancar el pla de <span class="num" x-text="YEAR"></span></h2>
+        <template x-if="closeBlockers.length">
+          <div class="mt-4 space-y-2">
+            <p class="text-[0.9375rem]">Encara no es pot tancar:</p>
+            <template x-for="b in closeBlockers">
+              <p class="flex gap-2 text-[0.875rem] rounded-lg bg-error-bg text-error p-3"><span x-icon="'circle-alert'" class="mt-0.5"></span><span x-text="b"></span></p>
+            </template>
+            <div class="flex justify-end pt-2"><button class="btn btn-outline" @click="closing = false">D'acord</button></div>
+          </div>
+        </template>
+        <template x-if="!closeBlockers.length">
+          <div class="mt-3 space-y-3">
+            <p class="text-[0.9375rem]" x-text="`${people.length} persones i ${allReqs.length} períodes de vacances. Quedarà fix per a tot l'any: es veurà a Saldos i al calendari del mes.`"></p>
+            <p x-show="clashWeeks.length" class="flex gap-2 text-[0.875rem] rounded-lg bg-warning-bg text-warning-fg p-3">
+              <span x-icon="'triangle-alert'" class="mt-0.5"></span>
+              <span x-text="`Hi ha ${clashWeeks.length} ${clashWeeks.length === 1 ? 'setmana' : 'setmanes'} amb més gent fora del que diuen les regles. Si ho tanques, ho dones per bo.`"></span>
+            </p>
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+              <button class="btn btn-outline" @click="closing = false">Encara no</button>
+              <button class="btn btn-primary" @click="closePlan()"><span x-icon="'lock'"></span>Tanca el pla</button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast" x-transition.opacity.duration.200ms class="fixed z-50 left-1/2 -translate-x-1/2 bottom-36 md:bottom-8 w-[calc(100%-2rem)] max-w-md no-print">
+      <div class="flex items-center gap-3 rounded-xl bg-foreground text-background px-4 py-3 shadow-sheet">
+        <span x-icon="'circle-check'" class="text-[#B9D3B4]"></span>
+        <p class="flex-1 text-[0.875rem]" x-text="toast?.text"></p>
+        <button class="text-[0.875rem] font-semibold underline underline-offset-2 cursor-pointer" x-show="toast?.canUndo" @click="undo()">Desfés</button>
+      </div>
+    </div>
+
+    <!-- Feedback questions for the director -->
+    <div class="fixed z-30 right-4 bottom-20 md:bottom-6 no-print" x-data="{ open: false }">
+      <div x-show="open" x-transition class="card absolute bottom-14 right-0 w-[min(23rem,calc(100vw-2rem))] p-5 max-h-[70dvh] overflow-y-auto">
+        <p class="eyebrow">Per a la directora</p>
+        <h2 class="text-xl mt-1">Què en penses?</h2>
+        <ol class="list-decimal pl-5 mt-3 space-y-2 text-[0.875rem]">
+          <li>Quantes persones poden fer vacances alhora a cada casa? Canvia a l'estiu o a Nadal?</li>
+          <li>Hi ha llocs que no poden coincidir mai (les dues de nit, les dues referents…)?</li>
+          <li>Com et donen avui les peticions: paper, WhatsApp, en una reunió…?</li>
+          <li>Quan dues persones xoquen, com decideixes qui cedeix (rotació, antiguitat, qui va cedir l'any passat…)?</li>
+          <li>Un cop tancat el pla, es pot canviar durant l'any? Com ho fas avui?</li>
+          <li>Els dies AA, fins quan es poden fer servir?</li>
+        </ol>
+        <p class="text-[0.8125rem] text-muted-foreground mt-3">Apunta-ho com vulguis: ens ho comentes després.</p>
+      </div>
+      <button class="btn btn-secondary rounded-full shadow-clay max-sm:size-12 max-sm:px-0" @click="open = !open" :aria-expanded="open" aria-label="Què en penses?">
+        <span x-icon="open ? 'x' : 'message-circle-question'"></span><span class="hidden sm:inline" x-text="open ? 'Tanca' : 'Què en penses?'"></span>
+      </button>
+    </div>
+  </main>
+
+  <div id="shell-bottom"></div>
+
+  <script>
+    PROTO.renderShell('vacances');
+
+    const PLAN_KEY = 'casa-infants-plan-2027-v1';
+    const Y = PROTO.PLAN_YEAR;
+    const YEAR_START = `${Y}-01-01`, YEAR_END = `${Y}-12-31`;
+    const ZOOMS = {
+      year: { from: YEAR_START, to: YEAR_END, minWidth: 1100 },
+      summer: { from: `${Y}-06-01`, to: `${Y}-09-30`, minWidth: 1400 },
+      xmas: { from: `${Y}-11-23`, to: YEAR_END, minWidth: 1000 },
+    };
+    // Educador/Educadora de nit count as the same post for the "same post" rule.
+    const postOf = (role) => role.replace(/^Educadora\b/, 'Educador').replace(/^Treballadora\b/, 'Treballador');
+
+    function seedPlan() {
+      const out = {};
+      for (const [slug, h] of Object.entries(PROTO.PLAN)) {
+        out[slug] = { maxOff: h.maxOff, roleRule: true, closedAt: null, people: {} };
+        for (const [pid, p] of Object.entries(h.people)) {
+          out[slug].people[pid] = { aa: p.aa, reqs: p.r.map(([from, to, state]) => ({ id: PROTO.newId(), from, to, state })) };
+        }
+      }
+      return out;
+    }
+    function loadPlan() {
+      try { const raw = localStorage.getItem(PLAN_KEY); if (raw) return JSON.parse(raw); } catch (_) { /* fall back */ }
+      return seedPlan();
+    }
+
+    function plan() {
+      const house = PROTO.currentHouse();
+      const all = loadPlan();
+      const people = PROTO.PEOPLE[house.slug].map((p, i) => ({
+        id: p.id, name: p.name, role: p.role, post: postOf(p.role),
+        color: PROTO.PERSON_COLORS[i % PROTO.PERSON_COLORS.length],
+      }));
+      return {
+        house, all, people,
+        YEAR: Y,
+        view: window.matchMedia('(max-width: 767px)').matches ? 'list' : 'cal',
+        zoom: 'year',
+        panel: { open: false, mode: 'edit', personId: '', reqId: null, from: '', to: '' },
+        drag: null,
+        closing: false,
+        toast: null,
+
+        fmtDate: PROTO.fmtDate, fmtShort: PROTO.fmtShort, fmtRange: PROTO.fmtRange, days: PROTO.daysInclusive,
+        initials: (name) => name.split(' ').map((w) => w[0]).slice(0, 2).join(''),
+
+        get st() { return this.all[house.slug]; },
+        reqs(p) { return this.st.people[p.id].reqs; },
+        sortedReqs(p) { return [...this.reqs(p)].sort((a, b) => a.from.localeCompare(b.from)); },
+        get allReqs() { return this.people.flatMap((p) => this.reqs(p).map((r) => ({ p, r }))); },
+
+        // ── Entitlement ──
+        entitled(p) { return PROTO.RULES.vacationDays + this.st.people[p.id].aa; },
+        requested(p) { return this.reqs(p).reduce((a, r) => a + PROTO.daysInclusive(r.from, r.to), 0); },
+        daysInfo(p) {
+          const e = this.entitled(p), n = this.requested(p), aa = this.st.people[p.id].aa;
+          const base = `${n}/${e} dies`;
+          const title = `${e} dies: ${PROTO.RULES.vacationDays} de l'any${aa ? ` i ${aa} de l'any anterior (AA)` : ''}`;
+          if (n > e) return { tone: 'text-error font-semibold', text: `${base} · en sobren ${n - e}`, title };
+          if (n < e) return { tone: 'text-muted-foreground', text: `${base} · falten ${e - n}`, title };
+          return { tone: 'text-success', text: `${base} ✓`, title };
+        },
+        get short() { return this.people.filter((p) => this.requested(p) < this.entitled(p)); },
+
+        // ── Conflicts ──
+        // Who else is off on each day of [from, to], ignoring request `skipId`.
+        othersOff(pid, from, to, skipId) {
+          const out = [];
+          for (const q of this.people) {
+            if (q.id === pid) continue;
+            for (const r of this.reqs(q)) {
+              if (r.id === skipId || r.to < from || r.from > to) continue;
+              out.push({ q, r });
+            }
+          }
+          return out;
+        },
+        clashFor(pid, from, to, skipId) {
+          const p = this.people.find((x) => x.id === pid);
+          const others = this.othersOff(pid, from, to, skipId);
+          const messages = [];
+          // Too many people off: find the days where the count goes over the limit.
+          let first = null, last = null, peak = 0; const names = new Set();
+          for (let d = from; d <= to; d = PROTO.addDays(d, 1)) {
+            const off = others.filter(({ r }) => r.from <= d && d <= r.to);
+            if (off.length + 1 > this.st.maxOff) {
+              first ??= d; last = d; peak = Math.max(peak, off.length + 1);
+              off.forEach(({ q }) => names.add(q.name.split(' ')[0]));
+            }
+          }
+          if (first) messages.push(`${first === last ? `El ${PROTO.fmtShort(first)}` : `Del ${PROTO.fmtRange(first, last)}`} hi hauria ${peak} persones fora (màxim ${this.st.maxOff}): també ${[...names].join(', ')}.`);
+          // Same post off at the same time.
+          if (this.st.roleRule && p) {
+            for (const { q, r } of others) {
+              if (q.post !== p.post) continue;
+              const a = r.from > from ? r.from : from, b = r.to < to ? r.to : to;
+              const when = a === b ? `el ${PROTO.fmtShort(a)}` : `del ${PROTO.fmtRange(a, b)}`;
+              messages.push(PROTO.sentence(`Coincideix amb ${q.name}, que també és ${q.role.toLowerCase()}, ${when}`));
+            }
+          }
+          return { any: messages.length > 0, messages };
+        },
+        clashOf(p, r) { return this.clashFor(p.id, r.from, r.to, r.id); },
+
+        get pending() { return this.allReqs.filter(({ r }) => r.state === 'p'); },
+        get acceptable() { return this.pending.filter(({ p, r }) => !this.clashOf(p, r).any); },
+
+        // Per-day view of the whole year, for the coverage strip and the hatched bands.
+        get dayMap() {
+          const map = new Map();
+          for (const { p, r } of this.allReqs) {
+            for (let d = r.from; d <= r.to; d = PROTO.addDays(d, 1)) {
+              if (!map.has(d)) map.set(d, []);
+              map.get(d).push(p);
+            }
+          }
+          return map;
+        },
+        isClashDay(off) {
+          if (off.length > this.st.maxOff) return true;
+          if (!this.st.roleRule) return false;
+          const posts = off.map((p) => p.post);
+          return posts.some((x, i) => posts.indexOf(x) !== i);
+        },
+        get weeksAll() {
+          const map = this.dayMap, out = [];
+          // Weeks start on Monday; the first one starts before 1 January.
+          let start = YEAR_START;
+          while (PROTO.d(start).getUTCDay() !== 1) start = PROTO.addDays(start, -1);
+          for (; start <= YEAR_END; start = PROTO.addDays(start, 7)) {
+            let max = 0, clash = false; const who = new Set();
+            for (let i = 0; i < 7; i++) {
+              const d = PROTO.addDays(start, i);
+              if (d < YEAR_START || d > YEAR_END) continue;
+              const off = map.get(d) ?? [];
+              max = Math.max(max, off.length);
+              off.forEach((p) => who.add(p.name.split(' ')[0]));
+              if (this.isClashDay(off)) clash = true;
+            }
+            out.push({ start, end: PROTO.addDays(start, 6), max, clash, who: [...who] });
+          }
+          return out;
+        },
+        get clashWeeks() { return this.weeksAll.filter((w) => w.clash); },
+
+        // ── Layout on the track (percentages of the visible range) ──
+        get zoomCfg() { return ZOOMS[this.zoom]; },
+        get span() { return PROTO.daysInclusive(this.zoomCfg.from, this.zoomCfg.to); },
+        pos(from, to) {
+          const z = this.zoomCfg;
+          const a = from < z.from ? z.from : from, b = to > z.to ? z.to : to;
+          if (a > b) return null;
+          return {
+            left: ((PROTO.daysInclusive(z.from, a) - 1) / this.span) * 100,
+            width: (PROTO.daysInclusive(a, b) / this.span) * 100,
+          };
+        },
+        inRange(r) { return !!this.pos(r.from, r.to); },
+        barStyle(r) {
+          const x = this.pos(r.from, r.to);
+          return x ? `left:calc(${x.left}% + 1px);width:calc(${x.width}% - 2px)` : 'display:none';
+        },
+        // Approximate on-screen width of a bar, to decide what fits inside it.
+        barPx(r) {
+          const x = this.pos(r.from, r.to);
+          return x ? (x.width / 100) * (this.zoomCfg.minWidth - 230) : 0;
+        },
+        barLabel(r) {
+          const px = this.barPx(r), n = PROTO.daysInclusive(r.from, r.to);
+          if (px > 130) return `${PROTO.fmtRange(r.from, r.to)} · ${n} d`;
+          if (px > 58) return `${n} d`;
+          return '';
+        },
+        barTitle(p, r) {
+          const c = this.clashOf(p, r);
+          return `${p.name}: ${PROTO.fmtRange(r.from, r.to)} (${PROTO.daysInclusive(r.from, r.to)} dies), ${r.state === 'a' ? 'acceptada' : 'demanada'}` + (c.any ? `\n${c.messages.join('\n')}` : '');
+        },
+        get months() {
+          const z = this.zoomCfg, out = [];
+          for (let m = 0; m < 12; m++) {
+            const from = `${Y}-${String(m + 1).padStart(2, '0')}-01`;
+            const to = PROTO.addDays(m === 11 ? `${Y + 1}-01-01` : `${Y}-${String(m + 2).padStart(2, '0')}-01`, -1);
+            const x = this.pos(from, to);
+            if (x) out.push({ key: from, name: PROTO.monthName(m)[0].toUpperCase() + PROTO.monthName(m).slice(1), short: PROTO.monthShort(m), ...x });
+          }
+          return out;
+        },
+        get weeks() {
+          return this.weeksAll.map((w) => {
+            const x = this.pos(w.start < YEAR_START ? YEAR_START : w.start, w.end > YEAR_END ? YEAR_END : w.end);
+            if (!x) return null;
+            const title = `Setmana del ${PROTO.fmtShort(w.start)}: ${w.max} ${w.max === 1 ? 'persona' : 'persones'} fora${w.who.length ? ` (${w.who.join(', ')})` : ''}`;
+            return { ...w, ...x, title };
+          }).filter(Boolean);
+        },
+        get clashBands() {
+          const map = this.dayMap, bands = [];
+          let open = null;
+          for (let d = YEAR_START; d <= YEAR_END; d = PROTO.addDays(d, 1)) {
+            const clash = this.isClashDay(map.get(d) ?? []);
+            if (clash && !open) open = { from: d, to: d };
+            else if (clash) open.to = d;
+            else if (open) { bands.push(open); open = null; }
+          }
+          if (open) bands.push(open);
+          return bands.map((b) => ({ ...b, ...this.pos(b.from, b.to) })).filter((b) => b.width != null);
+        },
+
+        // ── Drag to move a bar (whole days) ──
+        startDrag(ev, p, r) {
+          if (ev.button !== 0) return;
+          const el = ev.currentTarget;
+          const track = el.closest('[data-track]');
+          const pxPerDay = track.getBoundingClientRect().width / this.span;
+          const orig = { from: r.from, to: r.to };
+          const len = PROTO.daysInclusive(r.from, r.to);
+          let moved = false;
+          if (this.st.closedAt) { this.openEdit(p, r); return; }
+          this.drag = { rid: r.id };
+          el.setPointerCapture(ev.pointerId);
+          const move = (e) => {
+            const delta = Math.round((e.clientX - ev.clientX) / pxPerDay);
+            if (Math.abs(e.clientX - ev.clientX) > 4) moved = true;
+            let from = PROTO.addDays(orig.from, delta);
+            if (from < YEAR_START) from = YEAR_START;
+            if (PROTO.addDays(from, len - 1) > YEAR_END) from = PROTO.addDays(YEAR_END, -(len - 1));
+            r.from = from; r.to = PROTO.addDays(from, len - 1);
+          };
+          const up = () => {
+            if (el.hasPointerCapture(ev.pointerId)) el.releasePointerCapture(ev.pointerId);
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+            this.drag = null;
+            if (!moved || r.from === orig.from) { r.from = orig.from; r.to = orig.to; if (!moved) this.openEdit(p, r); return; }
+            this.persist();
+            this.flash(PROTO.sentence(`${p.name.split(' ')[0]}: ara del ${PROTO.fmtRange(r.from, r.to)}`), () => { r.from = orig.from; r.to = orig.to; });
+          };
+          window.addEventListener('pointermove', move);
+          window.addEventListener('pointerup', up);
+        },
+
+        // ── Panel ──
+        openEdit(p, r) { this.panel = { open: true, mode: 'edit', personId: p.id, reqId: r.id, from: r.from, to: r.to }; },
+        openNew(personId = '') { this.panel = { open: true, mode: 'new', personId, reqId: null, from: '', to: '' }; },
+        get panelPerson() { return this.people.find((p) => p.id === this.panel.personId) ?? null; },
+        get panelReq() { return this.panelPerson ? this.reqs(this.panelPerson).find((r) => r.id === this.panel.reqId) ?? null : null; },
+        get panelChanged() { const r = this.panelReq; return !!r && (r.from !== this.panel.from || r.to !== this.panel.to); },
+        get panelDays() {
+          const { from, to } = this.panel;
+          return from && to && to >= from ? PROTO.daysInclusive(from, to) : 0;
+        },
+        get panelError() {
+          const { from, to } = this.panel, p = this.panelPerson;
+          if (!from || !to) return '';
+          if (to < from) return "L'últim dia no pot ser abans del primer.";
+          if (from < YEAR_START || to > YEAR_END) return `Les dates han de ser del ${Y}.`;
+          if (!p) return '';
+          const own = this.reqs(p).find((r) => r.id !== this.panel.reqId && r.from <= to && from <= r.to);
+          if (own) return `Ja té una petició del ${PROTO.fmtRange(own.from, own.to)}.`;
+          return '';
+        },
+        get panelValid() { return !!this.panelPerson && this.panelDays > 0 && !this.panelError; },
+        get panelSummary() {
+          const p = this.panelPerson, n = this.panelDays;
+          if (!p) return `${n} dies naturals.`;
+          const cur = this.panelReq ? PROTO.daysInclusive(this.panelReq.from, this.panelReq.to) : 0;
+          const total = this.requested(p) - cur + n, e = this.entitled(p);
+          const tail = total === e ? 'tots els que li toquen' : total < e ? `en falten ${e - total}` : `${total - e} més dels que li toquen`;
+          return `${n} dies naturals. En total en tindria ${total} de ${e}: ${tail}.`;
+        },
+        get panelClash() {
+          if (!this.panelValid) return { any: false, messages: [] };
+          return this.clashFor(this.panel.personId, this.panel.from, this.panel.to, this.panel.reqId);
+        },
+        // Same length, nearest start without any conflict, earlier and later than requested.
+        get panelSuggestions() {
+          if (!this.panelValid || !this.panelClash.any) return [];
+          const { personId, from, to, reqId } = this.panel, len = this.panelDays, p = this.panelPerson;
+          const fits = (f) => {
+            const t = PROTO.addDays(f, len - 1);
+            if (f < YEAR_START || t > YEAR_END) return false;
+            if (this.reqs(p).some((r) => r.id !== reqId && r.from <= t && f <= r.to)) return false;
+            return !this.clashFor(personId, f, t, reqId).any;
+          };
+          const out = [];
+          for (const dir of [-1, 1]) {
+            for (let k = 1; k <= 120; k++) {
+              const f = PROTO.addDays(from, dir * k);
+              if (fits(f)) { out.push({ from: f, to: PROTO.addDays(f, len - 1), shift: k * dir }); break; }
+            }
+          }
+          return out.sort((a, b) => Math.abs(a.shift) - Math.abs(b.shift));
+        },
+        get panelOthers() {
+          if (!this.panelValid) return [];
+          return this.othersOff(this.panel.personId, this.panel.from, this.panel.to, this.panel.reqId)
+            .map(({ q, r }) => `${q.name.split(' ')[0]} (${PROTO.fmtRange(r.from, r.to)})`);
+        },
+
+        saveNew(state) {
+          const p = this.panelPerson, r = { id: PROTO.newId(), from: this.panel.from, to: this.panel.to, state };
+          this.st.people[p.id].reqs.push(r);
+          this.persist();
+          this.panel.open = false;
+          this.flash(`Apuntada la petició de ${p.name.split(' ')[0]}${state === 'a' ? ' i acceptada' : ''}.`, () => this.dropReq(p, r.id));
+        },
+        saveEdit(state) {
+          const p = this.panelPerson, r = this.panelReq, before = { ...r };
+          r.from = this.panel.from; r.to = this.panel.to; r.state = state;
+          this.persist();
+          this.panel.open = false;
+          const what = state === 'a' && before.state === 'p' ? 'acceptada' : state === 'p' && before.state === 'a' ? 'tornada a pendent' : 'desada';
+          this.flash(`Petició de ${p.name.split(' ')[0]} ${what}.`, () => Object.assign(r, before));
+        },
+        removeReq() {
+          const p = this.panelPerson, r = this.panelReq;
+          this.dropReq(p, r.id);
+          this.persist();
+          this.panel.open = false;
+          this.flash(`Esborrada la petició de ${p.name.split(' ')[0]}.`, () => this.st.people[p.id].reqs.push(r));
+        },
+        dropReq(p, id) { this.st.people[p.id].reqs = this.reqs(p).filter((r) => r.id !== id); },
+        accept(r) {
+          r.state = 'a';
+          this.persist();
+          this.flash('Petició acceptada.', () => { r.state = 'p'; });
+        },
+        acceptAllClean() {
+          const list = this.acceptable.map(({ r }) => r);
+          list.forEach((r) => { r.state = 'a'; });
+          this.persist();
+          this.flash(`${list.length} peticions acceptades.`, () => list.forEach((r) => { r.state = 'p'; }));
+        },
+
+        // ── Close / reopen ──
+        get closeBlockers() {
+          const out = [];
+          if (this.pending.length) out.push(`Queden ${this.pending.length} ${this.pending.length === 1 ? 'petició' : 'peticions'} per decidir: accepta-les, canvia-les o esborra-les.`);
+          for (const p of this.people) {
+            const n = this.requested(p), e = this.entitled(p);
+            if (n > e) out.push(`${p.name} té ${n - e} ${n - e === 1 ? 'dia' : 'dies'} més dels que li toquen.`);
+          }
+          return out;
+        },
+        askClose() { this.closing = true; },
+        closePlan() {
+          this.st.closedAt = PROTO.TODAY;
+          this.closing = false;
+          this.persist();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+        reopen() { this.st.closedAt = null; this.persist(); },
+
+        // ── Toast with undo ──
+        flash(text, undoFn) {
+          // Keep the function out of reactive state: Alpine calls functions returned by expressions.
+          this._undo = undoFn;
+          this.toast = { text, canUndo: !!undoFn };
+          clearTimeout(this._t);
+          this._t = setTimeout(() => (this.toast = null), 6000);
+        },
+        undo() { this._undo?.(); this._undo = null; this.persist(); this.toast = null; },
+
+        persist() { try { localStorage.setItem(PLAN_KEY, JSON.stringify(this.all)); } catch (_) { /* ignore */ } },
+        reset() { try { localStorage.removeItem(PLAN_KEY); } catch (_) { /* ignore */ } location.reload(); },
+      };
+    }
+  </script>
+  <script defer src="vendor/alpinejs-3.14.9.min.js"></script>
+</body>
+</html>

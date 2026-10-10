@@ -15,5 +15,5 @@ They are static HTML pages, not part of the Next.js app, and use **fictional dat
 | Page | Replaces in the spreadsheet | Status |
 |---|---|---|
 | `saldos.html` | `V I APS`: vacation days and AP hours per person | Ready |
-| Vacances 2027 | `VAC`: end-of-year vacation negotiation, locked for the next year | Planned |
+| `vacances.html` | `VAC`: end-of-year vacation negotiation (requests, coverage conflicts, drag to adjust, lock the plan) | Ready |
 | El mes | Month sheets: who is on vacation, AP or sick leave each day | Planned |

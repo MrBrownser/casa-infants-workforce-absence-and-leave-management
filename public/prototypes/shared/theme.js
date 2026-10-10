@@ -69,6 +69,7 @@ document.head.insertAdjacentHTML(
     font-variation-settings: "SOFT" 100, "WONK" 0;
   }
   [x-cloak] { display: none !important; }
+  [x-icon] { display: inline-flex; }
   input[type="date"]::-webkit-calendar-picker-indicator { opacity: .6; cursor: pointer; }
 }
 
