@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Prototips · Casa d'Infants</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="../brand/casa-plastelina-256.webp" />
+  <link rel="stylesheet" href="shared/fonts.css" />
+  <script src="shared/theme.js"></script>
+  <script src="vendor/tailwindcss-browser-4.1.11.js"></script>
+  <script src="vendor/lucide-0.469.0.min.js"></script>
+  <script src="shared/data.js"></script>
+  <script src="shared/ui.js"></script>
+</head>
+<body class="min-h-dvh pb-24 md:pb-10">
+  <div id="shell-top"></div>
+
+  <main class="max-w-[960px] mx-auto px-4 md:px-6 pt-8 md:pt-14">
+    <section class="grid md:grid-cols-[1fr_auto] gap-6 items-center">
+      <div>
+        <p class="eyebrow">Prototips per opinar</p>
+        <h1 class="text-[2.25rem] md:text-[2.75rem] tracking-[-0.02em] leading-[1.1] mt-2">Hola! Ens ajudes a fer-la a la teva mida?</h1>
+        <p class="text-muted-foreground mt-3 max-w-prose text-[1rem]">
+          Són maquetes de com podria ser l'eina per portar les vacances i els AP de les dues cases, en lloc del full de càlcul.
+          Les dades són <b class="text-foreground">inventades</b>: pots tocar-ho tot, no s'esborra res de debò.
+        </p>
+      </div>
+      <img src="../brand/casa-plastelina-512.webp" alt="La casa de plastilina de FASI" class="hidden md:block w-56 drop-shadow-sm" />
+    </section>
+
+    <h2 class="text-xl mt-10 mb-4">Què hi ha per mirar</h2>
+    <ol class="grid gap-4">
+      <li>
+        <a href="saldos.html" class="card rounded-xl p-5 flex gap-4 items-start hover:bg-hover transition-colors duration-150 group">
+          <span class="size-11 rounded-xl bg-leave-vacation text-leave-vacation-foreground grid place-items-center shrink-0"><i data-icon="scale" class="size-5"></i></span>
+          <span class="flex-1">
+            <span class="flex items-center gap-2"><span class="font-semibold text-[1.0625rem]">1. Saldos</span><span class="text-[0.75rem] font-semibold bg-success-bg text-success rounded-md px-2 py-0.5">Llest per provar</span></span>
+            <span class="block text-muted-foreground mt-1">Quants dies de vacances i hores d'AP li queden a cada persona, i apuntar-ne de nous. Substitueix la pestanya <i>V i APS</i>.</span>
+          </span>
+          <i data-icon="arrow-right" class="size-5 text-muted-foreground mt-3 group-hover:translate-x-0.5 transition-transform"></i>
+        </a>
+      </li>
+      <li>
+        <div class="card rounded-xl p-5 flex gap-4 items-start opacity-70">
+          <span class="size-11 rounded-xl bg-secondary text-sage-foreground grid place-items-center shrink-0"><i data-icon="sun" class="size-5"></i></span>
+          <span class="flex-1">
+            <span class="flex items-center gap-2"><span class="font-semibold text-[1.0625rem]">2. Vacances 2027</span><span class="text-[0.75rem] font-semibold bg-secondary text-sage-foreground rounded-md px-2 py-0.5">Aviat</span></span>
+            <span class="block text-muted-foreground mt-1">A final d'any: apuntar el que demana cada persona, veure les setmanes amb massa gent fora, ajustar i deixar l'any tancat.</span>
+          </span>
+        </div>
+      </li>
+      <li>
+        <div class="card rounded-xl p-5 flex gap-4 items-start opacity-70">
+          <span class="size-11 rounded-xl bg-secondary text-sage-foreground grid place-items-center shrink-0"><i data-icon="calendar-days" class="size-5"></i></span>
+          <span class="flex-1">
+            <span class="flex items-center gap-2"><span class="font-semibold text-[1.0625rem]">3. El mes</span><span class="text-[0.75rem] font-semibold bg-secondary text-sage-foreground rounded-md px-2 py-0.5">Aviat</span></span>
+            <span class="block text-muted-foreground mt-1">El calendari del mes de cada casa: qui fa vacances, AP o està de baixa cada dia.</span>
+          </span>
+        </div>
+      </li>
+    </ol>
+
+    <section class="mt-10 rounded-2xl bg-secondary/70 p-5 md:p-6">
+      <h2 class="text-xl flex items-center gap-2"><i data-icon="message-circle-question" class="size-5"></i> Com ens ajudes</h2>
+      <ul class="mt-3 space-y-2 text-[0.9375rem]">
+        <li class="flex gap-2"><i data-icon="check" class="size-4 mt-1 text-success"></i>Fes servir cada prototip com si fos el teu dia a dia: apunta unes vacances, un AP…</li>
+        <li class="flex gap-2"><i data-icon="check" class="size-4 mt-1 text-success"></i>A cada pàgina hi ha un botó <b>"Què en penses?"</b> amb unes quantes preguntes.</li>
+        <li class="flex gap-2"><i data-icon="check" class="size-4 mt-1 text-success"></i>El més important: què et faria estalviar temps i què hi sobra.</li>
+      </ul>
+    </section>
+  </main>
+
+  <div id="shell-bottom"></div>
+  <script>PROTO.renderShell('inici'); PROTO.paintIcons(document);</script>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Saldos · Casa d'Infants (prototip)</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="../brand/casa-plastelina-256.webp" />
+  <link rel="stylesheet" href="shared/fonts.css" />
+  <script src="shared/theme.js"></script>
+  <script src="vendor/tailwindcss-browser-4.1.11.js"></script>
+  <script src="vendor/lucide-0.469.0.min.js"></script>
+  <script src="shared/data.js"></script>
+  <script src="shared/ui.js"></script>
+</head>
+<body class="min-h-dvh pb-24 md:pb-10">
+  <div id="shell-top"></div>
+
+  <main x-data="saldos()" x-cloak class="max-w-[1280px] mx-auto px-4 md:px-6 pt-6 md:pt-10">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end gap-4 md:gap-6">
+      <div class="flex-1 min-w-0">
+        <p class="eyebrow" x-text="house.name"></p>
+        <h1 class="text-[1.875rem] tracking-[-0.015em] mt-1">Saldos <span class="num">2026</span></h1>
+        <p class="text-muted-foreground mt-1.5 max-w-prose">
+          Vacances i hores d'AP de cada persona, comptades a avui, <span class="num" x-text="fmtDate(today)"></span>.
+        </p>
+      </div>
+      <button class="btn btn-primary self-start md:self-auto" @click="openForm()">
+        <span x-icon="'plus'"></span> Apuntar vacances o AP
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 md:gap-4 mt-6">
+      <button class="stat card rounded-xl p-4 text-left transition-colors duration-150 hover:bg-hover" @click="filter = filter === 'vac' ? 'all' : 'vac'"
+              :class="filter === 'vac' && 'ring-2 ring-primary'">
+        <p class="text-[0.8125rem] font-medium text-muted-foreground flex items-center gap-1.5"><span x-icon="'sun'"></span> Vacances per planificar</p>
+        <p class="mt-1 text-[1.5rem] sm:text-[1.875rem] font-[650] leading-tight num" x-text="totals.vacLeft + ' dies'"></p>
+        <p class="text-[0.8125rem] text-muted-foreground" x-text="totals.vacPeople === 0 ? 'Tothom té l\'any planificat' : `${totals.vacPeople} ${totals.vacPeople === 1 ? 'persona encara en té' : 'persones encara en tenen'}`"></p>
+      </button>
+      <div class="stat card rounded-xl p-4">
+        <p class="text-[0.8125rem] font-medium text-muted-foreground flex items-center gap-1.5"><span x-icon="'clock'"></span> AP no recuperables usats</p>
+        <p class="mt-1 text-[1.5rem] sm:text-[1.875rem] font-[650] leading-tight num" x-text="fmtHours(totals.apnrUsed)"></p>
+        <p class="text-[0.8125rem] text-muted-foreground num" x-text="`de ${people.length * RULES.apnrHours} h de tot l'equip`"></p>
+      </div>
+      <button class="stat card rounded-xl p-4 text-left transition-colors duration-150 hover:bg-hover" @click="filter = filter === 'owe' ? 'all' : 'owe'"
+              :class="filter === 'owe' && 'ring-2 ring-primary'">
+        <p class="text-[0.8125rem] font-medium text-muted-foreground flex items-center gap-1.5"><span x-icon="'hourglass'"></span> Han de retornar hores</p>
+        <p class="mt-1 text-[1.5rem] sm:text-[1.875rem] font-[650] leading-tight num" x-text="totals.owePeople + (totals.owePeople === 1 ? ' persona' : ' persones')"></p>
+        <p class="text-[0.8125rem] text-muted-foreground num" x-text="totals.owePeople ? `${fmtHours(totals.oweHours)} en total, per cobrir necessitats puntuals` : 'Ningú té l\'excedent en negatiu'"></p>
+      </button>
+    </section>
+
+    <!-- Toolbar -->
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3 mt-8 mb-3">
+      <h2 class="text-xl">Equip</h2>
+      <div class="segmented sm:ml-4 self-start overflow-x-auto max-w-full">
+        <button :aria-pressed="filter === 'all'" @click="filter = 'all'">Tothom</button>
+        <button :aria-pressed="filter === 'vac'" @click="filter = 'vac'">Falten vacances</button>
+        <button :aria-pressed="filter === 'owe'" @click="filter = 'owe'">Deuen hores</button>
+      </div>
+      <label class="relative sm:ml-auto sm:w-64">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" x-icon="'search'"></span>
+        <input class="input pl-9" type="search" placeholder="Busca una persona" x-model="query" aria-label="Busca una persona" />
+      </label>
+    </div>
+
+    <!-- Desktop table -->
+    <div class="card overflow-hidden hidden md:block">
+      <table class="w-full text-left">
+        <thead class="bg-background/60 border-b border-border">
+          <tr class="text-[0.8125rem] text-muted-foreground">
+            <th class="font-medium py-3 pl-5 pr-3">Persona</th>
+            <th class="font-medium py-3 px-3 w-[26%]">
+              Vacances
+              <span class="ml-2 inline-flex items-center gap-3 text-[0.75rem]">
+                <span class="inline-flex items-center gap-1"><span class="size-2 rounded-full bg-primary"></span>gaudides</span>
+                <span class="inline-flex items-center gap-1"><span class="size-2 rounded-full bg-leave-vacation ring-1 ring-primary/30"></span>planificades</span>
+              </span>
+            </th>
+            <th class="font-medium py-3 px-3 w-[18%]">AP no recuperables</th>
+            <th class="font-medium py-3 px-3 w-[14%]">AP recuperables</th>
+            <th class="font-medium py-3 px-3 w-[14%]">Excedent calendari</th>
+            <th class="py-3 pr-4 w-10"><span class="sr-only">Obre</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="p in visible" :key="p.id">
+            <tr class="border-b border-border last:border-0 hover:bg-hover cursor-pointer transition-colors duration-150" @click="openPerson(p)">
+              <td class="py-3.5 pl-5 pr-3">
+                <div class="flex items-center gap-3">
+                  <span class="size-9 rounded-full grid place-items-center text-[0.8125rem] font-semibold text-white shrink-0" :style="`background:${p.color}`" x-text="initials(p.name)"></span>
+                  <div class="min-w-0">
+                    <p class="font-semibold leading-tight" x-text="p.name"></p>
+                    <p class="text-[0.8125rem] text-muted-foreground truncate" x-text="p.role"></p>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3.5 px-3">
+                <div class="bar">
+                  <span class="bg-primary" :style="`width:${pct(s(p).vacTaken, s(p).vacTotal)}%`"></span>
+                  <span class="bg-leave-vacation" :style="`width:${pct(s(p).vacPlanned - s(p).vacTaken, s(p).vacTotal)}%`"></span>
+                </div>
+                <p class="text-[0.8125rem] mt-1.5 num flex items-center gap-1">
+                  <template x-if="s(p).vacLeft > 0"><span class="font-semibold" x-text="`Falten ${s(p).vacLeft} per planificar`"></span></template>
+                  <template x-if="s(p).vacLeft === 0"><span class="text-success font-medium inline-flex items-center gap-1"><span x-icon="'check'"></span>Tot planificat</span></template>
+                  <span class="text-muted-foreground" x-text="`· ${s(p).vacTotal} dies${p.carried ? ` (${p.carried} AA)` : ''}`"></span>
+                </p>
+              </td>
+              <td class="py-3.5 px-3">
+                <div class="bar"><span class="bg-sage-foreground/70" :style="`width:${pct(s(p).apnrUsed, RULES.apnrHours)}%`"></span></div>
+                <p class="text-[0.8125rem] mt-1.5 num">
+                  <span class="font-semibold" x-text="`Queden ${fmtHours(s(p).apnrLeft)}`"></span>
+                  <span class="text-muted-foreground" x-text="`· ${p.apnr.length}/${RULES.apnrMaxDays} dies`"></span>
+                </p>
+              </td>
+              <td class="py-3.5 px-3 num text-[0.875rem]">
+                <span x-show="s(p).aprUsed > 0" x-text="`${fmtHours(s(p).aprUsed)} usades`"></span>
+                <span x-show="s(p).aprUsed === 0" class="text-muted-foreground">Cap</span>
+              </td>
+              <td class="py-3.5 px-3 num text-[0.875rem]">
+                <span x-show="s(p).surplusNow >= 0" class="font-semibold" x-text="fmtHours(s(p).surplusNow, { signed: true })"></span>
+                <span x-show="s(p).surplusNow < 0" class="inline-flex items-center gap-1 font-semibold text-warning-fg bg-warning-bg rounded-md px-2 py-0.5">
+                  <span x-icon="'hourglass'"></span><span x-text="`Deu ${fmtHours(-s(p).surplusNow)}`"></span>
+                </span>
+              </td>
+              <td class="py-3.5 pr-4 text-muted-foreground"><span x-icon="'chevron-right'"></span></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+      <p x-show="visible.length === 0" class="p-8 text-center text-muted-foreground">Ningú coincideix amb aquest filtre.</p>
+    </div>
+
+    <!-- Mobile cards -->
+    <ul class="md:hidden space-y-3">
+      <template x-for="p in visible" :key="p.id">
+        <li>
+          <button class="card rounded-xl w-full text-left p-4 active:bg-hover" @click="openPerson(p)">
+            <div class="flex items-center gap-3">
+              <span class="size-10 rounded-full grid place-items-center text-sm font-semibold text-white shrink-0" :style="`background:${p.color}`" x-text="initials(p.name)"></span>
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold leading-tight" x-text="p.name"></p>
+                <p class="text-[0.8125rem] text-muted-foreground truncate" x-text="p.role"></p>
+              </div>
+              <span class="text-muted-foreground" x-icon="'chevron-right'"></span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-3.5 text-[0.8125rem]">
+              <div class="rounded-lg bg-background p-2.5">
+                <p class="text-muted-foreground">Vacances</p>
+                <p class="font-semibold num" x-text="s(p).vacLeft ? `Falten ${s(p).vacLeft}` : 'Fetes ✓'"></p>
+              </div>
+              <div class="rounded-lg bg-background p-2.5">
+                <p class="text-muted-foreground">AP no rec.</p>
+                <p class="font-semibold num" x-text="fmtHours(s(p).apnrLeft)"></p>
+              </div>
+              <div class="rounded-lg p-2.5" :class="s(p).surplusNow < 0 ? 'bg-warning-bg' : 'bg-background'">
+                <p class="text-muted-foreground">Excedent</p>
+                <p class="font-semibold num" :class="s(p).surplusNow < 0 && 'text-warning-fg'" x-text="fmtHours(s(p).surplusNow, { signed: true })"></p>
+              </div>
+            </div>
+          </button>
+        </li>
+      </template>
+    </ul>
+
+    <p class="text-[0.8125rem] text-muted-foreground mt-6 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span class="inline-flex items-center gap-1.5"><span x-icon="'flask-conical'"></span> Prototip amb dades inventades. El que apuntis es guarda només en aquest navegador.</span>
+      <button class="underline underline-offset-2 hover:text-foreground cursor-pointer" @click="reset()">Torna a les dades d'exemple</button>
+    </p>
+
+    <!-- ═════════ Person sheet ═════════ -->
+    <div x-show="person" class="fixed inset-0 z-40" @keydown.escape.window="person = null" role="dialog" aria-modal="true" :aria-label="person?.name">
+      <div x-show="person" x-transition.opacity.duration.200ms class="absolute inset-0 bg-foreground/30" @click="person = null"></div>
+      <aside x-show="person"
+             x-transition:enter="transition ease-out duration-250" x-transition:enter-start="translate-y-full md:translate-y-0 md:translate-x-full" x-transition:enter-end="translate-y-0 md:translate-x-0"
+             x-transition:leave="transition ease-in duration-200" x-transition:leave-start="translate-y-0 md:translate-x-0" x-transition:leave-end="translate-y-full md:translate-y-0 md:translate-x-full"
+             class="absolute bottom-0 inset-x-0 max-h-[92dvh] rounded-t-2xl md:rounded-none md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[480px] bg-card shadow-sheet flex flex-col">
+        <template x-if="person">
+          <div class="flex flex-col min-h-0 h-full">
+            <div class="px-5 pt-5 pb-4 border-b border-border flex items-start gap-3">
+              <span class="size-12 rounded-full grid place-items-center font-semibold text-white shrink-0" :style="`background:${person.color}`" x-text="initials(person.name)"></span>
+              <div class="flex-1 min-w-0">
+                <h2 class="text-xl" x-text="person.name"></h2>
+                <p class="text-[0.8125rem] text-muted-foreground" x-text="person.role + (person.joined ? ` · a la casa des del ${fmtDate(person.joined)}` : '')"></p>
+              </div>
+              <button class="btn btn-ghost btn-icon -mr-2 -mt-1" @click="person = null" aria-label="Tanca"><span x-icon="'x'"></span></button>
+            </div>
+
+            <div class="overflow-y-auto px-5 py-5 space-y-6">
+              <!-- Tiles -->
+              <div class="grid grid-cols-3 gap-2">
+                <div class="rounded-xl bg-background p-3">
+                  <p class="text-[0.75rem] text-muted-foreground">Vacances per planificar</p>
+                  <p class="text-lg font-semibold num" x-text="`${s(person).vacLeft} de ${s(person).vacTotal}`"></p>
+                </div>
+                <div class="rounded-xl bg-background p-3">
+                  <p class="text-[0.75rem] text-muted-foreground">AP no recuperables</p>
+                  <p class="text-lg font-semibold num" x-text="fmtHours(s(person).apnrLeft)"></p>
+                </div>
+                <div class="rounded-xl p-3" :class="s(person).surplusNow < 0 ? 'bg-warning-bg' : 'bg-background'">
+                  <p class="text-[0.75rem] text-muted-foreground">Excedent calendari</p>
+                  <p class="text-lg font-semibold num" :class="s(person).surplusNow < 0 && 'text-warning-fg'" x-text="fmtHours(s(person).surplusNow, { signed: true })"></p>
+                </div>
+              </div>
+              <p x-show="s(person).surplusNow < 0" class="flex gap-2 text-[0.8125rem] rounded-lg bg-warning-bg text-warning-fg p-3 -mt-3">
+                <span x-icon="'hourglass'" class="mt-0.5"></span>
+                <span x-text="`Ha de retornar ${fmtHours(-s(person).surplusNow)} treballant quan calgui.`"></span>
+              </p>
+
+              <div class="flex gap-2">
+                <button class="btn btn-secondary btn-sm flex-1" @click="openForm(person.id, 'vac')"><span x-icon="'sun'"></span>Apuntar vacances</button>
+                <button class="btn btn-secondary btn-sm flex-1" @click="openForm(person.id, 'apnr')"><span x-icon="'clock'"></span>Apuntar AP</button>
+              </div>
+
+              <!-- Vacation periods -->
+              <section>
+                <h3 class="text-[0.9375rem] font-semibold flex items-baseline justify-between">
+                  Vacances <span class="text-[0.8125rem] font-normal text-muted-foreground num" x-text="`${s(person).vacPlanned} de ${s(person).vacTotal} dies${person.carried ? ` · inclou ${person.carried} AA` : ''}`"></span>
+                </h3>
+                <ul class="mt-2 divide-y divide-border rounded-xl border border-border">
+                  <template x-for="e in sortedV(person)" :key="e.id">
+                    <li class="flex items-center gap-3 px-3.5 py-2.5">
+                      <span class="w-1.5 self-stretch rounded-full" :class="e.to < today ? 'bg-primary' : 'bg-leave-vacation ring-1 ring-primary/30'"></span>
+                      <div class="flex-1 min-w-0">
+                        <p class="font-medium num" x-text="fmtRange(e.from, e.to)"></p>
+                        <p class="text-[0.8125rem] text-muted-foreground num" x-text="`${days(e.from, e.to)} dies · ${e.to < today ? 'gaudides' : e.from <= today ? 'ara de vacances' : 'planificades'}`"></p>
+                      </div>
+                      <button class="btn btn-ghost btn-icon size-8 text-muted-foreground hover:text-error" @click="remove(person, 'v', e)" aria-label="Esborra"><span x-icon="'trash-2'"></span></button>
+                    </li>
+                  </template>
+                  <li x-show="person.v.length === 0" class="px-3.5 py-3 text-[0.875rem] text-muted-foreground">Encara no té vacances apuntades.</li>
+                </ul>
+              </section>
+
+              <!-- AP no recuperables -->
+              <section>
+                <h3 class="text-[0.9375rem] font-semibold flex items-baseline justify-between">
+                  AP no recuperables <span class="text-[0.8125rem] font-normal text-muted-foreground num" x-text="`${fmtHours(s(person).apnrUsed)} de ${RULES.apnrHours} h · ${person.apnr.length}/${RULES.apnrMaxDays} dies`"></span>
+                </h3>
+                <ul class="mt-2 divide-y divide-border rounded-xl border border-border">
+                  <template x-for="e in sortedAP(person.apnr)" :key="e.id">
+                    <li class="flex items-center gap-3 px-3.5 py-2.5">
+                      <span class="w-1.5 self-stretch rounded-full bg-sage-foreground/60"></span>
+                      <p class="flex-1 num"><span class="font-medium" x-text="`${weekday(e.date)} ${fmtDate(e.date)}`"></span></p>
+                      <span class="num text-[0.875rem] font-semibold" x-text="fmtHours(e.hours)"></span>
+                      <button class="btn btn-ghost btn-icon size-8 text-muted-foreground hover:text-error" @click="remove(person, 'apnr', e)" aria-label="Esborra"><span x-icon="'trash-2'"></span></button>
+                    </li>
+                  </template>
+                  <li x-show="person.apnr.length === 0" class="px-3.5 py-3 text-[0.875rem] text-muted-foreground">Cap AP no recuperable aquest any.</li>
+                </ul>
+              </section>
+
+              <!-- AP recuperables -->
+              <section>
+                <h3 class="text-[0.9375rem] font-semibold flex items-baseline justify-between">
+                  AP recuperables <span class="text-[0.8125rem] font-normal text-muted-foreground num" x-text="`${fmtHours(s(person).aprUsed)} de ${RULES.aprHours} h · ${person.apr.length}/${RULES.aprMaxDays} dies`"></span>
+                </h3>
+                <ul class="mt-2 divide-y divide-border rounded-xl border border-border">
+                  <template x-for="e in sortedAP(person.apr)" :key="e.id">
+                    <li class="flex items-center gap-3 px-3.5 py-2.5">
+                      <span class="w-1.5 self-stretch rounded-full bg-sage"></span>
+                      <div class="flex-1">
+                        <p class="font-medium num" x-text="`${weekday(e.date)} ${fmtDate(e.date)}`"></p>
+                        <p class="text-[0.8125rem] text-muted-foreground">Descomptat de l'excedent</p>
+                      </div>
+                      <span class="num text-[0.875rem] font-semibold" x-text="fmtHours(e.hours)"></span>
+                      <button class="btn btn-ghost btn-icon size-8 text-muted-foreground hover:text-error" @click="remove(person, 'apr', e)" aria-label="Esborra"><span x-icon="'trash-2'"></span></button>
+                    </li>
+                  </template>
+                  <li x-show="person.apr.length === 0" class="px-3.5 py-3 text-[0.875rem] text-muted-foreground">Cap AP recuperable aquest any.</li>
+                </ul>
+                <p class="hint num" x-text="`Excedent abans d'AP recuperables: ${fmtHours(person.surplus, { signed: true })}`"></p>
+              </section>
+            </div>
+          </div>
+        </template>
+      </aside>
+    </div>
+
+    <!-- ═════════ Add form ═════════ -->
+    <div x-show="form.open" class="fixed inset-0 z-50 grid md:place-items-center items-end" @keydown.escape.window="form.open = false" role="dialog" aria-modal="true" aria-labelledby="form-title">
+      <div x-show="form.open" x-transition.opacity.duration.200ms class="absolute inset-0 bg-foreground/35" @click="form.open = false"></div>
+      <form x-show="form.open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
+            @submit.prevent="save()" novalidate
+            class="relative w-full md:w-[520px] max-h-[94dvh] overflow-y-auto bg-card rounded-t-2xl md:rounded-2xl shadow-sheet">
+        <div class="px-5 md:px-6 pt-5 pb-4 flex items-center border-b border-border">
+          <h2 id="form-title" class="text-xl flex-1">Apuntar</h2>
+          <button type="button" class="btn btn-ghost btn-icon -mr-2" @click="form.open = false" aria-label="Tanca"><span x-icon="'x'"></span></button>
+        </div>
+
+        <div class="px-5 md:px-6 py-5 space-y-5">
+          <div>
+            <label class="label" for="f-person">Persona</label>
+            <select id="f-person" class="input" x-model="form.personId">
+              <option value="" disabled>Tria una persona</option>
+              <template x-for="p in people" :key="p.id"><option :value="p.id" x-text="p.name" :selected="p.id === form.personId"></option></template>
+            </select>
+          </div>
+
+          <fieldset>
+            <legend class="label">Què apuntes?</legend>
+            <div class="grid gap-2">
+              <label class="choice">
+                <input type="radio" name="kind" value="vac" x-model="form.kind" />
+                <span><span class="font-semibold block">Vacances</span><span class="text-[0.8125rem] text-muted-foreground">Dies naturals, del primer a l'últim dia.</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="kind" value="apnr" x-model="form.kind" />
+                <span><span class="font-semibold block">AP no recuperable</span><span class="text-[0.8125rem] text-muted-foreground num" x-text="`Fins a ${RULES.apnrHours} h l'any, en ${RULES.apnrMaxDays} dies com a màxim.`"></span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="kind" value="apr" x-model="form.kind" />
+                <span><span class="font-semibold block">AP recuperable</span><span class="text-[0.8125rem] text-muted-foreground num" x-text="`Es descompta de l'excedent de calendari. Fins a ${RULES.aprHours} h en ${RULES.aprMaxDays} dies.`"></span></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Vacation fields -->
+          <div x-show="form.kind === 'vac'" class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="label" for="f-from">Primer dia</label>
+              <input id="f-from" type="date" class="input num" x-model="form.from" :min="`${YEAR}-01-01`" :max="`${YEAR}-12-31`" :aria-invalid="!!errors.dates" />
+            </div>
+            <div>
+              <label class="label" for="f-to">Últim dia</label>
+              <input id="f-to" type="date" class="input num" x-model="form.to" :min="form.from || `${YEAR}-01-01`" :max="`${YEAR}-12-31`" :aria-invalid="!!errors.dates" />
+            </div>
+          </div>
+
+          <!-- AP fields -->
+          <div x-show="form.kind !== 'vac'" class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="label" for="f-date">Dia</label>
+              <input id="f-date" type="date" class="input num" x-model="form.date" :min="`${YEAR}-01-01`" :max="`${YEAR}-12-31`" :aria-invalid="!!errors.date" />
+            </div>
+            <div>
+              <label class="label" for="f-hours">Hores</label>
+              <input id="f-hours" class="input num" inputmode="decimal" placeholder="p. ex. 3:45" x-model="form.hours" :aria-invalid="!!errors.hours" />
+              <p class="hint num" x-show="!isNaN(parsedHours) && parsedHours > 0" x-text="`= ${fmtHours(parsedHours)}`"></p>
+            </div>
+          </div>
+
+          <!-- Live preview and validation -->
+          <div class="space-y-2" aria-live="polite">
+            <template x-for="msg in Object.values(errors)">
+              <p class="flex gap-2 text-[0.875rem] rounded-lg bg-error-bg text-error p-3"><span x-icon="'circle-alert'" class="mt-0.5"></span><span x-text="msg"></span></p>
+            </template>
+            <template x-if="preview && Object.keys(errors).length === 0">
+              <p class="flex gap-2 text-[0.875rem] rounded-lg p-3" :class="preview.tone === 'warn' ? 'bg-warning-bg text-warning-fg' : 'bg-success-bg text-success'">
+                <span x-icon="preview.tone === 'warn' ? 'hourglass' : 'circle-check'" class="mt-0.5"></span><span x-text="preview.text"></span>
+              </p>
+            </template>
+            <template x-if="overlaps.length && Object.keys(errors).length === 0">
+              <p class="flex gap-2 text-[0.875rem] rounded-lg bg-info-bg text-info p-3">
+                <span x-icon="'users'" class="mt-0.5"></span>
+                <span>També de vacances aquells dies: <span x-text="overlaps.join(', ')"></span>.</span>
+              </p>
+            </template>
+          </div>
+        </div>
+
+        <div class="px-5 md:px-6 py-4 border-t border-border flex flex-col-reverse sm:flex-row sm:justify-end gap-2 bg-background/50 rounded-b-2xl">
+          <button type="button" class="btn btn-outline" @click="form.open = false">Cancel·la</button>
+          <button type="submit" class="btn btn-primary" :disabled="!canSave">Apunta-ho</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast" x-transition.opacity.duration.200ms class="fixed z-50 left-1/2 -translate-x-1/2 bottom-36 md:bottom-8 w-[calc(100%-2rem)] max-w-md">
+      <div class="flex items-center gap-3 rounded-xl bg-foreground text-background px-4 py-3 shadow-sheet">
+        <span x-icon="'circle-check'" class="text-[#B9D3B4]"></span>
+        <p class="flex-1 text-[0.875rem]" x-text="toast?.text"></p>
+        <button class="text-[0.875rem] font-semibold underline underline-offset-2 cursor-pointer" x-show="toast?.canUndo" @click="undo()">Desfés</button>
+      </div>
+    </div>
+
+    <!-- Feedback questions for the director -->
+    <div class="fixed z-30 right-4 bottom-20 md:bottom-6" x-data="{ open: false }">
+      <div x-show="open" x-transition class="card absolute bottom-14 right-0 w-[min(22rem,calc(100vw-2rem))] p-5">
+        <p class="eyebrow">Per a la directora</p>
+        <h2 class="text-xl mt-1">Què en penses?</h2>
+        <ol class="list-decimal pl-5 mt-3 space-y-2 text-[0.875rem]">
+          <li>Són aquests els números que mires cada dia? En falta algun o en sobra algun?</li>
+          <li>Com prefereixes escriure les hores: <b>3:45</b> o <b>3,75</b>? (Ara accepta les dues.)</li>
+          <li>T'és útil que l'AP recuperable es descompti sol de l'excedent?</li>
+          <li>Quan algú deu hores, com ho fas avui per decidir quan les retorna?</li>
+          <li>Necessites veure les dues cases alhora, o sempre una per una?</li>
+        </ol>
+        <p class="text-[0.8125rem] text-muted-foreground mt-3">Apunta-ho com vulguis: ens ho comentes després.</p>
+      </div>
+      <button class="btn btn-secondary rounded-full shadow-clay max-sm:size-12 max-sm:px-0" @click="open = !open" aria-label="Què en penses?" :aria-expanded="open">
+        <span x-icon="open ? 'x' : 'message-circle-question'"></span><span class="hidden sm:inline" x-text="open ? 'Tanca' : 'Què en penses?'"></span>
+      </button>
+    </div>
+  </main>
+
+  <div id="shell-bottom"></div>
+
+  <script>
+    PROTO.renderShell('saldos');
+
+    function saldos() {
+      const house = PROTO.currentHouse();
+      const all = PROTO.loadPeople();
+      return {
+        house,
+        all,
+        RULES: PROTO.RULES,
+        YEAR: PROTO.YEAR,
+        today: PROTO.TODAY,
+        filter: 'all',
+        query: '',
+        personId: null,
+        toast: null,
+        form: { open: false, personId: '', kind: 'vac', from: '', to: '', date: '', hours: '' },
+
+        fmtDate: PROTO.fmtDate,
+        fmtRange: PROTO.fmtRange,
+        fmtHours: PROTO.fmtHours,
+        weekday: PROTO.weekdayShort,
+        days: PROTO.daysInclusive,
+
+        get people() { return this.all[house.slug]; },
+        get person() { return this.people.find((p) => p.id === this.personId) ?? null; },
+        set person(v) { this.personId = v?.id ?? null; },
+
+        initials: (name) => name.split(' ').map((w) => w[0]).slice(0, 2).join(''),
+        pct: (n, d) => (d ? Math.max(0, Math.min(100, (n / d) * 100)) : 0),
+
+        // Balances for one person, as of "today".
+        s(p) {
+          const today = this.today;
+          const vacTotal = p.entitled + (p.carried || 0);
+          let vacPlanned = 0, vacTaken = 0;
+          for (const e of p.v) {
+            const n = PROTO.daysInclusive(e.from, e.to);
+            vacPlanned += n;
+            if (e.to < today) vacTaken += n;
+            else if (e.from <= today) vacTaken += PROTO.daysInclusive(e.from, today);
+          }
+          const apnrUsed = p.apnr.reduce((a, e) => a + e.hours, 0);
+          const aprUsed = p.apr.reduce((a, e) => a + e.hours, 0);
+          return {
+            vacTotal, vacPlanned, vacTaken,
+            vacLeft: Math.max(0, vacTotal - vacPlanned),
+            apnrUsed, apnrLeft: Math.max(0, PROTO.RULES.apnrHours - apnrUsed),
+            aprUsed, surplusNow: p.surplus - aprUsed,
+          };
+        },
+
+        get totals() {
+          let vacLeft = 0, vacPeople = 0, apnrUsed = 0, owePeople = 0, oweHours = 0;
+          for (const p of this.people) {
+            const s = this.s(p);
+            vacLeft += s.vacLeft; if (s.vacLeft) vacPeople++;
+            apnrUsed += s.apnrUsed;
+            if (s.surplusNow < 0) { owePeople++; oweHours -= s.surplusNow; }
+          }
+          return { vacLeft, vacPeople, apnrUsed, owePeople, oweHours };
+        },
+
+        get visible() {
+          const q = this.query.trim().toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+          return this.people.filter((p) => {
+            const s = this.s(p);
+            if (this.filter === 'vac' && !s.vacLeft) return false;
+            if (this.filter === 'owe' && s.surplusNow >= 0) return false;
+            if (q && !p.name.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').includes(q)) return false;
+            return true;
+          });
+        },
+
+        sortedV: (p) => [...p.v].sort((a, b) => a.from.localeCompare(b.from)),
+        sortedAP: (list) => [...list].sort((a, b) => a.date.localeCompare(b.date)),
+
+        openPerson(p) { this.personId = p.id; },
+
+        openForm(personId = '', kind = 'vac') {
+          this.form = { open: true, personId, kind, from: '', to: '', date: '', hours: '' };
+        },
+
+        get formPerson() { return this.people.find((p) => p.id === this.form.personId) ?? null; },
+        get parsedHours() { return PROTO.parseHours(this.form.hours); },
+
+        get errors() {
+          const f = this.form, p = this.formPerson, R = PROTO.RULES, out = {};
+          if (!p) return out;
+          if (f.kind === 'vac') {
+            if (!f.from || !f.to) return out;
+            if (f.to < f.from) { out.dates = "L'últim dia no pot ser abans del primer."; return out; }
+            if (!f.from.startsWith(`${PROTO.YEAR}-`) || !f.to.startsWith(`${PROTO.YEAR}-`)) { out.dates = `Les dates han de ser del ${PROTO.YEAR}.`; return out; }
+            const clash = p.v.find((e) => e.from <= f.to && f.from <= e.to);
+            if (clash) { out.dates = `Ja té vacances apuntades del ${PROTO.fmtRange(clash.from, clash.to)}.`; return out; }
+            const n = PROTO.daysInclusive(f.from, f.to), left = this.s(p).vacLeft;
+            if (n > left) out.dates = `Són ${n} dies i només li ${left === 1 ? 'queda 1' : `en queden ${left}`} per planificar.`;
+            return out;
+          }
+          const list = f.kind === 'apnr' ? p.apnr : p.apr;
+          const cap = f.kind === 'apnr' ? R.apnrHours : R.aprHours;
+          const maxDays = f.kind === 'apnr' ? R.apnrMaxDays : R.aprMaxDays;
+          if (f.date && !f.date.startsWith(`${PROTO.YEAR}-`)) out.date = `La data ha de ser del ${PROTO.YEAR}.`;
+          if (list.length >= maxDays) out.date = `Ja ha fet servir els ${maxDays} dies que permet aquest tipus d'AP.`;
+          if (f.hours) {
+            const h = this.parsedHours;
+            const used = list.reduce((a, e) => a + e.hours, 0);
+            if (isNaN(h) || h <= 0 || h > 24) out.hours = 'Escriu les hores així: 3:45 o 3,75.';
+            else if (used + h > cap) out.hours = `Supera el màxim de ${cap} h: només li ${cap - used > 0 ? `queden ${PROTO.fmtHours(cap - used)}` : 'queda 0 h'}.`;
+          }
+          return out;
+        },
+
+        get preview() {
+          const f = this.form, p = this.formPerson;
+          if (!p) return null;
+          const s = this.s(p);
+          if (f.kind === 'vac') {
+            if (!f.from || !f.to || f.to < f.from) return null;
+            const n = PROTO.daysInclusive(f.from, f.to), left = s.vacLeft - n;
+            return { text: `${n} dies naturals. Després li ${left === 1 ? 'quedarà 1 dia' : `quedaran ${left} dies`} per planificar.` };
+          }
+          const h = this.parsedHours;
+          if (isNaN(h) || h <= 0) return null;
+          if (f.kind === 'apnr') {
+            return { text: `Li quedaran ${PROTO.fmtHours(s.apnrLeft - h)} d'AP no recuperables (dia ${p.apnr.length + 1} de ${PROTO.RULES.apnrMaxDays}).` };
+          }
+          const after = s.surplusNow - h;
+          if (after < 0) return { tone: 'warn', text: `L'excedent passarà de ${PROTO.fmtHours(s.surplusNow, { signed: true })} a ${PROTO.fmtHours(after, { signed: true })}: haurà de retornar ${PROTO.fmtHours(-after)}.` };
+          return { text: `L'excedent passarà de ${PROTO.fmtHours(s.surplusNow, { signed: true })} a ${PROTO.fmtHours(after, { signed: true })}.` };
+        },
+
+        get overlaps() {
+          const f = this.form;
+          if (f.kind !== 'vac' || !f.from || !f.to || f.to < f.from) return [];
+          return this.people
+            .filter((o) => o.id !== f.personId)
+            .flatMap((o) => o.v.filter((e) => e.from <= f.to && f.from <= e.to).map((e) => `${o.name} (${PROTO.fmtRange(e.from, e.to)})`));
+        },
+
+        get canSave() {
+          const f = this.form;
+          if (!this.formPerson || Object.keys(this.errors).length) return false;
+          if (f.kind === 'vac') return !!(f.from && f.to);
+          return !!(f.date && this.parsedHours > 0);
+        },
+
+        save() {
+          if (!this.canSave) return;
+          const f = this.form, p = this.formPerson;
+          let entry, key, text;
+          if (f.kind === 'vac') {
+            key = 'v'; entry = { id: PROTO.newId(), from: f.from, to: f.to };
+            text = `Apuntades ${PROTO.daysInclusive(f.from, f.to)} dies de vacances a ${p.name}.`;
+          } else {
+            key = f.kind; entry = { id: PROTO.newId(), date: f.date, hours: this.parsedHours };
+            text = `Apuntat AP ${f.kind === 'apnr' ? 'no recuperable' : 'recuperable'} de ${PROTO.fmtHours(entry.hours)} a ${p.name}.`;
+          }
+          p[key].push(entry);
+          this.persist();
+          this.form.open = false;
+          this.flash(text, () => { p[key] = p[key].filter((e) => e.id !== entry.id); });
+        },
+
+        remove(p, key, entry) {
+          p[key] = p[key].filter((e) => e.id !== entry.id);
+          this.persist();
+          this.flash('Esborrat.', () => { p[key].push(entry); });
+        },
+
+        flash(text, undoFn) {
+          // Keep the function out of reactive state: Alpine calls functions returned by expressions.
+          this._undo = undoFn;
+          this.toast = { text, canUndo: !!undoFn };
+          clearTimeout(this._t);
+          this._t = setTimeout(() => (this.toast = null), 6000);
+        },
+        undo() {
+          this._undo?.();
+          this._undo = null;
+          this.persist();
+          this.toast = null;
+        },
+
+        persist() { PROTO.savePeople(this.all); },
+        reset() { PROTO.resetPeople(); location.reload(); },
+      };
+    }
+  </script>
+  <script defer src="vendor/alpinejs-3.14.9.min.js"></script>
+</body>
+</html>

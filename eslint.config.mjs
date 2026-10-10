@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Static HTML prototypes with vendored libraries (not app code).
+    "public/prototypes/**",
   ]),
 ]);
 

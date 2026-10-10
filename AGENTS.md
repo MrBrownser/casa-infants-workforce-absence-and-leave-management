@@ -50,6 +50,8 @@ See `README.md` for setup.
   `src/server/access-store.ts`: grant lookup (`isEnabledDirectorGrant`) and operator writes.
 - `src/app/(app)/[house]/team/actions.ts`: Server Functions for staffing writes.
 - `scripts/`: operator procedures (`access.ts`, `account-link.ts`). `test/db/`: real-database test harness.
+- `public/prototypes/`: static HTML prototypes with fictional data for the director's feedback
+  (not part of the app; see its README).
 - `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: FASI clay-house mark (images in `public/brand/`). `src/components/ui/`: shadcn primitives.
 
 ## Access and data rules
