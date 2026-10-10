@@ -42,6 +42,8 @@ See `README.md` for setup.
 - `src/lib/house-membership.ts`: pure membership rules (current/historical members, transfers).
 - `src/server/houses.ts`: House data, director-only. `src/server/membership-store.ts`: Prisma
   persistence without auth (seed only; app code uses `houses.ts`).
+- `public/prototypes/`: static HTML prototypes with fictional data for the director's feedback
+  (not part of the app; see its README).
 - `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: FASI clay-house mark (images in `public/brand/`). `src/components/ui/`: shadcn primitives.
 
 ## Access and data rules
