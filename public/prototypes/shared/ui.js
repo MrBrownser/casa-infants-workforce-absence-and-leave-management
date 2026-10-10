@@ -39,6 +39,9 @@ PROTO.fmtRange = (from, to) => {
   return `${PROTO.fmtShort(from)} – ${PROTO.fmtShort(to)}`;
 };
 
+// Ends a sentence with a period unless it already ends with one ("11 set.").
+PROTO.sentence = (s) => (s.endsWith('.') ? s : `${s}.`);
+
 // ── Hours ──
 // 3.75 → "3 h 45 min"; signed adds "+" or "−".
 PROTO.fmtHours = (h, { signed = false } = {}) => {
@@ -105,7 +108,7 @@ PROTO.currentHouse = () => {
 // ── Top bar + mobile tab bar ──
 PROTO.SECTIONS = [
   { key: 'saldos', label: 'Saldos', href: 'saldos.html', icon: 'scale' },
-  { key: 'vacances', label: 'Vacances 2027', href: null, icon: 'sun' },
+  { key: 'vacances', label: 'Vacances 2027', href: 'vacances.html', icon: 'sun' },
   { key: 'mes', label: 'El mes', href: null, icon: 'calendar-days' },
 ];
 
@@ -171,7 +174,7 @@ document.addEventListener('alpine:init', () => {
   // Reactive: <span x-icon="cond ? 'check' : 'x'"></span>
   window.Alpine.directive('icon', (el, { expression }, { effect, evaluateLater }) => {
     const get = evaluateLater(expression);
+    // Layout comes from CSS ([x-icon] in theme.js) so x-show can still hide the element.
     effect(() => get((name) => el.replaceChildren(PROTO.icon(name, el.dataset.iconClass ?? ''))));
-    el.style.display = 'inline-flex';
   });
 });
