@@ -306,11 +306,14 @@
           <div x-show="!st.closedAt" class="-mt-2">
             <p class="text-[0.8125rem] text-muted-foreground mb-1.5" x-text="panel.from ? 'Durada, a partir del primer dia:' : 'Tria el primer dia i després quantes setmanes.'"></p>
             <div class="flex flex-wrap gap-1.5">
-              <template x-for="w in [1, 2, 3, 4]" :key="w">
+              <template x-for="w in [1, 2, 3]" :key="w">
                 <button type="button" class="btn btn-sm btn-outline" :disabled="!panel.from" :aria-pressed="panelDays === w * 7"
                         :class="panelDays === w * 7 && 'bg-secondary border-sage'"
                         @click="panel.to = addDays(panel.from, w * 7 - 1)" x-text="w === 1 ? '1 setmana' : `${w} setmanes`"></button>
               </template>
+              <button type="button" x-show="panelRest >= 7 && panelRest % 7" class="btn btn-sm btn-outline num" :disabled="!panel.from"
+                      :class="panelDays === panelRest && 'bg-secondary border-sage'"
+                      @click="panel.to = addDays(panel.from, panelRest - 1)" x-text="`La resta (${panelRest} dies)`"></button>
             </div>
           </div>
 
@@ -449,7 +452,7 @@
   <script>
     PROTO.renderShell('vacances');
 
-    const PLAN_KEY = 'casa-infants-plan-2027-v2';
+    const PLAN_KEY = 'casa-infants-plan-2027-v3';
     const Y = PROTO.PLAN_YEAR;
     const YEAR_START = `${Y}-01-01`, YEAR_END = `${Y}-12-31`;
     const ZOOMS = {
@@ -710,11 +713,24 @@
           if (!from || !to) return '';
           if (to < from) return "L'últim dia no pot ser abans del primer.";
           if (from < YEAR_START || to > YEAR_END) return `Les dates han de ser del ${Y}.`;
-          if (PROTO.daysInclusive(from, to) < PROTO.RULES.vacationMinDays) return `Les vacances es fan per setmanes: com a mínim ${PROTO.RULES.vacationMinDays} dies seguits, mai dies solts.`;
+          if (p) {
+            const others = this.reqs(p).filter((r) => r.id !== this.panel.reqId).map((r) => PROTO.daysInclusive(r.from, r.to));
+            const ruleError = PROTO.vacationRuleError([...others, PROTO.daysInclusive(from, to)], this.st.people[p.id].aa);
+            if (ruleError) return ruleError;
+          } else if (PROTO.daysInclusive(from, to) < PROTO.RULES.vacationMinDays) {
+            return `Les vacances es fan per setmanes: com a mínim ${PROTO.RULES.vacationMinDays} dies seguits, mai dies solts.`;
+          }
           if (!p) return '';
           const own = this.reqs(p).find((r) => r.id !== this.panel.reqId && r.from <= to && from <= r.to);
           if (own) return `Ja té una petició ${PROTO.fromTo(own.from, own.to)}.`;
           return '';
+        },
+        // Days still to request for this person, counting the period being edited as free.
+        get panelRest() {
+          const p = this.panelPerson;
+          if (!p) return 0;
+          const cur = this.panelReq ? PROTO.daysInclusive(this.panelReq.from, this.panelReq.to) : 0;
+          return this.entitled(p) - this.requested(p) + cur;
         },
         get panelValid() { return !!this.panelPerson && this.panelDays > 0 && !this.panelError; },
         get panelSummary() {

@@ -354,11 +354,14 @@
           <div x-show="form.kind === 'vac'" class="-mt-2">
             <p class="text-[0.8125rem] text-muted-foreground mb-1.5" x-text="form.from ? 'Durada, a partir del primer dia:' : 'Tria el primer dia i després quantes setmanes.'"></p>
             <div class="flex flex-wrap gap-1.5">
-              <template x-for="w in [1, 2, 3, 4]" :key="w">
+              <template x-for="w in [1, 2, 3]" :key="w">
                 <button type="button" class="btn btn-sm btn-outline" :disabled="!form.from"
                         :class="form.from && form.to && days(form.from, form.to) === w * 7 && 'bg-secondary border-sage'"
                         @click="form.to = addDays(form.from, w * 7 - 1)" x-text="w === 1 ? '1 setmana' : `${w} setmanes`"></button>
               </template>
+              <button type="button" x-show="formRest >= 7 && formRest % 7" class="btn btn-sm btn-outline num" :disabled="!form.from"
+                      :class="form.from && form.to && days(form.from, form.to) === formRest && 'bg-secondary border-sage'"
+                      @click="form.to = addDays(form.from, formRest - 1)" x-text="`La resta (${formRest} dies)`"></button>
             </div>
           </div>
 
@@ -524,6 +527,7 @@
         },
 
         get formPerson() { return this.people.find((p) => p.id === this.form.personId) ?? null; },
+        get formRest() { return this.formPerson ? PROTO.balances(this.formPerson).vacLeft : 0; },
         get parsedHours() { return PROTO.parseHours(this.form.hours); },
 
         get errors() {
@@ -535,7 +539,8 @@
             if (!f.from.startsWith(`${PROTO.YEAR}-`) || !f.to.startsWith(`${PROTO.YEAR}-`)) { out.dates = `Les dates han de ser del ${PROTO.YEAR}.`; return out; }
             const clash = p.v.find((e) => e.from <= f.to && f.from <= e.to);
             if (clash) { out.dates = `Ja té vacances apuntades ${PROTO.fromTo(clash.from, clash.to)}.`; return out; }
-            if (PROTO.daysInclusive(f.from, f.to) < PROTO.RULES.vacationMinDays) { out.dates = `Les vacances es fan per setmanes: com a mínim ${PROTO.RULES.vacationMinDays} dies seguits, mai dies solts.`; return out; }
+            const ruleError = PROTO.vacationRuleError([...p.v.map((e) => PROTO.daysInclusive(e.from, e.to)), PROTO.daysInclusive(f.from, f.to)], p.carried);
+            if (ruleError) { out.dates = ruleError; return out; }
             const n = PROTO.daysInclusive(f.from, f.to), left = this.s(p).vacLeft;
             if (n > left) out.dates = `Són ${n} dies i només li ${left === 1 ? 'queda 1' : `en queden ${left}`} per planificar.`;
             return out;

@@ -60,6 +60,17 @@ PROTO.fmtWeeks = (n) => {
 // Ends a sentence with a period unless it already ends with one ("11 set.").
 PROTO.sentence = (s) => (s.endsWith('.') ? s : `${s}.`);
 
+// Vacation periods rule (FASI): at most 4 periods, each of 7 consecutive days or more, and all
+// of them multiples of 7 (7, 14, 21) except one remainder that completes the 31 days (10, 17, 24).
+// Assumption to confirm: days carried over from last year (AA) are one extra block outside the rule.
+PROTO.vacationRuleError = (lengths, carried = 0) => {
+  const R = PROTO.RULES, extra = carried > 0 ? 1 : 0;
+  if (lengths.some((n) => n < R.vacationMinDays)) return `Les vacances es fan per setmanes: com a mínim ${R.vacationMinDays} dies seguits, mai dies solts.`;
+  if (lengths.length > R.vacationMaxPeriods + extra) return `Com a màxim ${R.vacationMaxPeriods} períodes de vacances${extra ? ', més el dels dies AA' : ''}.`;
+  if (lengths.filter((n) => n % 7).length > 1 + extra) return 'Els períodes han de ser de 7, 14 o 21 dies; només un pot ser diferent, el que completa els 31 (p. ex. 10).';
+  return '';
+};
+
 // ── Hours ──
 // 3.75 → "3 h 45 min"; signed adds "+" or "−".
 PROTO.fmtHours = (h, { signed = false } = {}) => {
@@ -108,7 +119,7 @@ PROTO.balanceTiles = (p) => {
 };
 
 // ── Demo persistence: changes live only in this browser ──
-const STORAGE_KEY = 'casa-infants-prototypes-v5';
+const STORAGE_KEY = 'casa-infants-prototypes-v6';
 let entrySeq = 0;
 const nextId = () => `e${Date.now().toString(36)}${(entrySeq++).toString(36)}`;
 

@@ -9,6 +9,7 @@ PROTO.YEAR = 2026;
 PROTO.RULES = {
   vacationDays: 31,      // natural days per year, prorated when someone joins mid-year
   vacationMinDays: 7,    // taken in blocks of weeks, never loose days
+  vacationMaxPeriods: 4, // 31 days in at most 4 periods: blocks of 7, 14 or 21 days, plus one remainder (10, 17, 24)
   apnrHours: 24,         // AP no recuperables: 24 h per year...
   apnrMaxDays: 5,        // ...in at most 5 requests
   aprHours: 24,          // AP recuperables: 24 h per year...
@@ -71,7 +72,7 @@ PROTO.PEOPLE = {
   ],
   'carme-aymerich': [
     { id: 'ca1', name: 'Aina Costa', role: 'Educadora referent', entitled: 31, carried: 0, surplus: 22,
-      v: [['2026-07-06', '2026-07-25'], ['2026-12-21', '2026-12-31']],
+      v: [['2026-07-06', '2026-07-26'], ['2026-12-22', '2026-12-31']],
       apnr: [['2026-03-02', 8], ['2026-06-12', 6], ['2026-10-15', 6]], apr: [] },
     { id: 'ca2', name: 'Joan Pons', role: 'Educador de nit', entitled: 31, carried: 5, surplus: 41,
       v: [['2026-01-02', '2026-01-08'], ['2026-08-10', '2026-08-30']],
