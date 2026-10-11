@@ -153,7 +153,7 @@ PROTO.renderShell = (active) => {
   <header class="sticky top-0 z-30 bg-card/90 backdrop-blur border-b border-border">
     <div class="max-w-[1280px] mx-auto px-4 md:px-6 h-16 flex items-center gap-3 md:gap-6">
       <a href="index.html${q(house.slug)}" class="flex items-center gap-2 shrink-0">
-        <img src="../brand/casa-plastelina-256.webp" alt="" class="size-9 object-contain" />
+        <img src="assets/casa-plastelina-256.webp" alt="" class="size-9 object-contain" />
         <span class="font-display text-xl font-semibold hidden sm:inline">Casa d'Infants</span>
       </a>
       <nav class="flex items-center gap-1">${nav}</nav>

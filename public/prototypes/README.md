@@ -3,9 +3,16 @@
 Throwaway frontend prototypes to get the director's feedback before building more of the app.
 They are static HTML pages, not part of the Next.js app, and use **fictional data only**.
 
-- Open `index.html` (served at `/prototypes/` by Next.js or any static server, e.g.
-  `python3 -m http.server -d public` then `http://localhost:8000/prototypes/`).
-- `src/proxy.ts` skips `.html` files, so they need no sign-in.
+- The folder is self-contained (the clay-house images are copied into `assets/`), so it can be
+  published on its own as a static site, or opened locally with any static server
+  (`python3 -m http.server -d public/prototypes`, then `http://localhost:8000/`).
+- Inside the Next.js app it is served at `/prototypes/index.html` (with the file name: Next does
+  not map a folder to its `index.html`, and `src/proxy.ts` only skips `.html` URLs, so
+  `/prototypes/` asks to sign in).
+- To share it: deploy this folder as a separate static Vercel project (Framework preset "Other",
+  Root Directory `public/prototypes`, no build command), or run `npx vercel deploy --prod`
+  from this folder. No environment variables are needed.
+- The clay-house image belongs to FASI and its use is still pending permission (see `DESIGN.md`).
 - Look and feel follow `DESIGN.md`: tokens copied from `src/app/globals.css` into
   `shared/theme.js`, shadcn-style button and input classes.
 - Libraries are vendored in `vendor/` (no CDN): Tailwind v4 browser build, Alpine.js,
