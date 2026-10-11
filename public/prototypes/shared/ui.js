@@ -84,7 +84,7 @@ PROTO.parseHours = (raw) => {
 };
 
 // ── Demo persistence: changes live only in this browser ──
-const STORAGE_KEY = 'casa-infants-prototypes-v2';
+const STORAGE_KEY = 'casa-infants-prototypes-v3';
 let entrySeq = 0;
 const nextId = () => `e${Date.now().toString(36)}${(entrySeq++).toString(36)}`;
 
@@ -97,6 +97,7 @@ function seedPeople() {
       v: p.v.map(([from, to]) => ({ id: nextId(), from, to })),
       apnr: p.apnr.map(([date, hours]) => ({ id: nextId(), date, hours })),
       apr: p.apr.map(([date, hours]) => ({ id: nextId(), date, hours })),
+      baixes: (p.baixes ?? []).map(([from, to, cover]) => ({ id: nextId(), from, to, cover })),
     }));
   }
   return out;
@@ -127,7 +128,7 @@ PROTO.currentHouse = () => {
 PROTO.SECTIONS = [
   { key: 'saldos', label: 'Saldos', href: 'saldos.html', icon: 'scale' },
   { key: 'vacances', label: 'Vacances 2027', href: 'vacances.html', icon: 'sun' },
-  { key: 'mes', label: 'El mes', href: null, icon: 'calendar-days' },
+  { key: 'mes', label: 'El mes', href: 'mes.html', icon: 'calendar-days' },
 ];
 
 PROTO.renderShell = (active) => {

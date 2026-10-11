@@ -26,6 +26,7 @@ PROTO.PERSON_COLORS = [
 ];
 
 // v = vacation periods [from, to] (inclusive natural days)
+// baixes = sick leave [from, to or null while still open, who covers]. Never a reason (GDPR Art. 9).
 // apnr / apr = [date, hours]
 // surplus = "hores excedent calendari" before any APR is deducted (+ ahead, - owes)
 PROTO.PEOPLE = {
@@ -42,33 +43,35 @@ PROTO.PEOPLE = {
     { id: 'pf4', name: 'Marc Vidal', role: 'Educador de cap de setmana', entitled: 16, carried: 0, surplus: -2,
       joined: '2026-07-01',
       v: [['2026-09-14', '2026-09-27']],
-      apnr: [], apr: [['2026-09-29', 6.5]] },
+      apnr: [], apr: [['2026-09-29', 6.5]],
+      baixes: [['2026-10-05', null, 'Substituta: Júlia R.']] },
     { id: 'pf5', name: 'Rosa Ferrer', role: 'Psicòloga', entitled: 31, carried: 0, surplus: 31.5,
       v: [['2026-04-20', '2026-04-26'], ['2026-08-24', '2026-09-06'], ['2026-12-14', '2026-12-23']],
       apnr: [['2026-01-29', 8.5], ['2026-03-25', 8.5], ['2026-04-08', 7]], apr: [['2026-04-08', 1.5]] },
     { id: 'pf6', name: 'Pau Roca', role: 'Educador de tardes', entitled: 31, carried: 0, surplus: 1.7,
       v: [['2026-05-01', '2026-05-10'], ['2026-07-13', '2026-07-26']],
-      apnr: [['2026-03-13', 2]], apr: [['2026-03-18', 11]] },
+      apnr: [['2026-03-13', 2], ['2026-10-16', 4]], apr: [['2026-03-18', 11]] },
     { id: 'pf7', name: 'Carmen Ortiz', role: 'Educadora referent', entitled: 31, carried: 0, surplus: 19.25,
       v: [['2026-05-30', '2026-06-08'], ['2026-07-04', '2026-07-17'], ['2026-11-21', '2026-11-27']],
-      apnr: [['2026-02-08', 12.5]], apr: [] },
+      apnr: [['2026-02-08', 12.5], ['2026-10-22', 8]], apr: [],
+      baixes: [['2026-09-21', '2026-09-25', '']] },
     { id: 'pf8', name: 'Ivan Molina', role: 'Educador de nit', entitled: 31, carried: 0, surplus: -4,
       v: [['2026-04-19', '2026-04-25'], ['2026-05-16', '2026-05-22'], ['2026-08-08', '2026-08-17'], ['2026-10-31', '2026-11-06']],
       apnr: [['2026-03-18', 11], ['2026-03-19', 11]], apr: [] },
     { id: 'pf9', name: 'Montse Soler', role: 'Pedagoga', entitled: 31, carried: 0, surplus: 36.3,
       v: [['2026-07-13', '2026-07-19'], ['2026-08-03', '2026-08-16']],
-      apnr: [['2026-01-05', 1.5], ['2026-04-01', 8.5]], apr: [] },
+      apnr: [['2026-01-05', 1.5], ['2026-04-01', 8.5], ['2026-10-09', 3.5]], apr: [] },
     { id: 'pf10', name: 'Sílvia Prat', role: 'Treballadora familiar de tardes', entitled: 31, carried: 0, surplus: 25,
       v: [['2026-06-29', '2026-07-05'], ['2026-09-14', '2026-09-23'], ['2026-12-07', '2026-12-20']],
-      apnr: [['2026-06-26', 5]], apr: [] },
+      apnr: [['2026-06-26', 5], ['2026-10-27', 6]], apr: [] },
     { id: 'pf11', name: 'Òscar Gil', role: 'Corretor', entitled: 31, carried: 0, surplus: 12,
-      v: [['2026-06-22', '2026-07-05']],
+      v: [['2026-06-22', '2026-07-05'], ['2026-10-19', '2026-10-25']],
       apnr: [['2026-01-23', 8]], apr: [] },
   ],
   'carme-aymerich': [
     { id: 'ca1', name: 'Aina Costa', role: 'Educadora referent', entitled: 31, carried: 0, surplus: 22,
       v: [['2026-07-06', '2026-07-25'], ['2026-12-21', '2026-12-31']],
-      apnr: [['2026-03-02', 8], ['2026-06-12', 6]], apr: [] },
+      apnr: [['2026-03-02', 8], ['2026-06-12', 6], ['2026-10-15', 6]], apr: [] },
     { id: 'ca2', name: 'Joan Pons', role: 'Educador de nit', entitled: 31, carried: 5, surplus: 41,
       v: [['2026-01-02', '2026-01-08'], ['2026-08-10', '2026-08-30']],
       apnr: [['2026-05-04', 11], ['2026-09-21', 11]], apr: [['2026-10-02', 8]] },
@@ -80,7 +83,8 @@ PROTO.PEOPLE = {
       apnr: [['2026-02-27', 8.5], ['2026-11-13', 8.5]], apr: [] },
     { id: 'ca5', name: 'Xavi Martí', role: 'Educador de tardes', entitled: 31, carried: 0, surplus: -6.25,
       v: [['2026-06-15', '2026-06-28']],
-      apnr: [['2026-03-27', 7]], apr: [['2026-05-22', 6]] },
+      apnr: [['2026-03-27', 7]], apr: [['2026-05-22', 6]],
+      baixes: [['2026-10-01', '2026-10-16', 'Cobreix el CT']] },
     { id: 'ca6', name: 'Clara Sala', role: 'Educadora de cap de setmana', entitled: 31, carried: 3, surplus: 10,
       v: [['2026-04-04', '2026-04-12'], ['2026-08-17', '2026-08-30'], ['2026-12-05', '2026-12-15']],
       apnr: [['2026-01-10', 12], ['2026-06-06', 12]], apr: [] },
@@ -96,7 +100,8 @@ PROTO.PEOPLE = {
       apnr: [], apr: [['2026-06-30', 3]] },
     { id: 'ca10', name: 'Teresa Mas', role: 'Treballadora familiar de tardes', entitled: 31, carried: 0, surplus: 15.5,
       v: [['2026-03-30', '2026-04-05'], ['2026-07-06', '2026-07-19'], ['2026-11-30', '2026-12-09']],
-      apnr: [['2026-05-08', 5], ['2026-09-18', 5]], apr: [] },
+      apnr: [['2026-05-08', 5], ['2026-09-18', 5]], apr: [],
+      baixes: [['2026-08-24', '2026-08-28', '']] },
   ],
 };
 
@@ -136,4 +141,12 @@ PROTO.PLAN = {
       ca10: { aa: 0, r: [['2027-03-29', '2027-04-04', 'a'], ['2027-07-05', '2027-07-18', 'p'], ['2027-11-29', '2027-12-08', 'p']] },
     },
   },
+};
+
+// Public holidays 2026 in Catalonia plus Barcelona's local ones (as in the FESTIUS sheet).
+PROTO.HOLIDAYS = {
+  '2026-01-01': "Cap d'Any", '2026-01-06': 'Reis', '2026-04-03': 'Divendres Sant', '2026-04-06': 'Dilluns de Pasqua',
+  '2026-05-01': 'Festa del Treball', '2026-05-25': 'Segona Pasqua', '2026-06-24': 'Sant Joan', '2026-08-15': "L'Assumpció",
+  '2026-09-11': 'Diada', '2026-09-24': 'La Mercè', '2026-10-12': 'Festa Nacional', '2026-11-01': 'Tots Sants',
+  '2026-12-06': 'Constitució', '2026-12-08': 'La Puríssima', '2026-12-25': 'Nadal', '2026-12-26': 'Sant Esteve',
 };

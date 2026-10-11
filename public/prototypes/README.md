@@ -11,9 +11,12 @@ They are static HTML pages, not part of the Next.js app, and use **fictional dat
 - Libraries are vendored in `vendor/` (no CDN): Tailwind v4 browser build, Alpine.js,
   Lucide icons, Fraunces and Figtree (self-hosted, SIL OFL). Licenses in `vendor/licenses/`.
 - Changes made while trying a prototype are kept only in that browser (`localStorage`).
+  `saldos.html` and `mes.html` share the same data; `vacances.html` keeps its own 2027 plan.
+- Dates are shown as dd/mm/aaaa with a custom field (`dateInput` in `shared/ui.js`), because
+  native date inputs follow the browser language.
 
 | Page | Replaces in the spreadsheet | Status |
 |---|---|---|
 | `saldos.html` | `V I APS`: vacation days and AP hours per person | Ready |
 | `vacances.html` | `VAC`: end-of-year vacation negotiation (requests, coverage conflicts, drag to adjust, lock the plan) | Ready |
-| El mes | Month sheets: who is on vacation, AP or sick leave each day | Planned |
+| `mes.html` | Month sheets: who is on vacation, AP or sick leave ("Baixa", never a reason) each day, who covers, days over the limit | Ready |
