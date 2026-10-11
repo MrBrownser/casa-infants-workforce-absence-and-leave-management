@@ -22,21 +22,39 @@ PROTO.monthName = (m) => MONTHS[m];
 PROTO.monthShort = (m) => MONTHS_SHORT[m];
 PROTO.weekdayShort = (iso) => WEEKDAYS_SHORT[PROTO.d(iso).getUTCDay()];
 
-const de = (word) => (/^[aeiouàèéíòóú]/i.test(word) ? `d'${word}` : `de ${word}`);
-PROTO.fmtDate = (iso, { year = false } = {}) => {
+// Dates are shown in Spanish numeric format: dd/mm/aaaa (dd/mm when the year is obvious).
+const pad = (n) => String(n).padStart(2, '0');
+PROTO.fmtDate = (iso) => {
   const x = PROTO.d(iso);
-  const s = `${x.getUTCDate()} ${de(MONTHS[x.getUTCMonth()])}`;
-  return year ? `${s} de ${x.getUTCFullYear()}` : s;
+  return `${pad(x.getUTCDate())}/${pad(x.getUTCMonth() + 1)}/${x.getUTCFullYear()}`;
 };
 PROTO.fmtShort = (iso) => {
   const x = PROTO.d(iso);
-  return `${x.getUTCDate()} ${MONTHS_SHORT[x.getUTCMonth()]}`;
+  return `${pad(x.getUTCDate())}/${pad(x.getUTCMonth() + 1)}`;
 };
-PROTO.fmtRange = (from, to) => {
-  if (from === to) return PROTO.fmtShort(from);
-  const a = PROTO.d(from), b = PROTO.d(to);
-  if (a.getUTCMonth() === b.getUTCMonth()) return `${a.getUTCDate()}–${b.getUTCDate()} ${MONTHS_SHORT[b.getUTCMonth()]}`;
-  return `${PROTO.fmtShort(from)} – ${PROTO.fmtShort(to)}`;
+// "02/08–22/08", or with { year: true } "02/08/2027 – 22/08/2027".
+PROTO.fmtRange = (from, to, { year = false } = {}) => {
+  const f = year ? PROTO.fmtDate : PROTO.fmtShort;
+  if (from === to) return f(from);
+  return year ? `${f(from)} – ${f(to)}` : `${f(from)}–${f(to)}`;
+};
+// For sentences: "del 02/08 al 22/08" or "el 02/08".
+PROTO.fromTo = (from, to) => (from === to ? `el ${PROTO.fmtShort(from)}` : `del ${PROTO.fmtShort(from)} al ${PROTO.fmtShort(to)}`);
+// "dd/mm/aaaa" (also d/m/aaaa) to ISO, or null when it is not a real date.
+PROTO.parseDate = (raw) => {
+  const m = String(raw ?? '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const iso = `${m[3]}-${pad(m[2])}-${pad(m[1])}`;
+  return PROTO.iso(PROTO.d(iso)) === iso ? iso : null;
+};
+
+// Vacations are taken in blocks of at least one week.
+PROTO.fmtWeeks = (n) => {
+  const w = Math.floor(n / 7), d = n % 7;
+  const ws = w === 1 ? '1 setmana' : `${w} setmanes`;
+  const ds = d === 1 ? '1 dia' : `${d} dies`;
+  if (!w) return ds;
+  return d ? `${ws} i ${ds}` : ws;
 };
 
 // Ends a sentence with a period unless it already ends with one ("11 set.").
@@ -66,7 +84,7 @@ PROTO.parseHours = (raw) => {
 };
 
 // ── Demo persistence: changes live only in this browser ──
-const STORAGE_KEY = 'casa-infants-prototypes-v1';
+const STORAGE_KEY = 'casa-infants-prototypes-v2';
 let entrySeq = 0;
 const nextId = () => `e${Date.now().toString(36)}${(entrySeq++).toString(36)}`;
 
@@ -171,6 +189,35 @@ PROTO.paintIcons = (root) => {
 };
 
 document.addEventListener('alpine:init', () => {
+  // Date field that always reads and writes dd/mm/aaaa, whatever the browser language.
+  // Usage: x-data="dateInput(() => form.from, (v) => (form.from = v))". The model stays ISO.
+  window.Alpine.data('dateInput', (get, set) => ({
+    text: '',
+    iso() { return get() || ''; },
+    init() {
+      this.text = get() ? PROTO.fmtDate(get()) : '';
+      this.$watch(get, (v) => {
+        if ((PROTO.parseDate(this.text) ?? '') !== (v || '')) this.text = v ? PROTO.fmtDate(v) : '';
+      });
+    },
+    onInput(e) {
+      let t = e.target.value;
+      // Digits only: insert the slashes while typing (11082027 -> 11/08/2027).
+      if (!t.includes('/')) {
+        const d = t.replace(/\D/g, '').slice(0, 8);
+        t = d.length > 4 ? `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}` : d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+        e.target.value = t;
+      }
+      this.text = t;
+      set(PROTO.parseDate(t) ?? '');
+    },
+    pick(v) { if (v) { set(v); this.text = PROTO.fmtDate(v); } },
+    openPicker() {
+      const el = this.$refs.native;
+      try { el.showPicker(); } catch (_) { el.focus(); }
+    },
+  }));
+
   // Reactive: <span x-icon="cond ? 'check' : 'x'"></span>
   window.Alpine.directive('icon', (el, { expression }, { effect, evaluateLater }) => {
     const get = evaluateLater(expression);

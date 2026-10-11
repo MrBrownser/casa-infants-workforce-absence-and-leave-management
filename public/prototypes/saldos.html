@@ -225,8 +225,8 @@
                     <li class="flex items-center gap-3 px-3.5 py-2.5">
                       <span class="w-1.5 self-stretch rounded-full" :class="e.to < today ? 'bg-primary' : 'bg-leave-vacation ring-1 ring-primary/30'"></span>
                       <div class="flex-1 min-w-0">
-                        <p class="font-medium num" x-text="fmtRange(e.from, e.to)"></p>
-                        <p class="text-[0.8125rem] text-muted-foreground num" x-text="`${days(e.from, e.to)} dies · ${e.to < today ? 'gaudides' : e.from <= today ? 'ara de vacances' : 'planificades'}`"></p>
+                        <p class="font-medium num" x-text="fmtRange(e.from, e.to, { year: true })"></p>
+                        <p class="text-[0.8125rem] text-muted-foreground num" x-text="`${weeks(days(e.from, e.to))} · ${e.to < today ? 'gaudides' : e.from <= today ? 'ara de vacances' : 'planificades'}`"></p>
                       </div>
                       <button class="btn btn-ghost btn-icon size-8 text-muted-foreground hover:text-error" @click="remove(person, 'v', e)" aria-label="Esborra"><span x-icon="'trash-2'"></span></button>
                     </li>
@@ -305,7 +305,7 @@
             <div class="grid gap-2">
               <label class="choice">
                 <input type="radio" name="kind" value="vac" x-model="form.kind" />
-                <span><span class="font-semibold block">Vacances</span><span class="text-[0.8125rem] text-muted-foreground">Dies naturals, del primer a l'últim dia.</span></span>
+                <span><span class="font-semibold block">Vacances</span><span class="text-[0.8125rem] text-muted-foreground">Per setmanes: com a mínim 7 dies naturals seguits.</span></span>
               </label>
               <label class="choice">
                 <input type="radio" name="kind" value="apnr" x-model="form.kind" />
@@ -322,11 +322,30 @@
           <div x-show="form.kind === 'vac'" class="grid grid-cols-2 gap-3">
             <div>
               <label class="label" for="f-from">Primer dia</label>
-              <input id="f-from" type="date" class="input num" x-model="form.from" :min="`${YEAR}-01-01`" :max="`${YEAR}-12-31`" :aria-invalid="!!errors.dates" />
+              <div class="relative" x-data="dateInput(() => form.from, (v) => (form.from = v))">
+                <input id="f-from" class="input num pr-10" inputmode="numeric" placeholder="dd/mm/aaaa" autocomplete="off" maxlength="10" :value="text" @input="onInput($event)" :aria-invalid="!!errors.dates" />
+                <button type="button" class="absolute right-1 top-1 size-8 grid place-items-center rounded-md text-muted-foreground hover:bg-hover cursor-pointer" @click="openPicker()" aria-label="Obre el calendari"><span x-icon="'calendar'"></span></button>
+                <input type="date" x-ref="native" class="absolute left-0 bottom-0 w-full h-0 opacity-0 pointer-events-none" tabindex="-1" aria-hidden="true" :min="`${YEAR}-01-01`" :max="`${YEAR}-12-31`" :value="iso()" @change="pick($event.target.value)" />
+              </div>
             </div>
             <div>
               <label class="label" for="f-to">Últim dia</label>
-              <input id="f-to" type="date" class="input num" x-model="form.to" :min="form.from || `${YEAR}-01-01`" :max="`${YEAR}-12-31`" :aria-invalid="!!errors.dates" />
+              <div class="relative" x-data="dateInput(() => form.to, (v) => (form.to = v))">
+                <input id="f-to" class="input num pr-10" inputmode="numeric" placeholder="dd/mm/aaaa" autocomplete="off" maxlength="10" :value="text" @input="onInput($event)" :aria-invalid="!!errors.dates" />
+                <button type="button" class="absolute right-1 top-1 size-8 grid place-items-center rounded-md text-muted-foreground hover:bg-hover cursor-pointer" @click="openPicker()" aria-label="Obre el calendari"><span x-icon="'calendar'"></span></button>
+                <input type="date" x-ref="native" class="absolute left-0 bottom-0 w-full h-0 opacity-0 pointer-events-none" tabindex="-1" aria-hidden="true" :min="form.from || `${YEAR}-01-01`" :max="`${YEAR}-12-31`" :value="iso()" @change="pick($event.target.value)" />
+              </div>
+            </div>
+          </div>
+
+          <div x-show="form.kind === 'vac'" class="-mt-2">
+            <p class="text-[0.8125rem] text-muted-foreground mb-1.5" x-text="form.from ? 'Durada, a partir del primer dia:' : 'Tria el primer dia i després quantes setmanes.'"></p>
+            <div class="flex flex-wrap gap-1.5">
+              <template x-for="w in [1, 2, 3, 4]" :key="w">
+                <button type="button" class="btn btn-sm btn-outline" :disabled="!form.from"
+                        :class="form.from && form.to && days(form.from, form.to) === w * 7 && 'bg-secondary border-sage'"
+                        @click="form.to = addDays(form.from, w * 7 - 1)" x-text="w === 1 ? '1 setmana' : `${w} setmanes`"></button>
+              </template>
             </div>
           </div>
 
@@ -334,7 +353,11 @@
           <div x-show="form.kind !== 'vac'" class="grid grid-cols-2 gap-3">
             <div>
               <label class="label" for="f-date">Dia</label>
-              <input id="f-date" type="date" class="input num" x-model="form.date" :min="`${YEAR}-01-01`" :max="`${YEAR}-12-31`" :aria-invalid="!!errors.date" />
+              <div class="relative" x-data="dateInput(() => form.date, (v) => (form.date = v))">
+                <input id="f-date" class="input num pr-10" inputmode="numeric" placeholder="dd/mm/aaaa" autocomplete="off" maxlength="10" :value="text" @input="onInput($event)" :aria-invalid="!!errors.date" />
+                <button type="button" class="absolute right-1 top-1 size-8 grid place-items-center rounded-md text-muted-foreground hover:bg-hover cursor-pointer" @click="openPicker()" aria-label="Obre el calendari"><span x-icon="'calendar'"></span></button>
+                <input type="date" x-ref="native" class="absolute left-0 bottom-0 w-full h-0 opacity-0 pointer-events-none" tabindex="-1" aria-hidden="true" :min="`${YEAR}-01-01`" :max="`${YEAR}-12-31`" :value="iso()" @change="pick($event.target.value)" />
+              </div>
             </div>
             <div>
               <label class="label" for="f-hours">Hores</label>
@@ -420,6 +443,8 @@
 
         fmtDate: PROTO.fmtDate,
         fmtRange: PROTO.fmtRange,
+        addDays: PROTO.addDays,
+        weeks: PROTO.fmtWeeks,
         fmtHours: PROTO.fmtHours,
         weekday: PROTO.weekdayShort,
         days: PROTO.daysInclusive,
@@ -494,7 +519,8 @@
             if (f.to < f.from) { out.dates = "L'últim dia no pot ser abans del primer."; return out; }
             if (!f.from.startsWith(`${PROTO.YEAR}-`) || !f.to.startsWith(`${PROTO.YEAR}-`)) { out.dates = `Les dates han de ser del ${PROTO.YEAR}.`; return out; }
             const clash = p.v.find((e) => e.from <= f.to && f.from <= e.to);
-            if (clash) { out.dates = `Ja té vacances apuntades del ${PROTO.fmtRange(clash.from, clash.to)}.`; return out; }
+            if (clash) { out.dates = `Ja té vacances apuntades ${PROTO.fromTo(clash.from, clash.to)}.`; return out; }
+            if (PROTO.daysInclusive(f.from, f.to) < PROTO.RULES.vacationMinDays) { out.dates = `Les vacances es fan per setmanes: com a mínim ${PROTO.RULES.vacationMinDays} dies seguits, mai dies solts.`; return out; }
             const n = PROTO.daysInclusive(f.from, f.to), left = this.s(p).vacLeft;
             if (n > left) out.dates = `Són ${n} dies i només li ${left === 1 ? 'queda 1' : `en queden ${left}`} per planificar.`;
             return out;
@@ -520,7 +546,7 @@
           if (f.kind === 'vac') {
             if (!f.from || !f.to || f.to < f.from) return null;
             const n = PROTO.daysInclusive(f.from, f.to), left = s.vacLeft - n;
-            return { text: `${n} dies naturals. Després li ${left === 1 ? 'quedarà 1 dia' : `quedaran ${left} dies`} per planificar.` };
+            return { text: `${PROTO.fmtWeeks(n)} (${n} dies naturals). Després li ${left === 1 ? 'quedarà 1 dia' : `quedaran ${left} dies`} per planificar.` };
           }
           const h = this.parsedHours;
           if (isNaN(h) || h <= 0) return null;

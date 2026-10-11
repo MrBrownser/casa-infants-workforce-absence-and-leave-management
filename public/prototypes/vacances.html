@@ -115,8 +115,13 @@
       </div>
       <div class="segmented self-start" x-show="view === 'cal'">
         <button :aria-pressed="zoom === 'year'" @click="zoom = 'year'">Tot l'any</button>
-        <button :aria-pressed="zoom === 'summer'" @click="zoom = 'summer'">Estiu</button>
-        <button :aria-pressed="zoom === 'xmas'" @click="zoom = 'xmas'">Nadal</button>
+        <template x-for="z in [{ key: 'summer', label: 'Estiu' }, { key: 'xmas', label: 'Nadal' }]" :key="z.key">
+          <button :aria-pressed="zoom === z.key" @click="zoom = z.key" :title="zoomClashes(z.key) ? `${zoomClashes(z.key)} setmanes amb conflicte` : 'Sense conflictes'">
+            <span x-text="z.label"></span>
+            <span x-show="zoomClashes(z.key)" class="ml-1.5 min-w-5 h-5 px-1 rounded-full text-[0.6875rem] font-semibold grid place-items-center num"
+                  :class="st.closedAt ? 'bg-warning-bg text-warning-fg' : 'bg-accent text-accent-foreground'" x-text="zoomClashes(z.key)"></span>
+          </button>
+        </template>
       </div>
       <div class="lg:ml-auto flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.8125rem] text-muted-foreground">
         <span class="inline-flex items-center gap-1.5"><span class="w-6 h-3 rounded-sm bar-accepted"></span>Acceptades</span>
@@ -231,8 +236,8 @@
               <li class="rounded-lg border border-border overflow-hidden" :class="r.state === 'p' ? 'border-l-4 border-l-accent border-dashed' : 'border-l-4 border-l-[#F2D3C6]'">
                 <button class="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-hover cursor-pointer" @click="openEdit(p, r)">
                   <div class="flex-1 min-w-0">
-                    <p class="font-medium num" x-text="fmtRange(r.from, r.to)"></p>
-                    <p class="text-[0.8125rem] text-muted-foreground num" x-text="`${days(r.from, r.to)} dies · ${r.state === 'a' ? 'acceptada' : 'demanada'}`"></p>
+                    <p class="font-medium num" x-text="fmtRange(r.from, r.to, { year: true })"></p>
+                    <p class="text-[0.8125rem] text-muted-foreground num" x-text="`${fmtWeeks(days(r.from, r.to))} · ${r.state === 'a' ? 'acceptada' : 'demanada'}`"></p>
                   </div>
                   <span x-show="!st.closedAt && r.state === 'p' && !clashOf(p, r).any" class="btn btn-secondary btn-sm" @click.stop="accept(r)">Accepta</span>
                   <span class="text-muted-foreground" x-icon="'chevron-right'"></span>
@@ -282,11 +287,30 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="label" for="p-from">Primer dia</label>
-              <input id="p-from" type="date" class="input num" x-model="panel.from" :min="`${YEAR}-01-01`" :max="`${YEAR}-12-31`" :disabled="!!st.closedAt" :aria-invalid="!!panelError" />
+              <div class="relative" x-data="dateInput(() => panel.from, (v) => (panel.from = v))">
+                <input id="p-from" class="input num pr-10" inputmode="numeric" placeholder="dd/mm/aaaa" autocomplete="off" maxlength="10" :value="text" @input="onInput($event)" :disabled="!!st.closedAt" :aria-invalid="!!panelError" />
+                <button type="button" class="absolute right-1 top-1 size-8 grid place-items-center rounded-md text-muted-foreground hover:bg-hover cursor-pointer disabled:opacity-40" @click="openPicker()" :disabled="!!st.closedAt" aria-label="Obre el calendari"><span x-icon="'calendar'"></span></button>
+                <input type="date" x-ref="native" class="absolute left-0 bottom-0 w-full h-0 opacity-0 pointer-events-none" tabindex="-1" aria-hidden="true" :min="`${YEAR}-01-01`" :max="`${YEAR}-12-31`" :value="iso()" @change="pick($event.target.value)" />
+              </div>
             </div>
             <div>
               <label class="label" for="p-to">Últim dia</label>
-              <input id="p-to" type="date" class="input num" x-model="panel.to" :min="panel.from || `${YEAR}-01-01`" :max="`${YEAR}-12-31`" :disabled="!!st.closedAt" :aria-invalid="!!panelError" />
+              <div class="relative" x-data="dateInput(() => panel.to, (v) => (panel.to = v))">
+                <input id="p-to" class="input num pr-10" inputmode="numeric" placeholder="dd/mm/aaaa" autocomplete="off" maxlength="10" :value="text" @input="onInput($event)" :disabled="!!st.closedAt" :aria-invalid="!!panelError" />
+                <button type="button" class="absolute right-1 top-1 size-8 grid place-items-center rounded-md text-muted-foreground hover:bg-hover cursor-pointer disabled:opacity-40" @click="openPicker()" :disabled="!!st.closedAt" aria-label="Obre el calendari"><span x-icon="'calendar'"></span></button>
+                <input type="date" x-ref="native" class="absolute left-0 bottom-0 w-full h-0 opacity-0 pointer-events-none" tabindex="-1" aria-hidden="true" :min="panel.from || `${YEAR}-01-01`" :max="`${YEAR}-12-31`" :value="iso()" @change="pick($event.target.value)" />
+              </div>
+            </div>
+          </div>
+
+          <div x-show="!st.closedAt" class="-mt-2">
+            <p class="text-[0.8125rem] text-muted-foreground mb-1.5" x-text="panel.from ? 'Durada, a partir del primer dia:' : 'Tria el primer dia i després quantes setmanes.'"></p>
+            <div class="flex flex-wrap gap-1.5">
+              <template x-for="w in [1, 2, 3, 4]" :key="w">
+                <button type="button" class="btn btn-sm btn-outline" :disabled="!panel.from" :aria-pressed="panelDays === w * 7"
+                        :class="panelDays === w * 7 && 'bg-secondary border-sage'"
+                        @click="panel.to = addDays(panel.from, w * 7 - 1)" x-text="w === 1 ? '1 setmana' : `${w} setmanes`"></button>
+              </template>
             </div>
           </div>
 
@@ -310,7 +334,7 @@
                     <template x-for="sg in panelSuggestions" :key="sg.from">
                       <button type="button" class="btn btn-sm bg-card border border-border hover:bg-hover text-foreground num" @click="panel.from = sg.from; panel.to = sg.to">
                         <span x-icon="sg.shift < 0 ? 'arrow-left' : 'arrow-right'"></span>
-                        <span x-text="`${fmtRange(sg.from, sg.to)} (${Math.abs(sg.shift)} ${Math.abs(sg.shift) === 1 ? 'dia' : 'dies'} ${sg.shift < 0 ? 'abans' : 'després'})`"></span>
+                        <span x-text="`${fmtRange(sg.from, sg.to, { year: true })} (${Math.abs(sg.shift)} ${Math.abs(sg.shift) === 1 ? 'dia' : 'dies'} ${sg.shift < 0 ? 'abans' : 'després'})`"></span>
                       </button>
                     </template>
                   </div>
@@ -410,6 +434,7 @@
           <li>Quan dues persones xoquen, com decideixes qui cedeix (rotació, antiguitat, qui va cedir l'any passat…)?</li>
           <li>Un cop tancat el pla, es pot canviar durant l'any? Com ho fas avui?</li>
           <li>Els dies AA, fins quan es poden fer servir?</li>
+          <li>Si a algú li queden menys de 7 dies (p. ex. 31 = 4 setmanes i 3 dies), com els fa?</li>
         </ol>
         <p class="text-[0.8125rem] text-muted-foreground mt-3">Apunta-ho com vulguis: ens ho comentes després.</p>
       </div>
@@ -424,7 +449,7 @@
   <script>
     PROTO.renderShell('vacances');
 
-    const PLAN_KEY = 'casa-infants-plan-2027-v1';
+    const PLAN_KEY = 'casa-infants-plan-2027-v2';
     const Y = PROTO.PLAN_YEAR;
     const YEAR_START = `${Y}-01-01`, YEAR_END = `${Y}-12-31`;
     const ZOOMS = {
@@ -467,7 +492,7 @@
         closing: false,
         toast: null,
 
-        fmtDate: PROTO.fmtDate, fmtShort: PROTO.fmtShort, fmtRange: PROTO.fmtRange, days: PROTO.daysInclusive,
+        fmtDate: PROTO.fmtDate, fmtShort: PROTO.fmtShort, fmtRange: PROTO.fmtRange, days: PROTO.daysInclusive, fmtWeeks: PROTO.fmtWeeks, addDays: PROTO.addDays,
         initials: (name) => name.split(' ').map((w) => w[0]).slice(0, 2).join(''),
 
         get st() { return this.all[house.slug]; },
@@ -514,13 +539,13 @@
               off.forEach(({ q }) => names.add(q.name.split(' ')[0]));
             }
           }
-          if (first) messages.push(`${first === last ? `El ${PROTO.fmtShort(first)}` : `Del ${PROTO.fmtRange(first, last)}`} hi hauria ${peak} persones fora (màxim ${this.st.maxOff}): també ${[...names].join(', ')}.`);
+          if (first) messages.push(`${first === last ? `El ${PROTO.fmtShort(first)}` : `Del ${PROTO.fmtShort(first)} al ${PROTO.fmtShort(last)}`} hi hauria ${peak} persones fora (màxim ${this.st.maxOff}): també ${[...names].join(', ')}.`);
           // Same post off at the same time.
           if (this.st.roleRule && p) {
             for (const { q, r } of others) {
               if (q.post !== p.post) continue;
               const a = r.from > from ? r.from : from, b = r.to < to ? r.to : to;
-              const when = a === b ? `el ${PROTO.fmtShort(a)}` : `del ${PROTO.fmtRange(a, b)}`;
+              const when = PROTO.fromTo(a, b);
               messages.push(PROTO.sentence(`Coincideix amb ${q.name}, que també és ${q.role.toLowerCase()}, ${when}`));
             }
           }
@@ -568,6 +593,11 @@
           return out;
         },
         get clashWeeks() { return this.weeksAll.filter((w) => w.clash); },
+        // Conflict weeks inside a zoom range (summer and Christmas are where most of them are).
+        zoomClashes(key) {
+          const z = ZOOMS[key];
+          return this.clashWeeks.filter((w) => w.end >= z.from && w.start <= z.to).length;
+        },
 
         // ── Layout on the track (percentages of the visible range) ──
         get zoomCfg() { return ZOOMS[this.zoom]; },
@@ -593,13 +623,13 @@
         },
         barLabel(r) {
           const px = this.barPx(r), n = PROTO.daysInclusive(r.from, r.to);
-          if (px > 130) return `${PROTO.fmtRange(r.from, r.to)} · ${n} d`;
+          if (px > 150) return `${PROTO.fmtRange(r.from, r.to)} · ${n} d`;
           if (px > 58) return `${n} d`;
           return '';
         },
         barTitle(p, r) {
           const c = this.clashOf(p, r);
-          return `${p.name}: ${PROTO.fmtRange(r.from, r.to)} (${PROTO.daysInclusive(r.from, r.to)} dies), ${r.state === 'a' ? 'acceptada' : 'demanada'}` + (c.any ? `\n${c.messages.join('\n')}` : '');
+          return `${p.name}: ${PROTO.fmtRange(r.from, r.to, { year: true })} (${PROTO.fmtWeeks(PROTO.daysInclusive(r.from, r.to))}), ${r.state === 'a' ? 'acceptada' : 'demanada'}` + (c.any ? `\n${c.messages.join('\n')}` : '');
         },
         get months() {
           const z = this.zoomCfg, out = [];
@@ -615,7 +645,7 @@
           return this.weeksAll.map((w) => {
             const x = this.pos(w.start < YEAR_START ? YEAR_START : w.start, w.end > YEAR_END ? YEAR_END : w.end);
             if (!x) return null;
-            const title = `Setmana del ${PROTO.fmtShort(w.start)}: ${w.max} ${w.max === 1 ? 'persona' : 'persones'} fora${w.who.length ? ` (${w.who.join(', ')})` : ''}`;
+            const title = `Setmana del ${PROTO.fmtShort(w.start)} al ${PROTO.fmtShort(w.end)}: ${w.max} ${w.max === 1 ? 'persona' : 'persones'} fora${w.who.length ? ` (${w.who.join(', ')})` : ''}`;
             return { ...w, ...x, title };
           }).filter(Boolean);
         },
@@ -659,7 +689,7 @@
             this.drag = null;
             if (!moved || r.from === orig.from) { r.from = orig.from; r.to = orig.to; if (!moved) this.openEdit(p, r); return; }
             this.persist();
-            this.flash(PROTO.sentence(`${p.name.split(' ')[0]}: ara del ${PROTO.fmtRange(r.from, r.to)}`), () => { r.from = orig.from; r.to = orig.to; });
+            this.flash(`${p.name.split(' ')[0]}: ara ${PROTO.fromTo(r.from, r.to)}.`, () => { r.from = orig.from; r.to = orig.to; });
           };
           window.addEventListener('pointermove', move);
           window.addEventListener('pointerup', up);
@@ -680,19 +710,20 @@
           if (!from || !to) return '';
           if (to < from) return "L'últim dia no pot ser abans del primer.";
           if (from < YEAR_START || to > YEAR_END) return `Les dates han de ser del ${Y}.`;
+          if (PROTO.daysInclusive(from, to) < PROTO.RULES.vacationMinDays) return `Les vacances es fan per setmanes: com a mínim ${PROTO.RULES.vacationMinDays} dies seguits, mai dies solts.`;
           if (!p) return '';
           const own = this.reqs(p).find((r) => r.id !== this.panel.reqId && r.from <= to && from <= r.to);
-          if (own) return `Ja té una petició del ${PROTO.fmtRange(own.from, own.to)}.`;
+          if (own) return `Ja té una petició ${PROTO.fromTo(own.from, own.to)}.`;
           return '';
         },
         get panelValid() { return !!this.panelPerson && this.panelDays > 0 && !this.panelError; },
         get panelSummary() {
           const p = this.panelPerson, n = this.panelDays;
-          if (!p) return `${n} dies naturals.`;
+          if (!p) return `${PROTO.fmtWeeks(n)} (${n} dies naturals).`;
           const cur = this.panelReq ? PROTO.daysInclusive(this.panelReq.from, this.panelReq.to) : 0;
           const total = this.requested(p) - cur + n, e = this.entitled(p);
           const tail = total === e ? 'tots els que li toquen' : total < e ? `en falten ${e - total}` : `${total - e} més dels que li toquen`;
-          return `${n} dies naturals. En total en tindria ${total} de ${e}: ${tail}.`;
+          return `${PROTO.fmtWeeks(n)} (${n} dies naturals). En total en tindria ${total} de ${e}: ${tail}.`;
         },
         get panelClash() {
           if (!this.panelValid) return { any: false, messages: [] };
