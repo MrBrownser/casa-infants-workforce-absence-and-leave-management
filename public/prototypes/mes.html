@@ -120,7 +120,7 @@
                   </tr>
                 </template>
                 <tr class="border-t border-border" x-show="ctPerson">
-                  <th class="text-left px-3 py-1.5 font-medium text-muted-foreground align-top">CT (corretor)</th>
+                  <th class="text-left px-3 py-1.5 font-medium text-muted-foreground align-top">CT (corretorn)</th>
                   <template x-for="d in week" :key="d">
                     <td class="align-top border-l border-border px-2 py-1.5 text-[0.75rem]" :class="[!inMonth(d) && 'opacity-40', isFreeDay(d) && 'bg-background/70']">
                       <span x-text="ctText(d)" :class="ctState(d) === 'free' ? 'text-muted-foreground' : 'font-medium'"></span>
@@ -821,7 +821,7 @@
           if (f.kind === 'apnr') return { text: `Li quedaran ${PROTO.fmtHours(PROTO.RULES.apnrHours - used - h)} d'AP no recuperables.` };
           const surplus = p.surplus - p.apr.reduce((a, e) => a + e.hours, 0) - h;
           return surplus < 0
-            ? { tone: 'warn', text: `L'excedent quedarà a ${PROTO.fmtHours(surplus, { signed: true })}: haurà de retornar ${PROTO.fmtHours(-surplus)}.` }
+            ? { tone: 'warn', text: `L'excedent quedarà a ${PROTO.fmtHours(surplus, { signed: true })}: haurà de retornar ${PROTO.fmtHours(-surplus)}. Es pot apuntar igualment.` }
             : { text: `L'excedent quedarà a ${PROTO.fmtHours(surplus, { signed: true })}.` };
         },
         // Days in the new absence where the house would go over the limit.

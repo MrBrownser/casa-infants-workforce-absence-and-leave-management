@@ -418,15 +418,16 @@
     <div class="fixed z-30 right-4 bottom-20 md:bottom-6" x-data="{ open: false }">
       <div x-show="open" x-transition class="card absolute bottom-14 right-0 w-[min(22rem,calc(100vw-2rem))] p-5">
         <p class="eyebrow">Per a la directora</p>
-        <h2 class="text-xl mt-1">Què en penses?</h2>
-        <ol class="list-decimal pl-5 mt-3 space-y-2 text-[0.875rem]">
-          <li>Són aquests els números que mires cada dia? En falta algun o en sobra algun?</li>
-          <li>Com prefereixes escriure les hores: <b>3:45</b> o <b>3,75</b>? (Ara accepta les dues.)</li>
-          <li>T'és útil que l'AP recuperable es descompti sol de l'excedent?</li>
-          <li>Quan algú deu hores, com ho fas avui per decidir quan les retorna?</li>
-          <li>Necessites veure les dues cases alhora, o sempre una per una?</li>
-        </ol>
-        <p class="text-[0.8125rem] text-muted-foreground mt-3">Apunta-ho com vulguis: ens ho comentes després.</p>
+        <h2 class="text-xl mt-1">Gràcies! Això ens vas dir</h2>
+        <ul class="mt-3 space-y-2 text-[0.875rem]">
+          <li class="flex gap-2"><span x-icon="'check'" class="mt-1 text-success"></span>Són els números que cal portar al dia. Ho faries servir.</li>
+          <li class="flex gap-2"><span x-icon="'check'" class="mt-1 text-success"></span><span>Les hores, de moment amb <b>3:45</b> o <b>3,75</b>: ja anirem provant.</span></li>
+          <li class="flex gap-2"><span x-icon="'check'" class="mt-1 text-success"></span>L'AP recuperable es descompta de l'excedent, i si no n'hi ha, el negatiu pot créixer.</li>
+          <li class="flex gap-2"><span x-icon="'check'" class="mt-1 text-success"></span>Les hores es retornen quan hi ha necessitat de treball.</li>
+          <li class="flex gap-2"><span x-icon="'check'" class="mt-1 text-success"></span>Una casa cada vegada.</li>
+        </ul>
+        <p class="mt-4 pt-3 border-t border-border text-[0.875rem] font-semibold">Una pregunta nova</p>
+        <p class="text-[0.875rem] mt-1">Quan algú retorna hores, t'aniria bé apuntar-les aquí perquè l'excedent torni a pujar sol?</p>
       </div>
       <button class="btn btn-secondary rounded-full shadow-clay max-sm:size-12 max-sm:px-0" @click="open = !open" aria-label="Què en penses?" :aria-expanded="open">
         <span x-icon="open ? 'x' : 'message-circle-question'"></span><span class="hidden sm:inline" x-text="open ? 'Tanca' : 'Què en penses?'"></span>
@@ -568,7 +569,7 @@
             return { text: `Li quedaran ${PROTO.fmtHours(s.apnrLeft - h)} d'AP no recuperables (dia ${p.apnr.length + 1} de ${PROTO.RULES.apnrMaxDays}).` };
           }
           const after = s.surplusNow - h;
-          if (after < 0) return { tone: 'warn', text: `L'excedent passarà de ${PROTO.fmtHours(s.surplusNow, { signed: true })} a ${PROTO.fmtHours(after, { signed: true })}: haurà de retornar ${PROTO.fmtHours(-after)}.` };
+          if (after < 0) return { tone: 'warn', text: `L'excedent passarà de ${PROTO.fmtHours(s.surplusNow, { signed: true })} a ${PROTO.fmtHours(after, { signed: true })}: haurà de retornar ${PROTO.fmtHours(-after)}. Es pot apuntar igualment.` };
           return { text: `L'excedent passarà de ${PROTO.fmtHours(s.surplusNow, { signed: true })} a ${PROTO.fmtHours(after, { signed: true })}.` };
         },
 

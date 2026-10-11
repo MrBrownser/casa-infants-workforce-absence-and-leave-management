@@ -108,7 +108,7 @@ PROTO.balanceTiles = (p) => {
 };
 
 // ── Demo persistence: changes live only in this browser ──
-const STORAGE_KEY = 'casa-infants-prototypes-v4';
+const STORAGE_KEY = 'casa-infants-prototypes-v5';
 let entrySeq = 0;
 const nextId = () => `e${Date.now().toString(36)}${(entrySeq++).toString(36)}`;
 

@@ -1,14 +1,14 @@
 // Who works each day in a House (prototype 3, "Quadrant").
 // The rota is a simple weekly pattern by post, standing in for the director's real one:
 // weekday posts Monday to Friday, the weekend post on weekends and holidays, the night
-// educators alternating by week, and the CT (corretor) covering whoever is away.
+// educators alternating by week, and the CT (corretorn) covering whoever is away.
 // The director can change who works a given shift on a given day and add a note to the day.
 window.PROTO = window.PROTO || {};
 
 const POSTS = {
   'Educador referent': 'ER', 'Educador de nit': 'EN', 'Treballador familiar de matins': 'TFM',
   'Treballador familiar de tardes': 'TFT', 'Educador de tardes': 'ET', 'Educador de cap de setmana': 'ECS',
-  Pedagoga: 'PDG', Psicòloga: 'PSI', Corretor: 'CT',
+  Pedagoga: 'PDG', Psicòloga: 'PSI', Corretorn: 'CT',
 };
 PROTO.postCode = (role) => POSTS[role.replace(/^Educadora\b/, 'Educador').replace(/^Treballadora\b/, 'Treballador')] ?? '';
 
