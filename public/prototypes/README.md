@@ -19,6 +19,10 @@ They are static HTML pages, not part of the Next.js app, and use **fictional dat
   Lucide icons, Fraunces and Figtree (self-hosted, SIL OFL). Licenses in `vendor/licenses/`.
 - Changes made while trying a prototype are kept only in that browser (`localStorage`).
   `saldos.html` and `mes.html` share the same data; `vacances.html` keeps its own 2027 plan.
+- The rota in `mes.html` (`shared/rota.js`) is a weekly pattern by post standing in for the real
+  one: weekday posts Monday to Friday, the weekend post on weekends and holidays, the two night
+  educators alternating by week, and the CT covering whoever is away. Day changes and notes
+  are stored per day on top of the pattern.
 - Dates are shown as dd/mm/aaaa with a custom field (`dateInput` in `shared/ui.js`), because
   native date inputs follow the browser language.
 
@@ -26,4 +30,4 @@ They are static HTML pages, not part of the Next.js app, and use **fictional dat
 |---|---|---|
 | `saldos.html` | `V I APS`: vacation days and AP hours per person | Ready |
 | `vacances.html` | `VAC`: end-of-year vacation negotiation (requests, coverage conflicts, drag to adjust, lock the plan) | Ready |
-| `mes.html` | Month sheets: who is on vacation, AP or sick leave ("Baixa", never a reason) each day, who covers, days over the limit | Ready |
+| `mes.html` | Month sheets: the printable rota (who works each shift every day, who is away and who covers, uncovered shifts, day notes), plus absences, a per person table and an agenda | Ready |

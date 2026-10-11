@@ -83,8 +83,32 @@ PROTO.parseHours = (raw) => {
   return NaN;
 };
 
+// ── Balances of one person (as of PROTO.TODAY) for the "add" forms ──
+PROTO.balances = (p) => {
+  const R = PROTO.RULES;
+  const vacTotal = p.entitled + (p.carried || 0);
+  const vacPlanned = p.v.reduce((a, e) => a + PROTO.daysInclusive(e.from, e.to), 0);
+  const apnrUsed = p.apnr.reduce((a, e) => a + e.hours, 0);
+  const aprUsed = p.apr.reduce((a, e) => a + e.hours, 0);
+  return {
+    vacTotal, vacLeft: Math.max(0, vacTotal - vacPlanned),
+    apnrLeft: Math.max(0, R.apnrHours - apnrUsed), apnrDays: p.apnr.length,
+    aprUsed, aprDays: p.apr.length, surplusNow: p.surplus - aprUsed,
+  };
+};
+// Three tiles; `kinds` says which form choice each tile matters for, so it can be highlighted.
+PROTO.balanceTiles = (p) => {
+  const b = PROTO.balances(p), R = PROTO.RULES;
+  return [
+    { key: 'vac', kinds: ['vac'], label: 'Vacances', value: `${b.vacLeft} ${b.vacLeft === 1 ? 'dia' : 'dies'}`, sub: `per planificar, de ${b.vacTotal}` },
+    { key: 'apnr', kinds: ['apnr'], label: 'AP no recuperables', value: PROTO.fmtHours(b.apnrLeft), sub: `queden · ${b.apnrDays}/${R.apnrMaxDays} dies` },
+    { key: 'apr', kinds: ['apr'], label: 'Excedent calendari', value: PROTO.fmtHours(b.surplusNow, { signed: true }), warn: b.surplusNow < 0,
+      sub: b.aprUsed ? `${PROTO.fmtHours(b.aprUsed)} d'AP rec. · ${b.aprDays}/${R.aprMaxDays}` : `AP rec.: 0/${R.aprMaxDays} dies` },
+  ];
+};
+
 // ── Demo persistence: changes live only in this browser ──
-const STORAGE_KEY = 'casa-infants-prototypes-v3';
+const STORAGE_KEY = 'casa-infants-prototypes-v4';
 let entrySeq = 0;
 const nextId = () => `e${Date.now().toString(36)}${(entrySeq++).toString(36)}`;
 

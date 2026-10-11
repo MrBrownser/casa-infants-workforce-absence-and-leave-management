@@ -300,6 +300,19 @@
             </select>
           </div>
 
+          <div x-show="formPerson" class="-mt-2">
+            <p class="text-[0.8125rem] text-muted-foreground mb-1.5" x-text="formPerson ? `Saldo de ${formPerson.name.split(' ')[0]} avui` : ''"></p>
+            <div class="grid grid-cols-3 gap-2">
+              <template x-for="t in (formPerson ? balanceTiles(formPerson) : [])" :key="t.key">
+                <div class="rounded-lg p-2.5 transition-colors duration-150" :class="t.kinds.includes(form.kind) ? 'bg-secondary ring-1 ring-sage' : 'bg-background'">
+                  <p class="text-[0.75rem] text-muted-foreground leading-tight" x-text="t.label"></p>
+                  <p class="font-semibold num leading-tight mt-1" :class="t.warn && 'text-warning-fg'" x-text="t.value"></p>
+                  <p class="text-[0.6875rem] text-muted-foreground num leading-snug mt-0.5" x-text="t.sub"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
           <fieldset>
             <legend class="label">Què apuntes?</legend>
             <div class="grid gap-2">
@@ -446,6 +459,7 @@
         addDays: PROTO.addDays,
         weeks: PROTO.fmtWeeks,
         fmtHours: PROTO.fmtHours,
+        balanceTiles: PROTO.balanceTiles,
         weekday: PROTO.weekdayShort,
         days: PROTO.daysInclusive,
 

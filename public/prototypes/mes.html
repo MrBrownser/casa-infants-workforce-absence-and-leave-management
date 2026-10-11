@@ -12,13 +12,26 @@
   <script src="vendor/lucide-0.469.0.min.js"></script>
   <script src="shared/data.js"></script>
   <script src="shared/ui.js"></script>
+  <script src="shared/rota.js"></script>
   <style>
     .chip-vac { background: #F2D3C6; color: #8A3015; }
     .chip-ap { background: #E6E2D0; color: #55583F; }
     .chip-baixa { background: #DDEBEF; color: #2F5F6E; }
     .chip-open { background: repeating-linear-gradient(135deg, #DDEBEF 0 6px, #EAF3F5 6px 12px); color: #2F5F6E; }
+    @page { size: A4 landscape; margin: 8mm; }
     @media print {
       header, nav, .no-print { display: none !important; }
+      main { max-width: none !important; padding: 0 !important; }
+      .card { box-shadow: none !important; }
+      .print-quad table { min-width: 0 !important; }
+      .print-quad, .print-quad * { font-size: 8px !important; line-height: 1.2 !important; }
+      .print-quad td, .print-quad th { padding: 1px 4px !important; }
+      .print-quad thead, .print-quad tbody tr:first-child th { padding-top: 2px !important; }
+      .print-quad tbody { break-inside: avoid; }
+      .print-quad .slot { display: inline; margin-right: 5px; padding: 0 !important; }
+      .print-quad .slot .block:not([style*="display: none"]) { display: inline !important; }
+      .print-quad .size-6, .print-quad .size-5 { width: auto !important; height: auto !important; }
+      h1 { font-size: 18px !important; }
       body { background: white; padding: 0; }
       .print-wide { overflow: visible !important; }
     }
@@ -41,10 +54,10 @@
             <button class="btn btn-ghost btn-sm" x-show="month !== today.slice(0, 7)" @click="month = today.slice(0, 7)">Avui</button>
           </div>
         </div>
-        <p class="text-muted-foreground mt-1.5 max-w-prose">Qui és fora cada dia: vacances, AP i baixes. És el que avui escrius a sobre de cada setmana al full del mes.</p>
+        <p class="text-muted-foreground mt-1.5 max-w-prose no-print">Qui treballa cada dia i qui és fora (vacances, AP i baixes), amb qui cobreix cada absència. És el full del mes que s'imprimeix i es penja a la casa.</p>
       </div>
       <div class="flex flex-wrap gap-2 no-print">
-        <button class="btn btn-outline" @click="window.print()"><span x-icon="'printer'"></span> Imprimeix</button>
+        <button class="btn btn-outline" @click="printQuad()"><span x-icon="'printer'"></span> Imprimeix el quadrant</button>
         <button class="btn btn-primary" @click="openForm()"><span x-icon="'plus'"></span> Apunta una absència</button>
       </div>
     </div>
@@ -52,7 +65,8 @@
     <!-- Toolbar -->
     <div class="flex flex-col lg:flex-row lg:items-center gap-3 mt-6 mb-3 no-print">
       <div class="segmented self-start">
-        <button :aria-pressed="view === 'cal'" @click="view = 'cal'"><span x-icon="'calendar-days'" class="mr-1.5"></span>Calendari</button>
+        <button :aria-pressed="view === 'quad'" @click="view = 'quad'"><span x-icon="'users'" class="mr-1.5"></span>Quadrant</button>
+        <button :aria-pressed="view === 'cal'" @click="view = 'cal'"><span x-icon="'calendar-days'" class="mr-1.5"></span>Absències</button>
         <button :aria-pressed="view === 'grid'" @click="view = 'grid'"><span x-icon="'table'" class="mr-1.5"></span>Per persona</button>
         <button :aria-pressed="view === 'agenda'" @click="view = 'agenda'"><span x-icon="'list'" class="mr-1.5"></span>Agenda</button>
       </div>
@@ -62,10 +76,72 @@
         <span class="inline-flex items-center gap-1.5"><span class="w-5 h-3 rounded-sm chip-baixa"></span>Baixa</span>
         <span class="inline-flex items-center gap-1.5"><span class="w-5 h-3 rounded-sm chip-open"></span>Baixa sense data de tornada</span>
         <span class="inline-flex items-center gap-1.5"><span class="size-4 rounded-full bg-accent grid place-items-center text-[0.625rem] font-bold text-accent-foreground">3</span><span x-text="`Més de ${maxOff} fora`"></span></span>
+        <span x-show="view === 'quad'" class="inline-flex items-center gap-1.5"><span class="rounded px-1 text-[0.6875rem] font-semibold bg-accent text-accent-foreground">Sense cobrir</span>Cal decidir qui hi va</span>
       </div>
     </div>
 
-    <div class="grid gap-4 items-start" :class="view !== 'grid' && 'lg:grid-cols-[1fr_310px]'">
+    <div class="grid gap-4 items-start" :class="!['grid', 'quad'].includes(view) && 'lg:grid-cols-[1fr_310px]'">
+
+      <!-- ═════════ Quadrant: who works each day (this is what gets printed) ═════════ -->
+      <div x-show="view === 'quad'" class="card overflow-hidden print-quad">
+        <div class="overflow-x-auto print-wide">
+          <table class="w-full min-w-[980px] table-fixed border-collapse text-[0.8125rem]">
+            <template x-for="(week, wi) in weeks" :key="week[0]">
+              <tbody :class="wi > 0 && 'border-t-4 border-background'">
+                <tr class="bg-background/70">
+                  <th class="w-[124px] text-left px-3 py-2 text-[0.75rem] font-semibold uppercase tracking-wider text-muted-foreground" x-text="`Setmana ${wi + 1}`"></th>
+                  <template x-for="d in week" :key="d">
+                    <th class="text-left px-2 py-1.5 border-l border-border font-medium align-top cursor-pointer hover:bg-hover" :class="!inMonth(d) && 'opacity-40'" @click="openDay(d)">
+                      <span class="flex items-center gap-1.5">
+                        <span class="text-[0.75rem] uppercase text-muted-foreground" x-text="weekdayLetter(d)"></span>
+                        <span class="num font-semibold size-6 grid place-items-center rounded-full" :class="d === today && 'bg-primary text-primary-foreground'" x-text="Number(d.slice(8))"></span>
+                        <span x-show="over(d)" class="ml-auto size-5 rounded-full bg-accent text-accent-foreground grid place-items-center text-[0.6875rem] font-bold num" :title="`${count(d)} persones fora (màxim ${maxOff})`" x-text="count(d)"></span>
+                      </span>
+                      <span x-show="holiday(d)" class="block text-[0.6875rem] font-normal text-muted-foreground truncate" x-text="holiday(d)"></span>
+                    </th>
+                  </template>
+                </tr>
+                <template x-for="sh in SHIFTS" :key="sh.key">
+                  <tr class="border-t border-border">
+                    <th class="text-left px-3 py-1.5 font-medium text-muted-foreground align-top" x-text="sh.label"></th>
+                    <template x-for="d in week" :key="d">
+                      <td class="align-top border-l border-border px-2 py-1.5 cursor-pointer hover:bg-hover" :class="[!inMonth(d) && 'opacity-40', isFreeDay(d) && 'bg-background/70']" @click="openDay(d)">
+                        <template x-for="slot in slotsOf(d, sh.key)" :key="slot.p.id">
+                          <div class="slot leading-snug py-px">
+                            <span class="font-medium" :class="slot.away && 'line-through font-normal text-muted-foreground'" x-text="firstName(slot.p.name)"></span>
+                            <span x-show="slot.away" class="rounded px-1 text-[0.6875rem] font-semibold" :class="slot.away?.kind === 'vac' ? 'chip-vac' : 'chip-baixa'" x-text="slot.away?.label"></span>
+                            <span x-show="slot.ap" class="rounded px-1 text-[0.6875rem] font-semibold chip-ap" x-text="`AP ${compact(slot.ap)}`"></span>
+                            <span x-show="slot.away && slot.cover" class="block text-[0.75rem] font-semibold" x-text="`→ ${slot.cover?.text}`"></span>
+                            <span x-show="slot.away && !slot.cover" class="inline-block mt-0.5 rounded px-1 text-[0.6875rem] font-semibold bg-accent text-accent-foreground">Sense cobrir</span>
+                          </div>
+                        </template>
+                      </td>
+                    </template>
+                  </tr>
+                </template>
+                <tr class="border-t border-border" x-show="ctPerson">
+                  <th class="text-left px-3 py-1.5 font-medium text-muted-foreground align-top">CT (corretor)</th>
+                  <template x-for="d in week" :key="d">
+                    <td class="align-top border-l border-border px-2 py-1.5 text-[0.75rem]" :class="[!inMonth(d) && 'opacity-40', isFreeDay(d) && 'bg-background/70']">
+                      <span x-text="ctText(d)" :class="ctState(d) === 'free' ? 'text-muted-foreground' : 'font-medium'"></span>
+                    </td>
+                  </template>
+                </tr>
+                <tr class="border-t border-border">
+                  <th class="text-left px-3 py-1.5 font-medium text-muted-foreground align-top">Notes</th>
+                  <template x-for="d in week" :key="d">
+                    <td class="align-top border-l border-border px-2 py-1.5 text-[0.75rem] italic cursor-pointer hover:bg-hover" :class="!inMonth(d) && 'opacity-40'" @click="openDay(d)" x-text="rotaDay(d).note || ''"></td>
+                  </template>
+                </tr>
+              </tbody>
+            </template>
+          </table>
+        </div>
+        <p class="px-4 py-2.5 text-[0.8125rem] text-muted-foreground border-t border-border flex items-center gap-1.5 no-print">
+          <span x-icon="'mouse-pointer-click'"></span>
+          Fes clic en un dia per canviar qui treballa, apuntar una absència o afegir-hi una nota. El quadrant d'exemple segueix un patró setmanal per lloc.
+        </p>
+      </div>
 
       <!-- ═════════ Calendar ═════════ -->
       <div x-show="view === 'cal'" class="card overflow-hidden">
@@ -145,25 +221,44 @@
       <!-- ═════════ Agenda ═════════ -->
       <div x-show="view === 'agenda'" class="space-y-2.5">
         <template x-for="d in agendaDays" :key="d">
-          <button class="card rounded-xl w-full text-left p-3.5 hover:bg-hover transition-colors duration-150 cursor-pointer" :class="over(d) && 'border-l-4 border-l-accent'" @click="openDay(d)">
+          <button class="card rounded-xl w-full text-left p-3.5 hover:bg-hover transition-colors duration-150 cursor-pointer" :class="(over(d) || rotaOf(d).uncovered) && 'border-l-4 border-l-accent'" @click="openDay(d)">
             <div class="flex items-center gap-2">
               <span class="font-semibold num" :class="d === today && 'text-primary'" x-text="`${weekday(d)} ${fmtDate(d)}`"></span>
               <span x-show="d === today" class="text-[0.75rem] font-semibold bg-secondary rounded-md px-1.5 py-0.5">Avui</span>
               <span x-show="holiday(d)" class="text-[0.8125rem] text-muted-foreground" x-text="`· ${holiday(d)}`"></span>
               <span x-show="over(d)" class="ml-auto text-[0.75rem] font-semibold bg-accent text-accent-foreground rounded-md px-1.5 py-0.5 num" x-text="`${count(d)} fora`"></span>
             </div>
-            <div class="flex flex-wrap gap-1.5 mt-2" x-show="on(d).length">
-              <template x-for="a in on(d)" :key="a.key">
-                <span class="rounded-md px-2 py-0.5 text-[0.8125rem] font-medium" :class="a.cls" x-text="a.short"></span>
+            <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[0.8125rem]">
+              <template x-for="sh in rotaOf(d).shifts" :key="sh.key">
+                <div class="contents">
+                  <dt class="text-muted-foreground" x-text="sh.label"></dt>
+                  <dd>
+                    <template x-for="slot in sh.slots" :key="slot.p.id">
+                      <span class="mr-2 inline-flex items-center gap-1">
+                        <span :class="slot.away && 'line-through text-muted-foreground'" x-text="firstName(slot.p.name)"></span>
+                        <span x-show="slot.away && slot.cover" class="font-semibold" x-text="`→ ${slot.cover?.text}`"></span>
+                        <span x-show="slot.away && !slot.cover" class="rounded px-1 text-[0.6875rem] font-semibold bg-accent text-accent-foreground">Sense cobrir</span>
+                        <span x-show="slot.ap" class="rounded px-1 text-[0.6875rem] font-semibold chip-ap" x-text="`AP ${compact(slot.ap)}`"></span>
+                      </span>
+                    </template>
+                  </dd>
+                </div>
               </template>
-            </div>
+              <template x-if="ctPerson">
+                <div class="contents">
+                  <dt class="text-muted-foreground">CT</dt>
+                  <dd x-text="ctText(d)"></dd>
+                </div>
+              </template>
+            </dl>
+            <p x-show="rotaDay(d).note" class="mt-1.5 text-[0.8125rem] italic" x-text="rotaDay(d).note"></p>
           </button>
         </template>
-        <p x-show="!agendaDays.length" class="card rounded-xl p-6 text-center text-muted-foreground">Aquest mes no hi ha cap absència apuntada.</p>
+        
       </div>
 
       <!-- ═════════ Side column ═════════ -->
-      <aside class="no-print gap-4" :class="view === 'grid' ? 'grid md:grid-cols-3 items-start' : 'space-y-4'">
+      <aside class="no-print gap-4" :class="['grid', 'quad'].includes(view) ? 'grid md:grid-cols-3 items-start' : 'space-y-4'">
         <section class="card rounded-xl p-4">
           <p class="eyebrow">Avui</p>
           <h2 class="text-xl mt-1 num" x-text="`${weekdayLong(today)} ${fmtDate(today)}`"></h2>
@@ -207,6 +302,10 @@
             </template>
           </ul>
           <p x-show="!peopleWithAbsences.length" class="mt-2 text-[0.875rem] text-muted-foreground">Cap absència aquest mes.</p>
+          <p x-show="uncoveredDays.length" class="mt-3 pt-3 border-t border-border text-[0.8125rem] flex gap-1.5">
+            <span x-icon="'triangle-alert'" class="mt-0.5 text-[#B07A12]"></span>
+            <span x-text="`Torns sense cobrir ${uncoveredDays.length === 1 ? 'el dia' : 'els dies'} ${uncoveredDays.map((d) => Number(d.slice(8))).join(', ')}.`"></span>
+          </p>
           <p x-show="overDays.length" class="mt-3 pt-3 border-t border-border text-[0.8125rem] flex gap-1.5">
             <span x-icon="'triangle-alert'" class="mt-0.5 text-[#B07A12]"></span>
             <span x-text="`${overDays.length} ${overDays.length === 1 ? 'dia' : 'dies'} amb més de ${maxOff} persones fora: ${overDays.map((d) => Number(d.slice(8))).join(', ')}.`"></span>
@@ -237,6 +336,35 @@
               <button class="btn btn-ghost btn-icon -mr-2 -mt-1" @click="day = null" aria-label="Tanca"><span x-icon="'x'"></span></button>
             </div>
             <div class="overflow-y-auto px-5 py-5 space-y-4 flex-1">
+              <section>
+                <h3 class="font-semibold mb-2">Qui treballa</h3>
+                <div class="rounded-xl border border-border divide-y divide-border">
+                  <template x-for="sh in rotaOf(day).shifts" :key="sh.key">
+                    <div class="p-3">
+                      <p class="text-[0.8125rem] text-muted-foreground flex items-center gap-2">
+                        <span x-text="sh.label"></span>
+                        <button x-show="sh.manual" class="ml-auto text-primary font-semibold hover:underline cursor-pointer" @click="resetShift(day, sh.key)">Torna al quadrant habitual</button>
+                      </p>
+                      <template x-for="(slot, i) in sh.slots" :key="sh.key + i">
+                        <div class="mt-1.5">
+                          <select class="input h-9 text-[0.875rem]" @change="setSlot(day, sh.key, i, $event.target.value)" :aria-label="`${sh.label}: qui hi treballa`">
+                            <template x-for="p in people" :key="p.id"><option :value="p.id" :selected="p.id === slot.p.id" x-text="p.name"></option></template>
+                          </select>
+                          <p x-show="slot.away" class="text-[0.8125rem] mt-1 flex flex-wrap items-center gap-1.5">
+                            <span class="rounded px-1.5 font-semibold" :class="slot.away?.kind === 'vac' ? 'chip-vac' : 'chip-baixa'" x-text="slot.away?.kind === 'vac' ? 'De vacances' : 'De baixa'"></span>
+                            <span x-show="slot.cover" x-text="`Cobreix: ${slot.cover?.text}`"></span>
+                            <span x-show="!slot.cover" class="rounded px-1.5 font-semibold bg-accent text-accent-foreground">Sense cobrir: tria qui hi va</span>
+                          </p>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                  <p x-show="!rotaOf(day).shifts.length" class="p-3 text-[0.875rem] text-muted-foreground">Cap torn aquest dia.</p>
+                </div>
+                <label class="label text-[0.8125rem] mt-3" for="day-note">Nota del dia (surt al quadrant)</label>
+                <input id="day-note" class="input h-9 text-[0.875rem]" placeholder="p. ex. Ivan entra a les 21:30 h" :value="rotaDay(day).note" @change="setNote(day, $event.target.value)" />
+              </section>
+              <h3 class="font-semibold pt-1">Absències</h3>
               <div x-show="over(day)" class="rounded-lg border-2 border-dashed border-accent bg-accent/10 p-3 text-[0.875rem] text-accent-foreground">
                 <p class="font-semibold flex items-center gap-1.5"><span x-icon="'triangle-alert'"></span>Cal que ho decideixis</p>
                 <p class="mt-1" x-text="`Hi ha ${count(day)} persones fora i el màxim és ${maxOff}. Mira qui pot cobrir-ho o mou alguna absència.`"></p>
@@ -304,6 +432,19 @@
               <option value="" disabled>Tria una persona</option>
               <template x-for="p in people" :key="p.id"><option :value="p.id" x-text="p.name" :selected="p.id === form.personId"></option></template>
             </select>
+          </div>
+
+          <div x-show="formPerson" class="-mt-2">
+            <p class="text-[0.8125rem] text-muted-foreground mb-1.5" x-text="formPerson ? `Saldo de ${formPerson.name.split(' ')[0]} avui` : ''"></p>
+            <div class="grid grid-cols-3 gap-2">
+              <template x-for="t in (formPerson ? balanceTiles(formPerson) : [])" :key="t.key">
+                <div class="rounded-lg p-2.5 transition-colors duration-150" :class="t.kinds.includes(form.kind) ? 'bg-secondary ring-1 ring-sage' : 'bg-background'">
+                  <p class="text-[0.75rem] text-muted-foreground leading-tight" x-text="t.label"></p>
+                  <p class="font-semibold num leading-tight mt-1" :class="t.warn && 'text-warning-fg'" x-text="t.value"></p>
+                  <p class="text-[0.6875rem] text-muted-foreground num leading-snug mt-0.5" x-text="t.sub"></p>
+                </div>
+              </template>
+            </div>
           </div>
 
           <fieldset>
@@ -407,7 +548,9 @@
         <p class="eyebrow">Per a la directora</p>
         <h2 class="text-xl mt-1">Què en penses?</h2>
         <ol class="list-decimal pl-5 mt-3 space-y-2 text-[0.875rem]">
-          <li>Aquesta vista et serveix en lloc de les notes de sobre cada setmana del full del mes? Hi falta alguna cosa?</li>
+          <li>El quadrant s'assembla al que penges a la casa? Hi falta alguna fila o informació (horaris d'entrada i sortida…)?</li>
+          <li>Com és el quadrant real: quins torns hi ha, i qui fa els matins i les tardes del cap de setmana?</li>
+          <li>Quan algú falta, qui el cobreix normalment: sempre el CT, substitutes, algú de l'altra casa…?</li>
           <li>Un AP de poques hores (p. ex. 2 h), compta com a persona fora per a la cobertura?</li>
           <li>De les baixes, n'hi ha prou amb les dates i qui la cobreix?</li>
           <li>"Qui la cobreix": prefereixes triar-ho d'una llista (CT, substitutes…) o escriure-ho?</li>
@@ -445,12 +588,15 @@
         WEEKDAYS: ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'],
         today: PROTO.TODAY,
         month: PROTO.TODAY.slice(0, 7),
-        view: window.matchMedia('(max-width: 767px)').matches ? 'agenda' : 'cal',
+        view: window.matchMedia('(max-width: 767px)').matches ? 'agenda' : 'quad',
+        rota: PROTO.loadRota(),
+        SHIFTS: PROTO.SHIFTS,
         maxOff: PROTO.PLAN[house.slug]?.maxOff ?? 2,
         day: null,
         toast: null,
         form: { open: false, personId: '', kind: 'baixa', from: '', to: '', openEnded: true, hours: '', cover: '' },
 
+        balanceTiles: PROTO.balanceTiles,
         fmtDate: PROTO.fmtDate, fmtHours: PROTO.fmtHours, days: PROTO.daysInclusive, addDays: PROTO.addDays,
         weekday: PROTO.weekdayShort,
         weekdayLong: (iso) => cap(WEEKDAYS_LONG[PROTO.d(iso).getUTCDay()]),
@@ -525,7 +671,61 @@
           const a = this.on(d).find((x) => x.p.id === p.id);
           return a ? { cls: a.cls, letter: a.letter, label: `${p.name}: ${a.detail}` } : null;
         },
-        get agendaDays() { return this.monthDays.filter((d) => this.on(d).length || this.holiday(d) || d === this.today); },
+        get agendaDays() { return this.monthDays; },
+
+        // ── Rota (who works) ──
+        firstName: (name) => first(name),
+        compact: (h) => compactHours(h),
+        isFreeDay: (iso) => PROTO.isFreeDay(iso),
+        rotaDay(d) { return this.rota[house.slug]?.[d] ?? {}; },
+        rotaOf(d) { return PROTO.rotaFor(this.people, d, this.rotaDay(d)); },
+        slotsOf(d, key) { return this.rotaOf(d).shifts.find((s) => s.key === key)?.slots ?? []; },
+        get ctPerson() { return this.people.find((p) => PROTO.postCode(p.role) === 'CT') ?? null; },
+        ctState(d) {
+          const ct = this.rotaOf(d).ct;
+          if (!ct) return 'none';
+          return ct.away ? 'away' : ct.covering ? 'covering' : 'free';
+        },
+        ctText(d) {
+          const ct = this.rotaOf(d).ct;
+          if (!ct) return '';
+          const name = first(ct.p.name);
+          if (ct.away) return `${name} · ${ct.away.label}`;
+          if (ct.covering) return `${name} cobreix ${first(ct.covering.name)}`;
+          return `${name} · disponible`;
+        },
+        get uncoveredDays() { return this.monthDays.filter((d) => this.rotaOf(d).uncovered > 0); },
+        editRotaDay(d) {
+          this.rota[house.slug] ??= {};
+          this.rota[house.slug][d] ??= {};
+          return this.rota[house.slug][d];
+        },
+        setSlot(d, key, i, personId) {
+          const ids = this.rotaOf(d).shifts.find((s) => s.key === key).slots.map((x) => x.p.id);
+          const day = this.editRotaDay(d), before = day.shifts?.[key];
+          ids[i] = personId;
+          day.shifts = { ...(day.shifts ?? {}), [key]: ids };
+          this.persistRota();
+          this.flash(`Canviat qui treballa ${PROTO.fromTo(d, d)}.`, () => {
+            const x = this.editRotaDay(d);
+            if (before) x.shifts[key] = before; else delete x.shifts[key];
+          });
+        },
+        resetShift(d, key) {
+          const day = this.editRotaDay(d);
+          if (day.shifts) { const { [key]: _, ...rest } = day.shifts; day.shifts = rest; }
+          this.persistRota();
+        },
+        setNote(d, text) {
+          this.editRotaDay(d).note = text.trim();
+          this.persistRota();
+          this.flash('Nota desada.');
+        },
+        persistRota() { PROTO.saveRota(this.rota); },
+        printQuad() {
+          this.view = 'quad';
+          this.$nextTick(() => setTimeout(() => window.print(), 50));
+        },
         get overDays() { return this.monthDays.filter((d) => this.over(d)); },
         get openBaixes() { return this.people.flatMap((p) => p.baixes.filter((e) => !e.to).map((e) => ({ p, e }))); },
 
@@ -668,7 +868,7 @@
         },
         undo() { this._undo?.(); this._undo = null; this.persist(); this.toast = null; },
         persist() { PROTO.savePeople(this.all); },
-        reset() { PROTO.resetPeople(); location.reload(); },
+        reset() { PROTO.resetPeople(); PROTO.resetRota(); location.reload(); },
       };
     }
   </script>
