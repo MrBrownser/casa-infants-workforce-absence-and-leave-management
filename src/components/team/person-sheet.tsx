@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sheet } from '@/components/sheet';
 import type { IsoDate } from '@/lib/dates';
@@ -33,11 +33,21 @@ export function PersonSheet({
   today: IsoDate;
 }>) {
   const router = useRouter();
-  const close = useCallback(() => router.push(`/${houseSlug}/team`, { scroll: false }), [router, houseSlug]);
+  // Starts closed and opens on the next frame: Base UI only animates a drawer
+  // that goes from closed to open. Closing animates first, then leaves the URL.
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setOpen(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
   const { person } = details;
 
   return (
-    <Sheet open onClose={close} title={person.fullName} description={describePerson(person)}>
+    <Sheet
+      open={open}
+      onClose={() => setOpen(false)}
+      onClosed={() => router.push(`/${houseSlug}/team`, { scroll: false })}
+      title={person.fullName} description={describePerson(person)}>
       <div className="flex flex-col gap-8">
         <BalancesSection houseSlug={houseSlug} details={details} currentYear={Number(today.slice(0, 4))} />
         <SheetSection title="Nom">

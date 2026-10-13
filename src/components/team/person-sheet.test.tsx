@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -34,17 +34,25 @@ const vacant = [
 
 beforeEach(() => vi.clearAllMocks());
 
+// The sheet opens one frame after mounting so it can animate in.
+async function openSheet(ui: React.ReactElement) {
+  const result = render(ui);
+  await screen.findByRole('dialog');
+  return result;
+}
+
 describe('PersonSheet', () => {
   it('describes the person and closes back to the team page', async () => {
-    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    await openSheet(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
     expect(screen.getByRole('dialog', { name: 'Roger Beltrán Camps' })).toBeInTheDocument();
     expect(screen.getByText('Paulo Freire · Educadora de tardes · des del 01/09/2025')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Tanca' }));
-    expect(push).toHaveBeenCalledWith('/paulo-freire/team', { scroll: false });
+    // The URL changes once the close animation has finished.
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/paulo-freire/team', { scroll: false }));
   });
 
   it('renames keeping the same person', async () => {
-    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    await openSheet(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
     const name = screen.getByLabelText('Nom complet');
     await userEvent.clear(name);
     await userEvent.type(name, 'Roger Beltran Camps');
@@ -54,7 +62,7 @@ describe('PersonSheet', () => {
   });
 
   it('keeps "Desat." when the new name comes back from the server', async () => {
-    const { rerender } = render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    const { rerender } = await openSheet(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
     const name = screen.getByLabelText('Nom complet');
     await userEvent.clear(name);
     await userEvent.type(name, 'Roger Beltran Camps');
@@ -69,7 +77,7 @@ describe('PersonSheet', () => {
 
   it('keeps the name and shows the error when renaming fails', async () => {
     vi.mocked(renamePersonAction).mockResolvedValueOnce({ ok: false, message: "Aquesta persona no és d'aquesta casa." });
-    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    await openSheet(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
     const name = screen.getByLabelText('Nom complet');
     await userEvent.type(name, ' Jr');
     await userEvent.click(screen.getByRole('button', { name: 'Desa el nom' }));
@@ -78,7 +86,7 @@ describe('PersonSheet', () => {
   });
 
   it('rejects a blank name without calling the server', async () => {
-    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    await openSheet(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
     await userEvent.clear(screen.getByLabelText('Nom complet'));
     await userEvent.click(screen.getByRole('button', { name: 'Desa el nom' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Escriu el nom complet.');
@@ -86,14 +94,14 @@ describe('PersonSheet', () => {
   });
 
   it('moves an active person to a vacant seat', async () => {
-    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    await openSheet(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
     await userEvent.selectOptions(screen.getByLabelText('Lloc vacant'), 'carme-aymerich:et:1');
     await userEvent.click(screen.getByRole('button', { name: 'Mou' }));
     expect(movePersonAction).toHaveBeenCalledWith('paulo-freire', { personId: ID, seat: 'carme-aymerich:et:1' });
   });
 
   it('clears the choice and confirms after a move', async () => {
-    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    await openSheet(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
     const select = screen.getByLabelText('Lloc vacant');
     await userEvent.selectOptions(select, 'paulo-freire:ct:1');
     await userEvent.click(screen.getByRole('button', { name: 'Mou' }));
@@ -104,7 +112,7 @@ describe('PersonSheet', () => {
   });
 
   it('asks before moving someone to former members', async () => {
-    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    await openSheet(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
     await userEvent.click(screen.getByRole('button', { name: 'Passa a antics membres' }));
     expect(deactivatePersonAction).not.toHaveBeenCalled();
     const confirm = screen.getByRole('group', { name: 'Confirmació' });
@@ -114,7 +122,7 @@ describe('PersonSheet', () => {
   });
 
   it('offers to reactivate an inactive person instead of moving them', async () => {
-    render(<PersonSheet houseSlug="paulo-freire" details={details(false)} vacantSeats={vacant} today="2026-10-13" />);
+    await openSheet(<PersonSheet houseSlug="paulo-freire" details={details(false)} vacantSeats={vacant} today="2026-10-13" />);
     expect(screen.queryByRole('button', { name: 'Mou' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Passa a antics membres' })).toBeNull();
     await userEvent.selectOptions(screen.getByLabelText('Lloc vacant'), 'paulo-freire:ct:1');
@@ -123,15 +131,15 @@ describe('PersonSheet', () => {
   });
 
   it('uses copy that fits any person, not only women', async () => {
-    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    await openSheet(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
     await userEvent.click(screen.getByRole('button', { name: 'Passa a antics membres' }));
     const text = screen.getByRole('dialog').textContent ?? '';
     expect(text).not.toMatch(/Mou-la|la pots/);
     expect(text).toContain('Roger Beltrán Camps deixarà el lloc vacant. Es guarden les seves dades i saldos per si torna.');
   });
 
-  it('says so when there is no vacant seat', () => {
-    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={[]} today="2026-10-13" />);
+  it('says so when there is no vacant seat', async () => {
+    await openSheet(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={[]} today="2026-10-13" />);
     expect(screen.getByText('No hi ha cap lloc vacant.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Mou' })).toBeNull();
   });
