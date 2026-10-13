@@ -19,7 +19,7 @@
 
 ## 4. Navigation
 
-- [x] 4.1 Change `SECTIONS` in `src/components/section-nav.tsx` to Saldos, Vacances, El mes and Equip with an `available` flag; unavailable sections render as non-links with "aviat" (desktop) and dimmed (mobile); update the tests.
+- [x] 4.1 Change `SECTIONS` in `src/lib/sections.ts` (rendered by `src/components/section-nav.tsx`) to Saldos, Vacances, El mes and Equip with an `available` flag; unavailable sections render as non-links with "aviat" (desktop) and dimmed (mobile); update the tests.
 - [x] 4.2 Make `/[house]` redirect to the first available section after `requireDirector()`; unavailable section URLs return not-found; update the House switcher and `/dashboard` tests if needed.
 
 ## 5. People data layer

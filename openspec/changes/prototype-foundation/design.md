@@ -76,7 +76,8 @@
 - **Alternatives considered**: the prototypes' free-text parser (`3:45`, `3,75`…): more ambiguity, and the director had no preference.
 
 ### D8: Navigation with the final sections
-- **Choice**: `SECTIONS` becomes Saldos (`saldos`), Vacances (`vacances`), El mes (`mes`) and Equip (`team`), each with an `available` flag. Unavailable sections render as non-links with an "aviat" tag (desktop) or dimmed (mobile tab bar). `/<house>` redirects to the first available section (Equip until Saldos ships). The Inici placeholder page is removed.
+- **Choice**: `SECTIONS` becomes Saldos (`saldos`), Vacances (`vacances`), El mes (`mes`) and Equip (`team`), each with an `available` flag, and lives in `src/lib/sections.ts`. `src/components/section-nav.tsx` renders it. Unavailable sections render as non-links with an "aviat" tag (desktop) or dimmed (mobile tab bar). `/<house>` redirects to the first available section (Equip until Saldos ships). The Inici placeholder page is removed.
+- *Changed during implementation:* `SECTIONS` is in `src/lib/sections.ts`, not in the client component, because the `/<house>` redirect is a Server Component that calls `firstAvailableSection()`, and a `'use client'` module only exports client references.
 - **Rationale**: later specs only flip a flag and add a route; the director sees where the app is going.
 
 ### D9: Equip page and its writes
