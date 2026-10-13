@@ -72,7 +72,12 @@ npm run dev            # http://localhost:3000
 ```
 
 To open the dev server from a phone on the same network, set `ALLOWED_DEV_ORIGINS` in
-`.env.local` to the IP the phone uses (see `.env.example`) and restart `npm run dev`.
+`.env.local` to this machine's LAN IP, the "Network" address `npm run dev` prints (see
+`.env.example`), restart it and open that address on the phone. Signing in over plain
+`http://<ip>` is unreliable: the page is not a secure context, Clerk cannot use Web Crypto,
+and after signing in the server still renders you signed out until a manual reload. To test
+signed-in screens on a phone use an HTTPS address (a Vercel preview, or a tunnel such as
+`cloudflared tunnel --url http://localhost:3000` with its host added to `ALLOWED_DEV_ORIGINS`).
 
 Routes: `/` landing page, `/sign-in`, `/sign-up`, `/dashboard` (signed-in only, redirects to the
 last House), `/<house>` (redirects to Equip), `/<house>/team` (Equip).
