@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, dateToIsoDate, formatDateCa, isIsoDate, isoDateToDate, todayInMadrid } from './dates';
+import {
+  addDays,
+  dateToIsoDate,
+  daysBetween,
+  formatDateCa,
+  isIsoDate,
+  isoDateToDate,
+  todayInMadrid,
+  weekIndex,
+  weekdayOf,
+} from './dates';
 
 describe('todayInMadrid', () => {
   it('flips at Madrid midnight in summer (UTC+2)', () => {
@@ -42,5 +52,32 @@ describe('Date conversion', () => {
 describe('formatDateCa', () => {
   it('formats in Catalan', () => {
     expect(formatDateCa('2026-07-01')).toBe('1 de juliol del 2026');
+  });
+});
+
+describe('weekdayOf', () => {
+  it('counts Monday as 0 and Sunday as 6', () => {
+    expect(weekdayOf('2026-10-12')).toBe(0);
+    expect(weekdayOf('2026-10-13')).toBe(1);
+    expect(weekdayOf('2026-10-18')).toBe(6);
+  });
+});
+
+describe('daysBetween', () => {
+  it('counts calendar days, negative backwards', () => {
+    expect(daysBetween('2026-07-01', '2027-01-01')).toBe(184);
+    expect(daysBetween('2026-01-02', '2026-01-01')).toBe(-1);
+  });
+});
+
+describe('weekIndex', () => {
+  it('is the same from Monday to Sunday and grows by one each week', () => {
+    expect(weekIndex('2026-10-12')).toBe(weekIndex('2026-10-18'));
+    expect(weekIndex('2026-10-19')).toBe(weekIndex('2026-10-12') + 1);
+  });
+
+  it('keeps counting across a 53-week ISO year', () => {
+    // 2026-12-28 is ISO week 53 and 2027-01-04 ISO week 1: both odd, yet consecutive.
+    expect(weekIndex('2027-01-04') - weekIndex('2026-12-28')).toBe(1);
   });
 });

@@ -46,3 +46,25 @@ const catalanDate = new Intl.DateTimeFormat('ca', {
 export function formatDateCa(date: IsoDate): string {
   return catalanDate.format(isoDateToDate(date));
 }
+
+/** Monday = 0 … Sunday = 6, as on the director's rota. */
+export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export function weekdayOf(date: IsoDate): Weekday {
+  return ((isoDateToDate(date).getUTCDay() + 6) % 7) as Weekday;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export function daysBetween(from: IsoDate, to: IsoDate): number {
+  return Math.round((isoDateToDate(to).getTime() - isoDateToDate(from).getTime()) / DAY_MS);
+}
+
+// A fixed Monday anchors week alternation (night seats, shared posts). ISO week
+// numbers would break it: 2026 has 53 weeks, so weeks 53 and 1 are both odd.
+const WEEK_ANCHOR: IsoDate = '2024-01-01';
+
+/** Weeks (Monday to Sunday) since the anchor; consecutive weeks differ by one. */
+export function weekIndex(date: IsoDate): number {
+  return Math.floor(daysBetween(WEEK_ANCHOR, date) / 7);
+}
