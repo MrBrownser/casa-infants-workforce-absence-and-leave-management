@@ -78,6 +78,17 @@ describe('PersonSheet', () => {
     expect(movePersonAction).toHaveBeenCalledWith('paulo-freire', { personId: ID, seat: 'carme-aymerich:et:1' });
   });
 
+  it('clears the choice and confirms after a move', async () => {
+    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    const select = screen.getByLabelText('Lloc vacant');
+    await userEvent.selectOptions(select, 'paulo-freire:ct:1');
+    await userEvent.click(screen.getByRole('button', { name: 'Mou' }));
+    expect(await screen.findByText('Fet.')).toBeInTheDocument();
+    expect(select).toHaveValue('');
+    await userEvent.click(screen.getByRole('button', { name: 'Mou' }));
+    expect(movePersonAction).toHaveBeenCalledTimes(1);
+  });
+
   it('asks before moving someone to former members', async () => {
     render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
     await userEvent.click(screen.getByRole('button', { name: 'Passa a antics membres' }));

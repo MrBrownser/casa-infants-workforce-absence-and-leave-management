@@ -56,8 +56,9 @@ ERROR:  new row for relation "person_years" violates check constraint "person_ye
 ```
 
 Prisma 7 with `@prisma/adapter-pg` raises `PrismaClientKnownRequestError` code `P2002` when a
-write hits one of the partial unique indexes (checked while planning); the store maps it to
-`SeatTakenError`.
+write hits one of the partial unique indexes; the store maps it to `SeatTakenError`. Checked
+against the seeded local database with the generated client: a second active person on the shared
+PDG seat via `db.person.create` printed `instanceof PrismaClientKnownRequestError: true, code: P2002`.
 
 ## Pending (product owner, local session)
 
