@@ -107,5 +107,8 @@ account, gstack `browse` (headed Chromium).
 - Mobile 390px: bottom tab bar with the three sections dimmed and Equip active; one column of
   cards; the person sheet opens from the bottom; inputs 44px high; no horizontal scroll.
 - Found and fixed: two copy lines assumed a woman ("Mou-la", "la pots reincorporar"); now neutral.
-- Seen, deferred (from the final review): "Desat." disappears after a save that changes a value.
+- Fixed after the check (from the final review): "Desat." now stays after a save that changes a
+  value; the sheet keeps Tab inside, locks the page scroll, focuses the name field when adding a
+  person and returns focus to the opener; letters typed in a duration field stay visible and show
+  the H:MM error with an icon when leaving the field.
 

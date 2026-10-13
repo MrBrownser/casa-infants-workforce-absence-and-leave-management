@@ -31,6 +31,8 @@ function BalancesForm({ houseSlug, details }: Readonly<{ houseSlug: HouseSlug; d
   const { error, saved, pending, run } = useServerAction();
   const form = useForm<z.input<typeof balancesSchema>, unknown, z.output<typeof balancesSchema>>({
     resolver: zodResolver(balancesSchema),
+    // Errors show when leaving a field, not only on save.
+    mode: 'onTouched',
     // `values`, not a remount: when a save refreshes the props the fields follow and "Desat." stays.
     values: {
       personId: person.id,

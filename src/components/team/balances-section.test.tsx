@@ -79,6 +79,20 @@ describe('BalancesSection', () => {
     expect(screen.getByLabelText('Dies AA (any anterior)')).toHaveValue('0');
   });
 
+  it('shows an error with an icon as soon as letters are typed', async () => {
+    render(<BalancesSection houseSlug="paulo-freire" details={mireia(false)} currentYear={2026} />);
+    const surplus = screen.getByLabelText("Excedent de calendari a l'inici de l'any");
+    await userEvent.clear(surplus);
+    await userEvent.type(surplus, 'tres');
+    expect(surplus).toHaveValue('tres');
+    await userEvent.tab();
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Escriu les hores com H:MM, per exemple 3:45.');
+    expect(alert.querySelector('svg')).not.toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Desa els saldos de 2026' }));
+    expect(saveBalancesAction).not.toHaveBeenCalled();
+  });
+
   it('shows an error with an icon for 9:75 and saves nothing', async () => {
     render(<BalancesSection houseSlug="paulo-freire" details={mireia(false)} currentYear={2026} />);
     const surplus = screen.getByLabelText("Excedent de calendari a l'inici de l'any");

@@ -17,14 +17,20 @@ function Harness({ signed = false }: { signed?: boolean }) {
 }
 
 describe('DurationInput', () => {
-  it('inserts the colon and keeps only digits', async () => {
+  it('inserts the colon while typing digits', async () => {
     render(<Harness />);
     const input = screen.getByLabelText('Excedent');
     await userEvent.type(input, '5530');
     expect(input).toHaveValue('55:30');
-    await userEvent.clear(input);
-    await userEvent.type(input, 'ab');
-    expect(input).toHaveValue('');
+  });
+
+  it('keeps letters so the form can say what is wrong', async () => {
+    render(<Harness />);
+    const input = screen.getByLabelText('Excedent');
+    await userEvent.type(input, '9a');
+    expect(input).toHaveValue('9a');
+    await userEvent.type(input, '{Backspace}15');
+    expect(input).toHaveValue('9:15');
   });
 
   it('offers + and − for a surplus', async () => {

@@ -5,6 +5,10 @@ import { maskDuration } from '@/lib/duration';
 import { cn } from '@/lib/utils';
 
 type Sign = '+' | '-';
+
+// Digits get the H:MM mask; anything else is kept as typed so validation can
+// show an error instead of letters silently disappearing.
+const maskTyping = (raw: string) => (/^[\d:]*$/.test(raw) ? maskDuration(raw) : raw);
 const SIGNS: { value: Sign; text: string; label: string }[] = [
   { value: '+', text: '+', label: 'Excedent positiu' },
   { value: '-', text: '−', label: 'Excedent negatiu' },
@@ -58,7 +62,7 @@ export function DurationInput({
       <Input
         id={id}
         value={value}
-        onChange={(event) => onChange(maskDuration(event.target.value))}
+        onChange={(event) => onChange(maskTyping(event.target.value))}
         onBlur={onBlur}
         inputMode="numeric"
         autoComplete="off"
