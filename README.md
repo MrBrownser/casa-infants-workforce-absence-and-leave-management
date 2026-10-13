@@ -162,6 +162,12 @@ A preview deployment uses the Clerk **development** instance and the Supabase **
 
 Do not set `ALLOWED_DEV_ORIGINS` (dev server only).
 
+**A dev-only Vercel project** (for example `casa-infants-dev`): its main URL and every
+`vercel deploy --prod` or push to the production branch use Vercel's **Production**
+environment, not Preview. Add the same variables (dev keys, dev database) to Production too,
+then redeploy; variables only apply to new deployments. Without them the proxy fails with
+"Clerk keys are missing from your environment" and every page returns 500.
+
 **Clerk side.** Clerk's Vercel guide says preview and development deployments can use the
 development API keys, and only forbids `*.vercel.app` for production
 (https://clerk.com/docs/deployments/deploy-to-vercel). It does not state explicitly that a
