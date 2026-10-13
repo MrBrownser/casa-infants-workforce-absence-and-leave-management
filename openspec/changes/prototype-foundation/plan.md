@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Status:** all tasks implemented and committed; `tasks.md` is the change's progress tracker, and `db-check.md` holds the database and browser check evidence (Task 14 was done in the product owner's local session).
+
 **Goal:** Replace dated House membership with a "who covers each post" model (posts and weekly schedules in code, `Person` and `PersonYear` in the database), set the final navigation (Saldos, Vacances, El mes, Equip) and rebuild the Equip page so the director can manage the people of each House.
 
 **Architecture:** The domain (posts, schedules, AP and vacation rules, durations) is pure TypeScript in `src/lib/`, fully unit tested. Persistence is a thin Prisma store (`src/server/people-store.ts`, no auth, reused by the seed) behind director-gated reads (`src/server/people.ts`) and Server Functions (`src/app/(app)/[house]/team/actions.ts`). The Equip page is a Server Component that renders a pure "team view" built from the people rows; person details open as a sheet driven by `?person=<id>&year=<yyyy>`, and forms are small client components (react-hook-form + the same zod schemas the Server Functions re-parse).
@@ -90,7 +92,7 @@ Task to `tasks.md` mapping: T1 → 1.1, 1.2 · T2 → 1.3, 1.4 · T3 → 2.1, 2.
 - Produces (dates): `type Weekday = 0|1|2|3|4|5|6` (Monday 0), `weekdayOf(date: IsoDate): Weekday`, `daysBetween(from: IsoDate, to: IsoDate): number`, `weekIndex(date: IsoDate): number`.
 - Produces (posts): `ROLE_LABELS`, `type RoleCode`, `type TimeRange = { from: string; to: string }`, `type WeeklySchedule`, `type HolidayRule = 'off' | 'weekend' | 'as-usual'`, `type Post = { key; roleCode; seats: 1 | 2; schedule: WeeklySchedule | null; onHolidays: HolidayRule }`, `postsOf(house: HouseSlug): readonly Post[]`, `sharedPosts(): readonly Post[]`, `findPost(house: HouseSlug | null, postKey: string): Post | undefined`, `type SeatRef = { house: HouseSlug | null; postKey: string; seat: number }`, `isValidSeat(ref: SeatRef): boolean`, `encodeSeatRef(ref: SeatRef): string`, `decodeSeatRef(value: string): SeatRef | null`, `allSeats(): SeatRef[]`, `NO_FIXED_SCHEDULE`, `scheduleSummary(schedule: WeeklySchedule | null): string`, `rangesOn(post: Post, date: IsoDate, holiday?: boolean): readonly TimeRange[]`, `nightSeatOnDuty(date: IsoDate): 1 | 2`, `sharedPostHouseOn(date: IsoDate): HouseSlug | null`, `sharedWeekSplit(date: IsoDate): { days: string; house: HouseSlug }[]`.
 
-- [ ] **Step 1: Write the failing date tests**
+- [x] **Step 1: Write the failing date tests**
 
 Add `daysBetween, weekIndex, weekdayOf` to the import in `src/lib/dates.test.ts` and append:
 
@@ -123,12 +125,12 @@ describe('weekIndex', () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run src/lib/dates.test.ts`
 Expected: FAIL, `weekdayOf is not a function` (or a TS import error).
 
-- [ ] **Step 3: Implement the date helpers**
+- [x] **Step 3: Implement the date helpers**
 
 Append to `src/lib/dates.ts`:
 
@@ -156,12 +158,12 @@ export function weekIndex(date: IsoDate): number {
 }
 ```
 
-- [ ] **Step 4: Run the date tests**
+- [x] **Step 4: Run the date tests**
 
 Run: `npx vitest run src/lib/dates.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Write the failing posts tests**
+- [x] **Step 5: Write the failing posts tests**
 
 Create `src/lib/posts.test.ts`:
 
@@ -341,12 +343,12 @@ describe('seat refs', () => {
 });
 ```
 
-- [ ] **Step 6: Run it to verify it fails**
+- [x] **Step 6: Run it to verify it fails**
 
 Run: `npx vitest run src/lib/posts.test.ts`
 Expected: FAIL, cannot resolve `./posts`.
 
-- [ ] **Step 7: Implement `src/lib/posts.ts`**
+- [x] **Step 7: Implement `src/lib/posts.ts`**
 
 ```ts
 // The posts of each House and the posts shared by both Houses (SPEC-003,
@@ -546,12 +548,12 @@ export function sharedWeekSplit(date: IsoDate): { days: string; house: HouseSlug
 }
 ```
 
-- [ ] **Step 8: Run the tests**
+- [x] **Step 8: Run the tests**
 
 Run: `npx vitest run src/lib/posts.test.ts src/lib/dates.test.ts && npm run typecheck`
 Expected: PASS, no type errors (the old membership code is untouched until Task 3).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/lib/dates.ts src/lib/dates.test.ts src/lib/posts.ts src/lib/posts.test.ts
@@ -570,7 +572,7 @@ git commit -m "feat(posts): define House and shared posts with weekly schedules"
 - Consumes: `IsoDate`, `isIsoDate`, `daysBetween` (dates).
 - Produces: `AP_RULES`, `VACATION_RULES`, `type OpeningBalances = { vacationDays: number; carriedDays: number; surplusMinutes: number }`, `defaultVacationDays(year: number, startedOn: IsoDate | null): number`, `defaultOpeningBalances(year: number, startedOn: IsoDate | null): OpeningBalances`; `parseDuration(text: string): number | null`, `toDurationText(minutes: number): string`, `formatDuration(minutes: number, options?: { signed?: boolean }): string`, `maskDuration(raw: string): string`; `parseDateDdMmYyyy(text: string): IsoDate | null`, `formatDateDdMmYyyy(date: IsoDate): string`, `maskDate(raw: string): string`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `src/lib/rules.test.ts`:
 
@@ -695,12 +697,12 @@ describe('dd/mm/aaaa', () => {
 });
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `npx vitest run src/lib/rules.test.ts src/lib/duration.test.ts src/lib/dates.test.ts`
 Expected: FAIL, unresolved modules and missing exports.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Append to `src/lib/dates.ts`:
 
@@ -800,12 +802,12 @@ export function defaultOpeningBalances(year: number, startedOn: IsoDate | null):
 }
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `npx vitest run src/lib/rules.test.ts src/lib/duration.test.ts src/lib/dates.test.ts && npm run typecheck`
 Expected: PASS. (`2026-12-31`: 31 × 1 / 365 rounds to 0, as the test says.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/rules.ts src/lib/rules.test.ts src/lib/duration.ts src/lib/duration.test.ts src/lib/dates.ts src/lib/dates.test.ts
@@ -825,7 +827,7 @@ git commit -m "feat(rules): add AP and vacation rules, durations and dd/mm/aaaa 
 - Produces: Prisma models `House { id, slug, name, people }`, `Person { id, fullName, houseId?, postKey, seat, startedOn?, active, createdAt, updatedAt, house?, years }`, `PersonYear { id, personId, year, vacationDays, carriedDays, surplusMinutes, person }` with compound unique `personId_year`. Tables `houses`, `people`, `person_years`. Indexes `people_active_house_seat_key`, `people_active_shared_seat_key`.
 - `src/server/houses.ts` keeps only `getHouseBySlug(slug: string)`.
 
-- [ ] **Step 1: Rewrite the migration test (failing)**
+- [x] **Step 1: Rewrite the migration test (failing)**
 
 Replace `src/lib/houses-migration.test.ts`:
 
@@ -879,7 +881,7 @@ describe('init migration', () => {
 Run: `npx vitest run src/lib/houses-migration.test.ts`
 Expected: FAIL, `init migration not found`.
 
-- [ ] **Step 2: Rewrite `prisma/schema.prisma`**
+- [x] **Step 2: Rewrite `prisma/schema.prisma`**
 
 ```prisma
 // Prisma schema. The connection URL is configured in `prisma.config.ts`
@@ -946,7 +948,7 @@ model PersonYear {
 }
 ```
 
-- [ ] **Step 3: Delete the membership code, the old migration and the old seed**
+- [x] **Step 3: Delete the membership code, the old migration and the old seed**
 
 ```bash
 git rm -r prisma/migrations/20261005092628_house_context prisma/seed.ts \
@@ -1027,7 +1029,7 @@ export default async function TeamPage({ params }: Readonly<{ params: Promise<{ 
 }
 ```
 
-- [ ] **Step 4: Generate the init migration against the local Postgres**
+- [x] **Step 4: Generate the init migration against the local Postgres**
 
 Start the local Postgres (see "Local Postgres"), then:
 
@@ -1037,7 +1039,7 @@ npx prisma migrate dev --create-only --name init
 
 Expected: `prisma/migrations/<timestamp>_init/migration.sql` with `CREATE TABLE "houses"`, `"people"`, `"person_years"`, the `houses_slug_key`, `people_house_id_idx` and `person_years_person_id_year_key` indexes and the two foreign keys.
 
-- [ ] **Step 5: Append the hand-written SQL to that migration**
+- [x] **Step 5: Append the hand-written SQL to that migration**
 
 Append to the end of the generated `migration.sql`:
 
@@ -1063,7 +1065,7 @@ INSERT INTO "houses" ("slug", "name") VALUES
   ('carme-aymerich', 'Carme Aymerich');
 ```
 
-- [ ] **Step 6: Apply it to a fresh database and check Prisma sees no drift**
+- [x] **Step 6: Apply it to a fresh database and check Prisma sees no drift**
 
 ```bash
 psql -h localhost -p 54329 -U postgres -c 'DROP DATABASE casa' -c 'CREATE DATABASE casa'
@@ -1075,12 +1077,12 @@ rm -r prisma/migrations/*_drift_check
 
 Expected: deploy applies `..._init`; `drift_check` contains only `-- This is an empty migration.` (Prisma ignores the partial indexes and CHECKs, as verified while planning). If it is not empty, fix the schema until it is.
 
-- [ ] **Step 7: Regenerate the client and run everything**
+- [x] **Step 7: Regenerate the client and run everything**
 
 Run: `npm run db:generate && npm run typecheck && npm test`
 Expected: PASS, and `git grep -nE "Employee|HouseMembership|house-membership|membership-store|TeamList" -- src prisma` prints nothing.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A prisma src
@@ -1099,7 +1101,7 @@ git commit -m "feat(db)!: replace dated membership with people and opening balan
 - Produces in `src/lib/team.ts`: `type PersonRecord = { id: string; fullName: string; house: HouseSlug | null; postKey: string; seat: number; startedOn: IsoDate | null; active: boolean }`.
 - Produces in `src/server/people-store.ts`: `class SeatTakenError extends Error { occupant: string | null }`, `class InvalidSeatError extends Error`, `listPeopleOf(db, house: HouseSlug): Promise<PersonRecord[]>`, `listActivePeople(db): Promise<PersonRecord[]>`, `findPerson(db, id: string): Promise<PersonRecord | null>`, `addPerson(db, input: { fullName: string; startedOn: IsoDate | null; seat: SeatRef }): Promise<string>` (new id), `renamePerson(db, id: string, fullName: string): Promise<void>`, `placePerson(db, id: string, seat: SeatRef): Promise<void>` (move or reactivate: sets the seat and `active = true`), `deactivatePerson(db, id: string): Promise<void>`, `findOpeningBalances(db, personId: string, year: number): Promise<OpeningBalances | null>`, `saveOpeningBalances(db, personId: string, year: number, balances: OpeningBalances): Promise<void>`. `db` is `PrismaClient`.
 
-- [ ] **Step 1: Write the failing store tests**
+- [x] **Step 1: Write the failing store tests**
 
 Create `src/server/people-store.test.ts`:
 
@@ -1239,12 +1241,12 @@ describe('listPeopleOf', () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run src/server/people-store.test.ts`
 Expected: FAIL, cannot resolve `./people-store`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/lib/team.ts` (grows in Task 8):
 
@@ -1425,12 +1427,12 @@ export async function saveOpeningBalances(db: PrismaClient, personId: string, ye
 }
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `npx vitest run src/server/people-store.test.ts && npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/team.ts src/server/people-store.ts src/server/people-store.test.ts
@@ -1447,7 +1449,7 @@ git commit -m "feat(people): add the people store with seat checks"
 **Interfaces:**
 - Consumes: `addPerson`, `deactivatePerson`, `saveOpeningBalances` (Task 4), `OpeningBalances`, `HouseSlug`, `IsoDate`.
 
-- [ ] **Step 1: Write `prisma/seed.ts`**
+- [x] **Step 1: Write `prisma/seed.ts`**
 
 ```ts
 // Dev seed with FICTIONAL people only (GDPR: never seed real staff). The names
@@ -1539,12 +1541,12 @@ main()
   .finally(() => db.$disconnect());
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 3: Seed the local Postgres twice**
+- [x] **Step 3: Seed the local Postgres twice**
 
 With the local Postgres exports from "Local Postgres" set and the init migration applied (Task 3, Step 6):
 
@@ -1556,7 +1558,7 @@ psql -h localhost -p 54329 -U postgres -d casa -c "SELECT coalesce(h.slug, 'shar
 
 Expected: first run "Seeded 20 fictional people (3 inactive).", second run "Seed skipped: people already exist."; the table shows 2 active shared, 8 active Paulo Freire, 7 active Carme Aymerich (no active `ct`), 3 inactive.
 
-- [ ] **Step 4: Check the partial unique indexes and CHECKs by hand**
+- [x] **Step 4: Check the partial unique indexes and CHECKs by hand**
 
 ```bash
 psql -h localhost -p 54329 -U postgres -d casa <<'SQL'
@@ -1579,11 +1581,11 @@ SQL
 
 Expected: statements 1, 2, 4 (both) and 5 fail with the named index or CHECK; statement 3 succeeds.
 
-- [ ] **Step 5: Record the evidence**
+- [x] **Step 5: Record the evidence**
 
 Create `openspec/changes/prototype-foundation/db-check.md` with: the date, "local Postgres 16, migration `<timestamp>_init`", the seed output from Step 3, and the psql output from Step 4 (each statement with its ERROR or `INSERT 0 1`). Add one line: "Supabase dev reset: pending, product owner (`npx prisma migrate reset --force` then `npx prisma db seed`)" — or the result if the product owner already ran it. `verify.md` cites this file.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add prisma/seed.ts openspec/changes/prototype-foundation/db-check.md
@@ -1602,7 +1604,7 @@ git commit -m "feat(db): seed fictional people and record the seat index check"
 **Interfaces:**
 - Produces: `type Section = { segment: string; label: string; available: boolean }`, `SECTIONS: readonly Section[]`, `firstAvailableSection(): Section`, `sectionHref(houseSlug: HouseSlug, segment: string): string` — all in `src/lib/sections.ts` (plain module, so Server Components can call them). `section-nav.tsx` no longer exports `SECTIONS` or `sectionHref`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `src/lib/sections.test.ts`:
 
@@ -1723,12 +1725,12 @@ describe('House home', () => {
 });
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `npx vitest run src/lib/sections.test.ts src/components/section-nav.test.tsx "src/app/(app)/[house]/page.test.tsx"`
 Expected: FAIL (missing `./sections`, Inici still a link, page renders instead of redirecting).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/lib/sections.ts`:
 
@@ -1882,12 +1884,12 @@ export default async function HouseHomePage({ params }: Readonly<{ params: Promi
 }
 ```
 
-- [ ] **Step 4: Run the tests and the whole suite**
+- [x] **Step 4: Run the tests and the whole suite**
 
 Run: `npx vitest run src/lib/sections.test.ts src/components/section-nav.test.tsx "src/app/(app)/[house]/page.test.tsx" && npm test && npm run typecheck && npm run lint`
 Expected: PASS. `git grep -n "SECTIONS\|sectionHref" src` shows imports only from `@/lib/sections`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/sections.ts src/lib/sections.test.ts src/components/section-nav.tsx src/components/section-nav.test.tsx "src/app/(app)/[house]/page.tsx" "src/app/(app)/[house]/page.test.tsx"
@@ -1912,7 +1914,7 @@ git commit -m "feat(nav): show Saldos, Vacances, El mes and Equip and open the f
   - `isPersonId(value: string): boolean`
   - `type ActionResult = { ok: true } | { ok: false; message: string }` in `src/lib/action-result.ts`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `src/lib/people-schemas.test.ts`:
 
@@ -1998,12 +2000,12 @@ describe('balancesSchema', () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run src/lib/people-schemas.test.ts`
 Expected: FAIL, cannot resolve `./people-schemas`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/lib/action-result.ts`:
 
@@ -2084,12 +2086,12 @@ export function isPersonId(value: string): boolean {
 }
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `npx vitest run src/lib/people-schemas.test.ts && npm run typecheck`
 Expected: PASS. If zod 4 reports the uuid message differently, keep the message argument as the second form `z.uuid({ error: 'Persona desconeguda.' })`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/people-schemas.ts src/lib/people-schemas.test.ts src/lib/action-result.ts
@@ -2109,7 +2111,7 @@ git commit -m "feat(people): add the form schemas shared by client and server"
 - Produces in `src/lib/team.ts`: `type SeatView = { ref: SeatRef; encoded: string; person: PersonRecord | null; onDutyThisWeek: boolean | null }`, `type PostView = { key: string; roleCode: RoleCode; label: string; summary: string; alternates: boolean; seats: SeatView[] }`, `type TeamView = { shared: PostView[]; posts: PostView[]; unplaced: PersonRecord[]; former: PersonRecord[] }`, `type SeatOption = { value: string; label: string }`, `type PersonDetails = { person: PersonRecord; year: number; balances: OpeningBalances; stored: boolean }`, `buildTeamView(house, people, today): TeamView`, `vacantSeats(people): SeatOption[]`, `seatLabel(ref: SeatRef): string`, `belongsTo(person: PersonRecord, house: HouseSlug): boolean`, `describePerson(person: PersonRecord): string`.
 - Produces in `src/server/people.ts`: `getTeam(house: HouseSlug): Promise<TeamView>`, `getVacantSeats(): Promise<SeatOption[]>`, `getPersonDetails(house: HouseSlug, personId: string, year: number): Promise<PersonDetails | null>`.
 
-- [ ] **Step 1: Write the failing team view tests**
+- [x] **Step 1: Write the failing team view tests**
 
 Create `src/lib/team.test.ts`:
 
@@ -2215,12 +2217,12 @@ describe('labels', () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run src/lib/team.test.ts`
 Expected: FAIL, missing exports.
 
-- [ ] **Step 3: Implement the team view**
+- [x] **Step 3: Implement the team view**
 
 Append to `src/lib/team.ts` (and extend its imports to the block below):
 
@@ -2342,12 +2344,12 @@ export function describePerson(person: PersonRecord): string {
 
 Remove the now duplicated `import type { IsoDate }` / `import type { HouseSlug }` lines from the top of the file.
 
-- [ ] **Step 4: Run the team view tests**
+- [x] **Step 4: Run the team view tests**
 
 Run: `npx vitest run src/lib/team.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Write the failing server read tests**
+- [x] **Step 5: Write the failing server read tests**
 
 Create `src/server/people.test.ts`:
 
@@ -2421,12 +2423,12 @@ describe('for the director', () => {
 });
 ```
 
-- [ ] **Step 6: Run it to verify it fails**
+- [x] **Step 6: Run it to verify it fails**
 
 Run: `npx vitest run src/server/people.test.ts`
 Expected: FAIL, cannot resolve `./people`.
 
-- [ ] **Step 7: Implement `src/server/people.ts`**
+- [x] **Step 7: Implement `src/server/people.ts`**
 
 ```ts
 import 'server-only';
@@ -2463,12 +2465,12 @@ export async function getPersonDetails(house: HouseSlug, personId: string, year:
 }
 ```
 
-- [ ] **Step 8: Run the tests**
+- [x] **Step 8: Run the tests**
 
 Run: `npx vitest run src/lib/team.test.ts src/server/people.test.ts && npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/lib/team.ts src/lib/team.test.ts src/server/people.ts src/server/people.test.ts
@@ -2486,7 +2488,7 @@ git commit -m "feat(people): build the team view and the director-gated reads"
 - Consumes: schemas (Task 7), `ActionResult`, store writes and `SeatTakenError` (Task 4), `belongsTo` (Task 8), `requireDirector`, `prisma`, `isHouseSlug`, `revalidatePath` from `next/cache`.
 - Produces (each `(houseSlug: string, input: unknown) => Promise<ActionResult>`, input = the raw form values of the matching schema): `addPersonAction`, `renamePersonAction`, `movePersonAction`, `deactivatePersonAction`, `reactivatePersonAction`, `saveBalancesAction`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `src/app/(app)/[house]/team/actions.test.ts`:
 
@@ -2657,12 +2659,12 @@ describe('saveBalancesAction', () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run "src/app/(app)/[house]/team/actions.test.ts"`
 Expected: FAIL, cannot resolve `./actions`.
 
-- [ ] **Step 3: Implement `src/app/(app)/[house]/team/actions.ts`**
+- [x] **Step 3: Implement `src/app/(app)/[house]/team/actions.ts`**
 
 ```ts
 'use server';
@@ -2778,12 +2780,12 @@ export async function saveBalancesAction(houseSlug: string, input: unknown): Pro
 
 Before writing, re-read `node_modules/next/dist/docs/01-app/01-getting-started/07-mutating-data.md` and `.../03-api-reference/04-functions/revalidatePath.md` (a dynamic route pattern needs the `'page'` type argument).
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `npx vitest run "src/app/(app)/[house]/team/actions.test.ts" && npm run typecheck && npm run lint`
 Expected: PASS. (Lint: a `'use server'` file may only export async functions; `run`, `personIn` and `fail` are not exported.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add "src/app/(app)/[house]/team/actions.ts" "src/app/(app)/[house]/team/actions.test.ts"
@@ -2802,7 +2804,7 @@ git commit -m "feat(people): add the Equip Server Functions"
 - Consumes: `maskDuration` (Task 2), `maskDate` (Task 2), `Button`, `cn`.
 - Produces: `Input(props: ComponentProps<'input'>)`, `NativeSelect(props: ComponentProps<'select'>)`, `ErrorText({ id?, children })`, `SuccessText({ children })`, `Field({ id, label, hint?, error?, children })`, `Sheet({ open, onClose, title, description?, children })`, `DurationInput({ id, value, onChange, onBlur?, sign?, onSignChange?, invalid?, describedBy? })`, `DateInput({ value, onChange, ...inputProps })`.
 
-- [ ] **Step 1: Write the failing component tests**
+- [x] **Step 1: Write the failing component tests**
 
 `src/components/field.test.tsx`:
 
@@ -2955,12 +2957,12 @@ describe('DateInput', () => {
 });
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `npx vitest run src/components/field.test.tsx src/components/sheet.test.tsx src/components/duration-input.test.tsx src/components/date-input.test.tsx`
 Expected: FAIL, unresolved modules.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `src/app/globals.css`, next to `--shadow-clay` inside `@theme`, add (value from the prototypes' `shared/theme.js`):
 
@@ -3221,12 +3223,12 @@ export function DateInput({
 }
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `npx vitest run src/components && npm run typecheck && npm run lint`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/app/globals.css src/components/ui/input.tsx src/components/ui/native-select.tsx src/components/field.tsx src/components/field.test.tsx src/components/sheet.tsx src/components/sheet.test.tsx src/components/duration-input.tsx src/components/duration-input.test.tsx src/components/date-input.tsx src/components/date-input.test.tsx
@@ -3245,7 +3247,7 @@ git commit -m "feat(ui): add the field, sheet, duration and date inputs"
 - Consumes: `TeamView`, `PostView`, `PersonRecord`, `seatLabel`, `buildTeamView` (Task 8), `getTeam`, `getPersonDetails`, `getVacantSeats` (Task 8), `addPersonAction` (Task 9), `addPersonSchema` (Task 7), primitives (Task 10), `sharedWeekSplit` (Task 1), `findHouseBySlug`, `todayInMadrid`.
 - Produces: `TeamBoard({ houseSlug, houseName, team, today })` (Server Component), `PostCard({ houseSlug, post, ownerName })`, `AddPersonButton({ houseSlug, seat, seatName })`, `AddPersonForm({ houseSlug, seat, onDone })`, `useServerAction(): { error: string | null; saved: boolean; pending: boolean; run(action: () => Promise<ActionResult>, onSuccess?: () => void): void }`, `personHref(houseSlug, personId, year?)`.
 
-- [ ] **Step 1: Write the failing board test**
+- [x] **Step 1: Write the failing board test**
 
 `src/components/team/team-board.test.tsx`:
 
@@ -3319,12 +3321,12 @@ describe('TeamBoard', () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run src/components/team/team-board.test.tsx`
 Expected: FAIL, cannot resolve `./team-board`.
 
-- [ ] **Step 3: Implement the board, the card and the add flow**
+- [x] **Step 3: Implement the board, the card and the add flow**
 
 `src/components/team/use-server-action.ts`:
 
@@ -3689,12 +3691,12 @@ export function PersonSheet({
 }
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `npx vitest run src/components/team && npm test && npm run typecheck && npm run lint`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/team "src/app/(app)/[house]/team/page.tsx"
@@ -3713,7 +3715,7 @@ git commit -m "feat(team): list posts, people, vacant seats and former members"
 - Consumes: `renamePersonAction`, `movePersonAction`, `reactivatePersonAction`, `deactivatePersonAction` (Task 9); `renamePersonSchema`, `placePersonSchema` (Task 7); primitives (Task 10); `useServerAction` (Task 11); `PersonDetails`, `SeatOption`, `describePerson` (Task 8).
 - Produces: `RenameForm({ houseSlug, personId, fullName })`, `PlaceForm({ houseSlug, personId, vacantSeats, mode: 'move' | 'reactivate' })`, `DeactivateForm({ houseSlug, personId, fullName })`, `PersonSheet({ houseSlug, details, vacantSeats, today })`. `PersonSheet` renders a `{balances}` slot filled in Task 13.
 
-- [ ] **Step 1: Write the failing sheet test**
+- [x] **Step 1: Write the failing sheet test**
 
 `src/components/team/person-sheet.test.tsx`:
 
@@ -3825,12 +3827,12 @@ describe('PersonSheet', () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run src/components/team/person-sheet.test.tsx`
 Expected: FAIL (the first-version sheet renders no forms).
 
-- [ ] **Step 3: Implement the forms and the sheet**
+- [x] **Step 3: Implement the forms and the sheet**
 
 `src/components/team/rename-form.tsx`:
 
@@ -4068,12 +4070,12 @@ export function PersonSheet({
 
 (`today` is accepted but not destructured until Task 13 uses it for the year tabs.)
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `npx vitest run src/components/team && npm run typecheck && npm run lint`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/team
@@ -4092,7 +4094,7 @@ git commit -m "feat(team): rename, move, deactivate and reactivate people"
 - Consumes: `saveBalancesAction` (Task 9), `balancesSchema` (Task 7), `formatDuration`, `toDurationText` (Task 2), `DurationInput`, `Field`, `ErrorText`, `SuccessText`, `Input` (Task 10), `personHref` (Task 11), `PersonDetails`.
 - Produces: `BalancesSection({ houseSlug, details, currentYear })`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `src/components/team/balances-section.test.tsx`:
 
@@ -4170,12 +4172,12 @@ describe('BalancesSection', () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run src/components/team/balances-section.test.tsx`
 Expected: FAIL, cannot resolve `./balances-section`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `src/components/team/balances-section.tsx`:
 
@@ -4326,12 +4328,12 @@ In `src/components/team/person-sheet.tsx`: import `BalancesSection`, remove the 
 
 (replacing `{balances}`). `person-sheet.test.tsx` already mocks `saveBalancesAction`. Note the "Nom complet" label is unique in the sheet; the balances fields use other labels.
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `npx vitest run src/components/team && npm test && npm run typecheck && npm run lint`
 Expected: PASS. If `getByText('3')` is ambiguous because another node renders "3", scope it with `within(screen.getByText('Dies AA').closest('div')!)`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/team
@@ -4346,12 +4348,12 @@ git commit -m "feat(team): edit opening balances per person and year"
 
 This needs Clerk dev keys, a user with `publicMetadata.role = "director"` and a seeded database. In the cloud container there is no `.env.local`: if the variables are not available, **do not fake auth**; write "Browser check: pending, product owner" in the evidence file and tell the product owner the steps below.
 
-- [ ] **Step 1: Start the app** — `npm run dev` with `.env.local` pointing at a seeded database (Supabase dev after the reset, or the local Postgres via `DATABASE_URL`).
-- [ ] **Step 2: Desktop (1280px), Paulo Freire** — `/paulo-freire` redirects to `/paulo-freire/team`; nav shows Saldos, Vacances, El mes with "aviat" (not clickable) and Equip current; `/paulo-freire/saldos` shows the Catalan 404; shared posts listed first with "Aquesta setmana: …"; seven posts with schedules; EN with both people and "Aquesta setmana" / "La setmana vinent"; Antics membres lists Clara Soler Pujol and Núria Roca Ferrer.
-- [ ] **Step 3: Flows** — add a person to Carme Aymerich's vacant Corretorn; rename Roger Beltrán Camps; move him to a vacant seat of Carme Aymerich and back; try moving into an occupied seat (error with icon names the occupant; no implicit swap); pass Pol Jiménez Alcover to antics membres and reincorporate him; save Mireia Santos Rovira's 2026 balances 31 / 3 / +12:00 and see "31 dies", "3", "+12 h"; type `9:75` and see the error; switch year to 2027 and see defaults.
-- [ ] **Step 4: House switch** — from `/paulo-freire/team` switch to Carme Aymerich: lands on `/carme-aymerich/team`, shared posts show the same people, no Paulo Freire names.
-- [ ] **Step 5: Mobile (390px)** — bottom tab bar with Saldos, Vacances, El mes dimmed and Equip active; cards in one column; the person sheet opens from the bottom; inputs are at least 44px high.
-- [ ] **Step 6: Record** the results (or "pending, product owner") and commit:
+- [x] **Step 1: Start the app** — `npm run dev` with `.env.local` pointing at a seeded database (Supabase dev after the reset, or the local Postgres via `DATABASE_URL`).
+- [x] **Step 2: Desktop (1280px), Paulo Freire** — `/paulo-freire` redirects to `/paulo-freire/team`; nav shows Saldos, Vacances, El mes with "aviat" (not clickable) and Equip current; `/paulo-freire/saldos` shows the Catalan 404; shared posts listed first with "Aquesta setmana: …"; seven posts with schedules; EN with both people and "Aquesta setmana" / "La setmana vinent"; Antics membres lists Clara Soler Pujol and Núria Roca Ferrer.
+- [x] **Step 3: Flows** — add a person to Carme Aymerich's vacant Corretorn; rename Roger Beltrán Camps; move him to a vacant seat of Carme Aymerich and back; try moving into an occupied seat (error with icon names the occupant; no implicit swap); pass Pol Jiménez Alcover to antics membres and reincorporate him; save Mireia Santos Rovira's 2026 balances 31 / 3 / +12:00 and see "31 dies", "3", "+12 h"; type `9:75` and see the error; switch year to 2027 and see defaults.
+- [x] **Step 4: House switch** — from `/paulo-freire/team` switch to Carme Aymerich: lands on `/carme-aymerich/team`, shared posts show the same people, no Paulo Freire names.
+- [x] **Step 5: Mobile (390px)** — bottom tab bar with Saldos, Vacances, El mes dimmed and Equip active; cards in one column; the person sheet opens from the bottom; inputs are at least 44px high.
+- [x] **Step 6: Record** the results (or "pending, product owner") and commit:
 
 ```bash
 git add openspec/changes/prototype-foundation/db-check.md
@@ -4365,12 +4367,12 @@ git commit -m "docs(openspec): record the Equip browser check"
 **Files:**
 - Modify: `docs/domain.md`, `AGENTS.md`, `README.md`, `openspec/config.yaml`, `docs/prototypes/director-feedback.md`, `openspec/changes/prototype-foundation/tasks.md`
 
-- [ ] **Step 1: `docs/domain.md`** — §2: posts live in `src/lib/posts.ts` (keys `er, tfm, tft, et, ecs, en, ct`; shared `pdg, psi`). §3: replace "alternate by ISO week" wording with "alternate every week, counted from a fixed Monday (`weekIndex` in `src/lib/dates.ts`) so the alternation survives 53-week years"; state that shared posts work Monday to Wednesday in one House and Thursday and Friday in the other, swapping each week (provisional). §7: default vacation days are `defaultVacationDays` in `src/lib/rules.ts`. §10: dates use `DateInput`, durations `DurationInput`. §11: Equip "Done in SPEC-003". Mark each edit "(changed in SPEC-003)" where it differs from what was written before.
-- [ ] **Step 2: `docs/prototypes/director-feedback.md`** — the note "the app's role catalogue (`src/lib/roles.ts`, staffing migration) still says Corretor" refers to unmerged SPEC-002: replace with "The app says Corretorn (`src/lib/posts.ts`)."
-- [ ] **Step 3: `AGENTS.md`** — intro: SPEC-003 `prototype-foundation` replaced dated membership with people per post; the next specs are SPEC-004 Saldos, SPEC-005 El mes, SPEC-006 Vacances, and agents **must read `docs/domain.md`, the prototypes in `public/prototypes/` and `docs/prototypes/director-feedback.md` before working on them**. Stack: models `House`, `Person`, `PersonYear`. Layout: `[house]/` sections are registered in `src/lib/sections.ts` (flag + route) and their icon in `src/components/section-nav.tsx`; `/[house]` redirects to the first available section; `src/lib/posts.ts`, `src/lib/rules.ts`, `src/lib/duration.ts`, `src/lib/team.ts`, `src/lib/people-schemas.ts`; `src/server/people.ts` (director-gated reads), `src/server/people-store.ts` (Prisma, no auth, seed only outside the Server Functions), `src/app/(app)/[house]/team/actions.ts`; `src/components/team/`, `sheet.tsx`, `field.tsx`, `duration-input.tsx`, `date-input.tsx`. Remove `house-membership.ts`, `membership-store.ts`. Access and data rules: replace the "Every House-scoped record stores its own houseId … transfer" and exclusion-constraint bullets with: balances, APs and vacations belong to the person, never to a House; records that belong to a House (rota changes, day notes) store `house_id`; one active person per seat is enforced by two hand-written partial unique indexes in the init migration (Prisma does not show them); posts, schedules and rules are code, changed by a code change; Server Functions call `requireDirector()`, validate the House slug and re-parse with the form's zod schema.
-- [ ] **Step 4: `README.md`** — Status: "Houses, the final navigation and the Equip page (people per post, opening balances). Saldos, Vacances and El mes are next (SPEC-004 to SPEC-006)." Routes: `/<house>` redirects to Equip. "Dev data and access": (1) reset the dev database after pulling SPEC-003 (`npx prisma migrate reset --force`, it drops everything; fictional data only), (2) `npx prisma db seed` (20 fictional people, 3 inactive), (3) the Clerk metadata step unchanged.
-- [ ] **Step 5: `openspec/config.yaml`** — add to `context`: "Domain reference: docs/domain.md (read before any spec). Approved UI: public/prototypes/ and docs/prototypes/director-feedback.md. People cover seats of posts defined in src/lib/posts.ts; balances belong to the person."
-- [ ] **Step 6: Final checks**
+- [x] **Step 1: `docs/domain.md`** — §2: posts live in `src/lib/posts.ts` (keys `er, tfm, tft, et, ecs, en, ct`; shared `pdg, psi`). §3: replace "alternate by ISO week" wording with "alternate every week, counted from a fixed Monday (`weekIndex` in `src/lib/dates.ts`) so the alternation survives 53-week years"; state that shared posts work Monday to Wednesday in one House and Thursday and Friday in the other, swapping each week (provisional). §7: default vacation days are `defaultVacationDays` in `src/lib/rules.ts`. §10: dates use `DateInput`, durations `DurationInput`. §11: Equip "Done in SPEC-003". Mark each edit "(changed in SPEC-003)" where it differs from what was written before.
+- [x] **Step 2: `docs/prototypes/director-feedback.md`** — the note "the app's role catalogue (`src/lib/roles.ts`, staffing migration) still says Corretor" refers to unmerged SPEC-002: replace with "The app says Corretorn (`src/lib/posts.ts`)."
+- [x] **Step 3: `AGENTS.md`** — intro: SPEC-003 `prototype-foundation` replaced dated membership with people per post; the next specs are SPEC-004 Saldos, SPEC-005 El mes, SPEC-006 Vacances, and agents **must read `docs/domain.md`, the prototypes in `public/prototypes/` and `docs/prototypes/director-feedback.md` before working on them**. Stack: models `House`, `Person`, `PersonYear`. Layout: `[house]/` sections are registered in `src/lib/sections.ts` (flag + route) and their icon in `src/components/section-nav.tsx`; `/[house]` redirects to the first available section; `src/lib/posts.ts`, `src/lib/rules.ts`, `src/lib/duration.ts`, `src/lib/team.ts`, `src/lib/people-schemas.ts`; `src/server/people.ts` (director-gated reads), `src/server/people-store.ts` (Prisma, no auth, seed only outside the Server Functions), `src/app/(app)/[house]/team/actions.ts`; `src/components/team/`, `sheet.tsx`, `field.tsx`, `duration-input.tsx`, `date-input.tsx`. Remove `house-membership.ts`, `membership-store.ts`. Access and data rules: replace the "Every House-scoped record stores its own houseId … transfer" and exclusion-constraint bullets with: balances, APs and vacations belong to the person, never to a House; records that belong to a House (rota changes, day notes) store `house_id`; one active person per seat is enforced by two hand-written partial unique indexes in the init migration (Prisma does not show them); posts, schedules and rules are code, changed by a code change; Server Functions call `requireDirector()`, validate the House slug and re-parse with the form's zod schema.
+- [x] **Step 4: `README.md`** — Status: "Houses, the final navigation and the Equip page (people per post, opening balances). Saldos, Vacances and El mes are next (SPEC-004 to SPEC-006)." Routes: `/<house>` redirects to Equip. "Dev data and access": (1) reset the dev database after pulling SPEC-003 (`npx prisma migrate reset --force`, it drops everything; fictional data only), (2) `npx prisma db seed` (20 fictional people, 3 inactive), (3) the Clerk metadata step unchanged.
+- [x] **Step 5: `openspec/config.yaml`** — add to `context`: "Domain reference: docs/domain.md (read before any spec). Approved UI: public/prototypes/ and docs/prototypes/director-feedback.md. People cover seats of posts defined in src/lib/posts.ts; balances belong to the person."
+- [x] **Step 6: Final checks**
 
 ```bash
 npm run lint
@@ -4381,8 +4383,8 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-} npm run
 
 Expected: lint, typecheck and tests green. `npm run build` needs real Clerk keys (`README.md`); with `.env.local` present it must succeed and list `/[house]`, `/[house]/team`, `/dashboard`, `/no-access`. Without keys in the cloud container, record "build: pending, product owner" and the exact error. `git grep -nE "Employee|HouseMembership|membership|transferEmployee|Inici" -- src prisma AGENTS.md README.md` must return nothing relevant (the word "membres" in Catalan copy is fine).
 
-- [ ] **Step 7: Tick `tasks.md`** — mark every completed box; leave 2.4 (Supabase reset) and 6.5 (browser check) unticked if they are still pending for the product owner, with a note.
-- [ ] **Step 8: Commit**
+- [x] **Step 7: Tick `tasks.md`** — mark every completed box; leave 2.4 (Supabase reset) and 6.5 (browser check) unticked if they are still pending for the product owner, with a note.
+- [x] **Step 8: Commit**
 
 ```bash
 git add docs AGENTS.md README.md openspec
