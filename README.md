@@ -137,12 +137,69 @@ This repo is configured for OpenSpec with the **superpowers-bridge** schema
 
 ## Deployment (Vercel)
 
-- Import the repo in Vercel; pin the **Function region to the same EU region as
-  Supabase** (`dub1`, Dublin, for `eu-west-1`).
-- Production uses **separate** credentials: a new Supabase project for prod and the
-  Clerk production instance. Set them only in the Vercel project settings; never
-  point a local `.env.local` at the prod database.
-- Pushes to the default branch deploy automatically.
+`vercel.json` pins the Function region to `dub1` (Dublin), next to Supabase `eu-west-1`
+(GDPR: EU only). The build needs no database access: `postinstall` runs `prisma generate`,
+which works without `DIRECT_URL` or `DATABASE_URL`, and `next build` needs only the Clerk keys.
+**Migrations are not run by the Vercel build.** Apply them by hand against the target database:
+
+```bash
+DIRECT_URL="<target direct url>" npx prisma migrate deploy
+```
+
+### Preview with dev keys (first target)
+
+A preview deployment uses the Clerk **development** instance and the Supabase **dev** database
+(fictional data). Set these in the Vercel project for the **Preview** environment only (names only):
+
+- `DATABASE_URL`: pooled Supabase URL (`:6543`, `pgbouncer=true`). It is the only database
+  variable the running app reads. If you see "too many connections" under load, add
+  `connection_limit=1` to this URL (not needed so far; untested).
+- `DIRECT_URL`: not needed on Vercel (only `prisma migrate` uses it); leave unset.
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`: the `pk_test_` / `sk_test_` keys.
+- `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`,
+  `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL`:
+  same values as `.env.example`.
+
+Do not set `ALLOWED_DEV_ORIGINS` (dev server only).
+
+**Clerk side.** Clerk's Vercel guide says preview and development deployments can use the
+development API keys, and only forbids `*.vercel.app` for production
+(https://clerk.com/docs/deployments/deploy-to-vercel). It does not state explicitly that a
+development instance needs no domain setup for `*.vercel.app`; this is unconfirmed until the
+first sign-in on a preview URL. If sign-in fails, check the preview guide linked from that page.
+The user needs `publicMetadata.role = "director"` in the dev instance (see "Dev data and access").
+
+**Commands** (Vercel CLI, run by the product owner; install with `npm i -g vercel`):
+
+```bash
+vercel login
+vercel link                       # create or pick the project, connect the Git repo
+vercel env add DATABASE_URL preview
+vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY preview
+vercel env add CLERK_SECRET_KEY preview
+vercel env add NEXT_PUBLIC_CLERK_SIGN_IN_URL preview
+vercel env add NEXT_PUBLIC_CLERK_SIGN_UP_URL preview
+vercel env add NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL preview
+vercel env add NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL preview
+vercel deploy                     # no --prod: creates a preview and prints an https URL
+```
+
+If the CLI asks for a Git branch when adding a Preview variable, leave it empty (all branches).
+Dashboard alternative: Vercel, Add New Project, import the GitHub repo, add the same variables
+under Environment Variables with only "Preview" ticked, then push the branch.
+Open the printed `https://...vercel.app` URL on the phone.
+
+**Security.** Preview URLs are public. Access is still gated by Clerk sign-in plus the `director`
+role, and the dev database holds fictional data only. Vercel Deployment Protection (Vercel
+Authentication) can add a second gate if wanted.
+
+### Production (later)
+
+- A separate Supabase EU project; apply `npx prisma migrate deploy` against it. No data migration.
+- The Clerk production instance with its own custom domain (`*.vercel.app` is not allowed), its
+  `pk_live_` / `sk_live_` keys, set for the Production environment only.
+- Set `publicMetadata.role` to `director` on the director's production account.
+- Never point a local `.env.local` at production.
 
 ## GDPR
 
