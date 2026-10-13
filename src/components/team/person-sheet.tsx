@@ -47,7 +47,7 @@ export function PersonSheet({
         {person.active ? (
           <SheetSection title="Lloc">
             <p className="text-[0.8125rem] text-muted-foreground">
-              Mou-la a un lloc vacant d&apos;aquesta casa, de l&apos;altra o compartit. Els saldos es queden amb la persona.
+              Tria un lloc vacant d&apos;aquesta casa, de l&apos;altra o compartit. Els saldos es queden amb la persona.
             </p>
             <PlaceForm houseSlug={houseSlug} personId={person.id} vacantSeats={vacantSeats} mode="move" />
             <DeactivateForm houseSlug={houseSlug} personId={person.id} fullName={person.fullName} />

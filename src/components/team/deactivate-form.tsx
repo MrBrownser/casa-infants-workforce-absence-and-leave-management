@@ -25,7 +25,7 @@ export function DeactivateForm({ houseSlug, personId, fullName }: Readonly<{ hou
   return (
     <div role="group" aria-label="Confirmació" className="flex flex-col gap-3 rounded-xl border border-border p-4">
       <p className="text-[0.875rem]">
-        {fullName} deixarà el lloc vacant. Es guarden les seves dades i saldos, i la pots reincorporar quan torni.
+        {fullName} deixarà el lloc vacant. Es guarden les seves dades i saldos per si torna.
       </p>
       {error && <ErrorText>{error}</ErrorText>}
       <div className="flex flex-wrap gap-2">

@@ -108,6 +108,14 @@ describe('PersonSheet', () => {
     expect(reactivatePersonAction).toHaveBeenCalledWith('paulo-freire', { personId: ID, seat: 'paulo-freire:ct:1' });
   });
 
+  it('uses copy that fits any person, not only women', async () => {
+    render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Passa a antics membres' }));
+    const text = screen.getByRole('dialog').textContent ?? '';
+    expect(text).not.toMatch(/Mou-la|la pots/);
+    expect(text).toContain('Roger Beltrán Camps deixarà el lloc vacant. Es guarden les seves dades i saldos per si torna.');
+  });
+
   it('says so when there is no vacant seat', () => {
     render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={[]} today="2026-10-13" />);
     expect(screen.getByText('No hi ha cap lloc vacant.')).toBeInTheDocument();

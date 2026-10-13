@@ -10,7 +10,7 @@
 - [x] 2.1 Rewrite `prisma/schema.prisma` with `House`, `Person` (`full_name`, `house_id` nullable for shared posts, `post_key`, `seat`, `started_on`, `active`, timestamps) and `PersonYear` (`person_id`, `year`, `vacation_days`, `carried_days`, `surplus_minutes`).
 - [x] 2.2 Replace `prisma/migrations/20261005092628_house_context` with one initial migration: the two House rows, the two partial unique indexes on `people` (per House and seat, and per seat for shared posts with no House), unique `(person_id, year)` and CHECKs on the balances; keep the Houses migration test in sync.
 - [x] 2.3 Rewrite `prisma/seed.ts` from the validated list (fictional names, two people on each night post) plus a few inactive people and some 2026 balances.
-- [ ] 2.4 Reset the dev database (`prisma migrate reset`), run the seed, and check by hand that a second active person for the same seat (of a House post and of a shared post) is rejected; record the result for `verify.md`. *(Checked on a local Postgres, see `db-check.md`; the Supabase dev reset is pending, product owner.)*
+- [x] 2.4 Reset the dev database (`prisma migrate reset`), run the seed, and check by hand that a second active person for the same seat (of a House post and of a shared post) is rejected; record the result for `verify.md`. *(Done on Supabase dev and a local Postgres, see `db-check.md`.)*
 
 ## 3. Remove dated membership
 
@@ -34,7 +34,7 @@
 - [x] 6.2 Rebuild `/[house]/team`: the shared posts first ("Compartits entre les dues cases", same on both Houses), then the House's posts in inventory order with role label, compact weekly schedule and the people of each seat or "Vacant" (night post with two people and alternating weeks), plus "Antics membres"; following `DESIGN.md` and the prototypes' look; component tests.
 - [x] 6.3 Add the forms (react-hook-form + zod): add a person to a vacant seat, rename, move to a vacant seat of another post or House, mark inactive, reactivate; errors with icon and text, values kept on error.
 - [x] 6.4 Add the person details with the opening balances of a year (defaults shown when nothing is stored, duration input for the surplus).
-- [ ] 6.5 Check the page on desktop and mobile (bottom tab bar) in the browser, for both Houses. *(Pending, product owner's local session.)*
+- [x] 6.5 Check the page on desktop and mobile (bottom tab bar) in the browser, for both Houses. *(Done, see `db-check.md`.)*
 
 ## 7. Docs and context for later specs
 
