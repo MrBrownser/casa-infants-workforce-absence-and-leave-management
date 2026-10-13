@@ -71,6 +71,9 @@ cp .env.example .env.local   # then fill in real values (see below)
 npm run dev            # http://localhost:3000
 ```
 
+To open the dev server from a phone on the same network, set `ALLOWED_DEV_ORIGINS` in
+`.env.local` to the IP the phone uses (see `.env.example`) and restart `npm run dev`.
+
 Routes: `/` landing page, `/sign-in`, `/sign-up`, `/dashboard` (signed-in only, redirects to the
 last House), `/<house>` (redirects to Equip), `/<house>/team` (Equip).
 
