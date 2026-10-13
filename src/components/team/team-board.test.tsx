@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { buildTeamView, type PersonRecord } from '@/lib/team';
 import { TeamBoard } from './team-board';
@@ -46,6 +47,13 @@ describe('TeamBoard', () => {
     expect(within(ct).getByRole('button', { name: 'Afegeix una persona a Paulo Freire · Corretorn' })).toBeInTheDocument();
     const et = screen.getByRole('listitem', { name: 'Educadora de tardes' });
     expect(within(et).getByText('dl–dv 14:00–22:00')).toBeInTheDocument();
+  });
+
+  it('opens the add form with the cursor in the name field', async () => {
+    render(<TeamBoard houseSlug="paulo-freire" houseName="Paulo Freire" team={team} today={TODAY} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Afegeix una persona a Paulo Freire · Corretorn' }));
+    expect(screen.getByRole('dialog', { name: 'Afegeix una persona' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Nom complet')).toHaveFocus();
   });
 
   it('shows the two night people and their alternating weeks', () => {

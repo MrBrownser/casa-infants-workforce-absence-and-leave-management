@@ -27,6 +27,7 @@ export function AddPersonForm({ houseSlug, seat, onDone }: Readonly<{ houseSlug:
       <Field id="add-full-name" label="Nom complet" error={errors.fullName?.message}>
         <Input
           id="add-full-name"
+          data-autofocus
           autoComplete="off"
           aria-invalid={errors.fullName ? true : undefined}
           aria-describedby={errors.fullName ? 'add-full-name-error' : undefined}
