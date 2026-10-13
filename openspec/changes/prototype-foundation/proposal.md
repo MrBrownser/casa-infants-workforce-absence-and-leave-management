@@ -11,7 +11,7 @@ After two specs the director still had no screen for her daily work: vacations, 
 - Impact: breaking for the database (single clean initial migration, dev database reset). No production database exists yet.
 
 **Domain in code**
-- New: the posts of each House (the validated list: PDG, PSI, ER, TFM, TFT, ET, ECS, EN with two people alternating weeks, CT "Corretorn"), each with a weekly schedule (invented for now, to be corrected in code), and the AP and vacation constants live in `src/lib/`. Changing them is a code change. Public holidays are documented now and coded with SPEC-005, the first spec that uses them.
+- New: the posts of each House (ER, TFM, TFT, ET, ECS, EN with two people alternating weeks, CT "Corretorn") and the posts shared by both Houses (PDG and PSI, whose people have no House but the same balances as everyone), each with a weekly schedule (invented for now, to be corrected in code), and the AP and vacation constants live in `src/lib/`. Changing them is a code change. Public holidays are documented now and coded with SPEC-005, the first spec that uses them.
 
 **Equip page**
 - From: a read-only list of current members with "Des del <date>".

@@ -29,12 +29,13 @@ prototypes do until the director says otherwise.
 - Two Houses: **Paulo Freire** (`paulo-freire`) and **Carme Aymerich** (`carme-aymerich`).
   Casa d'Infants is a 24/7 residential service for children run by FASI.
 - Each House has a fixed set of **posts** (`src/lib/posts.ts`). What changes is **who** covers
-  each post. Both Houses have the same nine posts (list validated by the product owner):
+  each post. Both Houses have the same posts (list validated by the product owner), and two of
+  them are **shared by both Houses**:
 
 | Code | Label | People | Works |
 |---|---|---|---|
-| PDG | Pedagoga | 1 | Weekdays |
-| PSI | Psicòloga | 1 | Weekdays |
+| PDG | Pedagoga | 1, **shared** | Weekdays, split between both Houses |
+| PSI | Psicòloga | 1, **shared** | Weekdays, split between both Houses |
 | ER | Educadora referent | 1 | Weekdays (only one ER at a time; a month can show two names when one leaves and another starts) |
 | TFM | Treballadora familiar de matins | 1 | Weekday mornings |
 | TFT | Treballadora familiar de tardes | 1 | Weekday afternoons |
@@ -43,6 +44,10 @@ prototypes do until the director says otherwise.
 | EN | Educadora de nit | **2** | Nights; the two people **alternate by week** (legal rest) |
 | CT | **Corretorn** (never "corretor": director's correction) | 1 | No fixed schedule: covers absences |
 
+- **Shared posts:** the Pedagoga and the Psicòloga work for **both Houses**: the person has no
+  House, but has vacations, APs and a surplus like everyone else. **(open)** Their exact week:
+  the product owner believes a fixed schedule, three days in one House and two in the other,
+  alternating every week (to confirm with the director). Both Equip pages show them.
 - An ER may stand in for the director when she is away; that gives no app access.
 - A person covers one seat of one post. A seat with nobody is "Vacant". A person can be moved
   to another post or House (an edit) or marked inactive when they leave or take a long leave

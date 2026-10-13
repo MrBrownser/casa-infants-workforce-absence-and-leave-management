@@ -5,7 +5,18 @@ The system SHALL define, in code, the ordered list of posts of each House. Each 
 
 #### Scenario: Inventory of each House
 - **WHEN** the posts of Paulo Freire and Carme Aymerich are loaded
-- **THEN** each House has, in this order, PDG, PSI, ER, TFM, TFT, ET, ECS, EN and CT, keys are unique within the House, and only EN has two seats
+- **THEN** each House has, in this order, ER, TFM, TFT, ET, ECS, EN and CT, keys are unique within the House, and only EN has two seats
+
+### Requirement: Posts shared by both Houses
+The system SHALL define, in code, posts shared by both Houses, which belong to no House: PDG and PSI. A person covering a shared post MUST have no House assigned and SHALL have the same balances (vacations, AA, APs, calendar surplus) as any other person. Each shared post has one seat.
+
+#### Scenario: Shared posts have no House
+- **WHEN** the director adds Meritxell Torres Vila to the shared Pedagoga post
+- **THEN** Meritxell Torres Vila has no House, and her opening balances can be edited like anyone else's
+
+#### Scenario: Shared posts on both Equip pages
+- **WHEN** the director opens the Equip page of Paulo Freire or of Carme Aymerich
+- **THEN** both pages show the Pedagoga and Psicòloga posts, with the same people, under "Compartits entre les dues cases"
 
 ### Requirement: Role labels
 Each role code SHALL be shown with its Catalan label: PDG Pedagoga, PSI Psicòloga, ER Educadora referent, TFM Treballadora familiar de matins, TFT Treballadora familiar de tardes, ET Educadora de tardes, ECS Educadora de cap de setmana, EN Educadora de nit, CT Corretorn.
@@ -26,7 +37,7 @@ Each post SHALL have, in code, a weekly schedule: for each day of the week, the 
 - **THEN** each weekday shows its own range, and the same ranges repeat every week
 
 ### Requirement: Weekends, holidays, nights and the CT
-Weekday posts MUST NOT work on public holidays. The weekend post (ECS) SHALL work weekends and public holidays, mornings and afternoons. The two people of the night post SHALL alternate by week. The CT SHALL have no fixed schedule.
+Weekday posts MUST NOT work on public holidays. A shared post SHALL state, for each weekday of its schedule, in which House it works; until the director confirms it, it alternates by week between three days in one House and two in the other. The weekend post (ECS) SHALL work weekends and public holidays, mornings and afternoons. The two people of the night post SHALL alternate by week. The CT SHALL have no fixed schedule.
 
 #### Scenario: Night alternation
 - **WHEN** the first seat of the night post works the nights of one week
@@ -37,11 +48,11 @@ Weekday posts MUST NOT work on public holidays. The weekend post (ECS) SHALL wor
 - **THEN** the Educadora de cap de setmana covers the morning and the afternoon, and the night post covers the night
 
 ### Requirement: Minimal personal data
-A person record SHALL hold only a full name, the House, the post key and seat, an optional start date in the House, an active flag and technical timestamps. It MUST NOT hold contact, identity, contract or health data. Personal data MUST be stored in the EU database.
+A person record SHALL hold only a full name, the House (none for a shared post), the post key and seat, an optional start date in the House, an active flag and technical timestamps. It MUST NOT hold contact, identity, contract or health data. Personal data MUST be stored in the EU database.
 
 #### Scenario: Person fields
 - **WHEN** the director adds a person
-- **THEN** the form asks only for the full name and an optional start date, and the House, post and seat come from where the person is added
+- **THEN** the form asks only for the full name and an optional start date, and the House (if any), post and seat come from where the person is added
 
 ### Requirement: People per post
 Each seat of a post SHALL have at most one active person at a time, so a post has at most as many active people as seats. A seat without an active person MUST be shown as "Vacant". The database MUST reject a second active person for the same House, post and seat, independently of the application.
@@ -59,7 +70,7 @@ Each seat of a post SHALL have at most one active person at a time, so a post ha
 - **THEN** the database rejects the insert
 
 ### Requirement: Equip lists posts and people
-The Equip page of a House SHALL list every post of that House in inventory order, each with its weekly schedule and the active people who cover its seats, or "Vacant". It SHALL also list, separately, the inactive people whose House is that House ("Antics membres"), so the director can reincorporate someone who comes back (for example after an excedència) with their data and balances. It MUST NOT show people of the other House.
+The Equip page of a House SHALL list the shared posts and every post of that House in inventory order, each with its weekly schedule and the active people who cover its seats, or "Vacant". It SHALL also list, separately, the inactive people whose House is that House or who covered a shared post ("Antics membres"), so the director can reincorporate someone who comes back (for example after an excedència) with their data and balances. It MUST NOT show people of the other House.
 
 #### Scenario: Paulo Freire team
 - **WHEN** the director opens `/paulo-freire/team`
@@ -142,7 +153,7 @@ Vacation days, AA days, APs and the calendar surplus SHALL belong to the person,
 - **THEN** in Carme Aymerich the person still has 10 vacation days left, 8 h of AP left and −4 h of surplus
 
 ### Requirement: Writes are scoped to the active House
-Every write SHALL resolve the House from the validated route and MUST verify that the person and post belong to that House (or, for a move, that the target post belongs to the target House). A tampered person, post or seat identifier MUST be rejected without changing data. Errors MUST be shown in Catalan with an icon and text, and form fields MUST keep their values.
+Every write SHALL resolve the House from the validated route and MUST verify that the person and post belong to that House or are shared (or, for a move, that the target post belongs to the target House or is shared). A tampered person, post or seat identifier MUST be rejected without changing data. Errors MUST be shown in Catalan with an icon and text, and form fields MUST keep their values.
 
 #### Scenario: Person from the other House
 - **WHEN** a request on `/paulo-freire/team` tries to rename a person whose House is Carme Aymerich

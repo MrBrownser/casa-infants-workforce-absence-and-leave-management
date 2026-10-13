@@ -30,7 +30,7 @@
 - **Alternatives considered**: merge SPEC-002 and delete most of it (large, risky diff); reset to the first skeleton commit (loses tested Houses, switcher, 404 and dates).
 
 ### D2: Posts are fixed per House in code
-- **Choice**: `src/lib/posts.ts` exports the role labels (PDG Pedagoga, PSI Psicòloga, ER Educadora referent, TFM Treballadora familiar de matins, TFT Treballadora familiar de tardes, ET Educadora de tardes, ECS Educadora de cap de setmana, EN Educadora de nit, CT Corretorn) and, per House slug, the ordered posts `{ key, roleCode, seats, schedule }`: `pdg`, `psi`, `er`, `tfm`, `tft`, `et`, `ecs`, `en` (2 seats), `ct`. Both Houses have the same nine posts today (the list validated for SPEC-002).
+- **Choice**: `src/lib/posts.ts` exports the role labels (PDG Pedagoga, PSI Psicòloga, ER Educadora referent, TFM Treballadora familiar de matins, TFT Treballadora familiar de tardes, ET Educadora de tardes, ECS Educadora de cap de setmana, EN Educadora de nit, CT Corretorn) the **shared posts** `pdg` and `psi` (no House: the Pedagoga and the Psicòloga work for both Houses), and, per House slug, the ordered posts `{ key, roleCode, seats, schedule }`: `er`, `tfm`, `tft`, `et`, `ecs`, `en` (2 seats), `ct`. Both Houses have the same seven own posts today (the list validated for SPEC-002, with PDG and PSI moved to shared after the product owner's review).
 - **Rationale**: the product owner decided posts are fixed and only the people change. A constant is trivially testable and versioned.
 - **Alternatives considered**: a `positions` table editable from the UI (SPEC-002): more code, migrations and screens for data that does not change.
 
@@ -40,8 +40,8 @@
 | Post | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
 |---|---|---|---|---|---|---|---|
 | TFM | 07:30–15:00 | 07:30–15:00 | 07:30–15:00 | 07:30–15:00 | 07:30–15:00 | | |
-| PDG | 09:00–15:00 | 09:00–15:00 | 09:00–15:00 | 09:00–15:00 | 09:00–15:00 | | |
-| PSI | 09:00–15:00 | 14:00–20:00 | 09:00–15:00 | 14:00–20:00 | 09:00–15:00 | | |
+| PDG (shared) | 09:00–15:00 | 09:00–15:00 | 09:00–15:00 | 09:00–15:00 | 09:00–15:00 | | |
+| PSI (shared) | 09:00–15:00 | 14:00–20:00 | 09:00–15:00 | 14:00–20:00 | 09:00–15:00 | | |
 | ER | 09:00–17:00 | 13:00–21:00 | 09:00–17:00 | 13:00–21:00 | 08:00–15:00 | | |
 | ET | 14:00–22:00 | 14:00–22:00 | 14:00–22:00 | 14:00–22:00 | 14:00–22:00 | | |
 | TFT | 15:00–22:00 | 15:00–22:00 | 15:00–22:00 | 15:00–22:00 | 15:00–22:00 | | |
@@ -49,12 +49,12 @@
 | EN | 22:00–08:00 | 22:00–08:00 | 22:00–08:00 | 22:00–08:00 | 22:00–10:30 | 22:00–10:30 | 22:00–08:00 |
 | CT | Sense horari fix | | | | | | |
 
-  The night and weekend day times come from the spreadsheet's `FESTIUS` tab; the rest are invented from the post names.
+  The night and weekend day times come from the spreadsheet's `FESTIUS` tab; the rest are invented from the post names. Shared posts also say, per weekday, in which House they work (invented: odd ISO weeks Monday to Wednesday in Paulo Freire and Thursday and Friday in Carme Aymerich, even weeks the other way round; to confirm with the director).
 - **Rationale**: the product owner prefers invented times visible in the UI (faster to correct) over empty ones. The schedule is also the base of SPEC-005's rota.
 - **Alternatives considered**: separate "shifts" grouping several posts (the prototypes' Matí, Tarda, Equip tècnic rows): an invented concept the director never used; the rota rows become the posts themselves.
 
 ### D4: A simple `Person` with a seat
-- **Choice**: table `people`: `id`, `full_name`, `house_id` (FK to `houses`), `post_key`, `seat` (1 for most posts, 1 or 2 for EN), `started_on` (date, optional), `active` (boolean), `created_at`, `updated_at`. `post_key` and `seat` are validated by the application against the House's inventory (it lives in code, so there is no FK). A partial unique index on `(house_id, post_key, seat) WHERE active` allows one active person per seat. Moving a person updates the row; leaving sets `active = false` and keeps the last post and seat for reference.
+- **Choice**: table `people`: `id`, `full_name`, `house_id` (FK to `houses`, **null for a shared post**), `post_key`, `seat` (1 for most posts, 1 or 2 for EN), `started_on` (date, optional), `active` (boolean), `created_at`, `updated_at`. `post_key` and `seat` are validated by the application against the House's inventory (it lives in code, so there is no FK). Two partial unique indexes allow one active person per seat: `(house_id, post_key, seat) WHERE active AND house_id IS NOT NULL`, and `(post_key, seat) WHERE active AND house_id IS NULL` for shared posts. Moving a person updates the row; leaving sets `active = false` and keeps the last post and seat for reference.
 - **Rationale**: matches how the director thinks ("who covers this post"), including the night post shared by two people. A vacancy is a seat with no active person.
 - **Alternatives considered**: keep dated memberships and add assignments (SPEC-001/002): not needed yet; a history spec comes later. Two separate night posts ("EN 1", "EN 2"): the director sees one night post shared in alternate weeks.
 
@@ -77,11 +77,11 @@
 - **Rationale**: later specs only flip a flag and add a route; the director sees where the app is going.
 
 ### D9: Equip page and its writes
-- **Choice**: `/<house>/team` lists the House's posts in inventory order, each with its role label, its weekly schedule (compact, for example "dl–dv 07:30–15:00") and the active people of its seats or "Vacant" (the night post shows its two people and "setmanes alternes"). An "Antics membres" list shows inactive people of that House so the director can reincorporate someone who comes back (for example after an excedència) with their balances. Actions: add a person to a vacant seat (name, optional start date), rename, move to a vacant seat of another post or House (rejected with a Catalan message naming the occupant if taken; no implicit swap), mark inactive, reactivate into a vacant seat, and edit the opening balances of a year. One zod schema per form shared by client and server (react-hook-form). Server Functions live in `src/app/(app)/[house]/team/actions.ts`; each calls `requireDirector()`, resolves the House from the route and checks the person belongs to it. Errors carry an icon and text; fields keep their values. Dates in `dd/mm/aaaa`.
+- **Choice**: `/<house>/team` first lists the shared posts under "Compartits entre les dues cases" (the same on both Houses, editable from either), then the House's posts in inventory order, each with its role label, its weekly schedule (compact, for example "dl–dv 07:30–15:00") and the active people of its seats or "Vacant" (the night post shows its two people and "setmanes alternes"). An "Antics membres" list shows inactive people of that House so the director can reincorporate someone who comes back (for example after an excedència) with their balances. Actions: add a person to a vacant seat (name, optional start date), rename, move to a vacant seat of another post or House (rejected with a Catalan message naming the occupant if taken; no implicit swap), mark inactive, reactivate into a vacant seat, and edit the opening balances of a year. One zod schema per form shared by client and server (react-hook-form). Server Functions live in `src/app/(app)/[house]/team/actions.ts`; each calls `requireDirector()`, resolves the House from the route and checks the person belongs to it. Errors carry an icon and text; fields keep their values. Dates in `dd/mm/aaaa`.
 - **Rationale**: same patterns as the existing code and `DESIGN.md`; the look follows the prototypes (cards, sheets).
 
 ### D10: One clean initial migration
-- **Choice**: delete `20261005092628_house_context` and create one migration with `houses` (seeded rows), `people` (partial unique index written by hand) and `person_years` (CHECKs). Reset the dev database (approved by the product owner). Rewrite `prisma/seed.ts` with the validated list's fictional people (two per night post) and a few inactive people.
+- **Choice**: delete `20261005092628_house_context` and create one migration with `houses` (seeded rows), `people` (the two partial unique indexes written by hand) and `person_years` (CHECKs). Reset the dev database (approved by the product owner). Rewrite `prisma/seed.ts` with the validated list's fictional people (two per night post) and a few inactive people.
 - **Rationale**: no production data exists; a single readable migration is easier for every later spec.
 - **Alternatives considered**: a second migration that drops the membership tables (history with no value).
 
@@ -90,7 +90,7 @@
 - **Rationale**: the product owner asked that agents implementing the next specs have the same context this session had.
 
 ### D12: Testing
-- **Choice**: Vitest unit tests for the posts inventory (nine posts per House, unique keys, EN with two seats, valid schedules), proration, duration parsing and formatting, the zod schemas and the navigation; component tests for the Equip list (vacant seats, night post with two people, inactive people) and the duration input; Server Function tests with mocked auth and data layer (non-director redirected, House mismatch rejected, occupied seat rejected). The partial unique index is checked by hand against the dev database and recorded in `verify.md`.
+- **Choice**: Vitest unit tests for the posts inventory (seven posts per House plus the two shared posts, unique keys, EN with two seats, valid schedules), proration, duration parsing and formatting, the zod schemas and the navigation; component tests for the Equip list (vacant seats, night post with two people, inactive people) and the duration input; Server Function tests with mocked auth and data layer (non-director redirected, House mismatch rejected, occupied seat rejected). The two partial unique indexes are checked by hand against the dev database and recorded in `verify.md`.
 - **Alternatives considered**: bringing SPEC-002's real-database harness (useful later, but large for one index).
 
 ## Risks / Trade-offs
@@ -111,6 +111,6 @@
 
 ## Open Questions
 
-- Real weekly schedules of each post (the invented ones are placeholders).
+- Real weekly schedules of each post (the invented ones are placeholders), and how the shared Pedagoga and Psicòloga split their week between the Houses (the product owner believes three days in one House and two in the other, alternating each week).
 - FASI's exact proration formula for people who start mid-year.
 - Next specs on the roadmap: history of people and posts (and future-dated changes); GDPR compliance (research first, then retention and erasure); the other prototype sections after the director's detailed review.

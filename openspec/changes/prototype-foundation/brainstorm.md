@@ -210,3 +210,7 @@ these win.
 - **Roadmap** (after this change): history of people and posts; GDPR compliance (research
   first, then retention and erasure); the other prototype sections after the director's
   detailed review.
+- **Shared posts** (added at the end of the review): the Pedagoga (PDG) and the Psicòloga (PSI)
+  work for **both Houses**. They have no House assigned but have vacations, APs and a surplus
+  like everyone. The product owner believes they have a fixed schedule, three days in one
+  House and two in the other, alternating every week; to confirm with the director.
