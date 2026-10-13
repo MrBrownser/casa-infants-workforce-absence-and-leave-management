@@ -6,6 +6,7 @@ import { Sheet } from '@/components/sheet';
 import type { IsoDate } from '@/lib/dates';
 import type { HouseSlug } from '@/lib/houses';
 import { describePerson, type PersonDetails, type SeatOption } from '@/lib/team';
+import { BalancesSection } from './balances-section';
 import { DeactivateForm } from './deactivate-form';
 import { PlaceForm } from './place-form';
 import { RenameForm } from './rename-form';
@@ -24,14 +25,12 @@ export function PersonSheet({
   houseSlug,
   details,
   vacantSeats,
-  balances,
+  today,
 }: Readonly<{
   houseSlug: HouseSlug;
   details: PersonDetails;
   vacantSeats: readonly SeatOption[];
   today: IsoDate;
-  /** Opening balances section (Task 13). */
-  balances?: React.ReactNode;
 }>) {
   const router = useRouter();
   const close = useCallback(() => router.push(`/${houseSlug}/team`, { scroll: false }), [router, houseSlug]);
@@ -40,7 +39,7 @@ export function PersonSheet({
   return (
     <Sheet open onClose={close} title={person.fullName} description={describePerson(person)}>
       <div className="flex flex-col gap-8">
-        {balances}
+        <BalancesSection houseSlug={houseSlug} details={details} currentYear={Number(today.slice(0, 4))} />
         <SheetSection title="Nom">
           {/* key: a rename refreshes the props, so the form restarts from the saved name. */}
           <RenameForm key={person.fullName} houseSlug={houseSlug} personId={person.id} fullName={person.fullName} />
