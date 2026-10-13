@@ -15,7 +15,8 @@ export function RenameForm({ houseSlug, personId, fullName }: Readonly<{ houseSl
   const { error, saved, pending, run } = useServerAction();
   const form = useForm<z.input<typeof renamePersonSchema>, unknown, z.output<typeof renamePersonSchema>>({
     resolver: zodResolver(renamePersonSchema),
-    defaultValues: { personId, fullName },
+    // `values`, not a remount: the saved name flows back in and "Desat." stays.
+    values: { personId, fullName },
   });
   const fieldError = form.formState.errors.fullName?.message;
   const onSubmit = form.handleSubmit(() => run(() => renamePersonAction(houseSlug, form.getValues())));

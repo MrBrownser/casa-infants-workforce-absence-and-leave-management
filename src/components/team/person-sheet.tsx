@@ -41,8 +41,7 @@ export function PersonSheet({
       <div className="flex flex-col gap-8">
         <BalancesSection houseSlug={houseSlug} details={details} currentYear={Number(today.slice(0, 4))} />
         <SheetSection title="Nom">
-          {/* key: a rename refreshes the props, so the form restarts from the saved name. */}
-          <RenameForm key={person.fullName} houseSlug={houseSlug} personId={person.id} fullName={person.fullName} />
+          <RenameForm key={person.id} houseSlug={houseSlug} personId={person.id} fullName={person.fullName} />
         </SheetSection>
         {person.active ? (
           <SheetSection title="Lloc">

@@ -57,6 +57,28 @@ describe('BalancesSection', () => {
     });
   });
 
+  it('keeps "Desat." when the saved values come back from the server', async () => {
+    const { rerender } = render(<BalancesSection houseSlug="paulo-freire" details={mireia(false)} currentYear={2026} />);
+    const surplus = screen.getByLabelText("Excedent de calendari a l'inici de l'any");
+    await userEvent.clear(surplus);
+    await userEvent.type(surplus, '1200');
+    await userEvent.click(screen.getByRole('button', { name: 'Desa els saldos de 2026' }));
+    expect(await screen.findByText('Desat.')).toBeInTheDocument();
+    rerender(<BalancesSection houseSlug="paulo-freire" details={mireia(true, { vacationDays: 31, carriedDays: 0, surplusMinutes: 720 })} currentYear={2026} />);
+    expect(screen.getByText('Desat.')).toBeInTheDocument();
+    expect(screen.getByText('+12 h')).toBeInTheDocument();
+    expect(screen.getByLabelText("Excedent de calendari a l'inici de l'any")).toHaveValue('12:00');
+  });
+
+  it('starts clean when switching year', async () => {
+    const { rerender } = render(<BalancesSection houseSlug="paulo-freire" details={mireia(true, { vacationDays: 31, carriedDays: 3, surplusMinutes: 720 })} currentYear={2026} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Desa els saldos de 2026' }));
+    expect(await screen.findByText('Desat.')).toBeInTheDocument();
+    rerender(<BalancesSection houseSlug="paulo-freire" details={{ ...mireia(false), year: 2027 }} currentYear={2026} />);
+    expect(screen.queryByText('Desat.')).toBeNull();
+    expect(screen.getByLabelText('Dies AA (any anterior)')).toHaveValue('0');
+  });
+
   it('shows an error with an icon for 9:75 and saves nothing', async () => {
     render(<BalancesSection houseSlug="paulo-freire" details={mireia(false)} currentYear={2026} />);
     const surplus = screen.getByLabelText("Excedent de calendari a l'inici de l'any");

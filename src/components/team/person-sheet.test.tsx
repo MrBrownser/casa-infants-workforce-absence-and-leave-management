@@ -53,6 +53,20 @@ describe('PersonSheet', () => {
     expect(await screen.findByText('Desat.')).toBeInTheDocument();
   });
 
+  it('keeps "Desat." when the new name comes back from the server', async () => {
+    const { rerender } = render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);
+    const name = screen.getByLabelText('Nom complet');
+    await userEvent.clear(name);
+    await userEvent.type(name, 'Roger Beltran Camps');
+    await userEvent.click(screen.getByRole('button', { name: 'Desa el nom' }));
+    expect(await screen.findByText('Desat.')).toBeInTheDocument();
+    const renamed = details();
+    renamed.person = { ...renamed.person, fullName: 'Roger Beltran Camps' };
+    rerender(<PersonSheet houseSlug="paulo-freire" details={renamed} vacantSeats={vacant} today="2026-10-13" />);
+    expect(screen.getByText('Desat.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Nom complet')).toHaveValue('Roger Beltran Camps');
+  });
+
   it('keeps the name and shows the error when renaming fails', async () => {
     vi.mocked(renamePersonAction).mockResolvedValueOnce({ ok: false, message: "Aquesta persona no és d'aquesta casa." });
     render(<PersonSheet houseSlug="paulo-freire" details={details()} vacantSeats={vacant} today="2026-10-13" />);

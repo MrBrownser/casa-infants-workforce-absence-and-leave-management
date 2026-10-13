@@ -31,7 +31,8 @@ function BalancesForm({ houseSlug, details }: Readonly<{ houseSlug: HouseSlug; d
   const { error, saved, pending, run } = useServerAction();
   const form = useForm<z.input<typeof balancesSchema>, unknown, z.output<typeof balancesSchema>>({
     resolver: zodResolver(balancesSchema),
-    defaultValues: {
+    // `values`, not a remount: when a save refreshes the props the fields follow and "Desat." stays.
+    values: {
       personId: person.id,
       year,
       vacationDays: String(balances.vacationDays),
@@ -129,8 +130,8 @@ export function BalancesSection({
         <Tile label="Excedent" value={formatDuration(balances.surplusMinutes, { signed: true })} />
       </dl>
       {!stored && <p className="text-[0.8125rem] text-muted-foreground">Encara no s&apos;han desat: són els valors per defecte.</p>}
-      {/* key: switching year or saving restarts the form from the shown values. */}
-      <BalancesForm key={`${person.id}-${year}-${balances.vacationDays}-${balances.carriedDays}-${balances.surplusMinutes}`} houseSlug={houseSlug} details={details} />
+      {/* key: another person or year starts a fresh form. */}
+      <BalancesForm key={`${person.id}-${year}`} houseSlug={houseSlug} details={details} />
     </section>
   );
 }
