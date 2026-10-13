@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 A time and leave (absence) management web app for the Casa d'Infants team.
 The House context (SPEC-001) and the prototype foundation (SPEC-003, change
-`openspec/changes/prototype-foundation/`) are in place: two Houses, House-scoped routes, the final
+`openspec/changes/archive/2026-10-14-prototype-foundation/`; specs in `openspec/specs/`) are in place: two Houses, House-scoped routes, the final
 navigation (Saldos, Vacances, El mes, Equip) and the Equip page, where the director manages who
 covers each post and each person's opening balances. Dated membership (SPEC-001) was replaced by
 people per post. Saldos, El mes and Vacances (SPEC-004 to SPEC-006) are next: **before working on

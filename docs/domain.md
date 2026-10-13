@@ -10,8 +10,7 @@ Sources:
 - The approved UI: static prototypes in `public/prototypes/` (see its `README.md`). Open them
   with `python3 -m http.server -d public/prototypes`.
 - The director's answers: `docs/prototypes/director-feedback.md`.
-- The decision log: `openspec/changes/prototype-foundation/brainstorm.md` (archived later under
-  `openspec/changes/archive/`).
+- The decision log: `openspec/changes/archive/2026-10-14-prototype-foundation/brainstorm.md`.
 
 Items marked **(open)** are not confirmed yet; items marked **(assumption)** are what the
 prototypes do until the director says otherwise.
@@ -80,7 +79,7 @@ prototypes do until the director says otherwise.
   minutes and are written as notes ("Eva entra 21:30h").
 - **(provisional)** All other times are **invented** from the post names (product owner: better
   invented and visible than empty, so the director corrects them). They live in
-  `src/lib/posts.ts`; see `openspec/changes/prototype-foundation/design.md` D3 for the table.
+  `src/lib/posts.ts`; see `openspec/changes/archive/2026-10-14-prototype-foundation/design.md` D3 for the table.
 - **REE** is the weekly team meeting ("reunió d'equip"), same day and time every week, different
   per House (Carme Aymerich: Tuesday 9:00; Paulo Freire: Friday about 10:00). Not modelled.
 
