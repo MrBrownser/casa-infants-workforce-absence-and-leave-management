@@ -6,16 +6,59 @@ import { Sheet } from '@/components/sheet';
 import type { IsoDate } from '@/lib/dates';
 import type { HouseSlug } from '@/lib/houses';
 import { describePerson, type PersonDetails, type SeatOption } from '@/lib/team';
+import { DeactivateForm } from './deactivate-form';
+import { PlaceForm } from './place-form';
+import { RenameForm } from './rename-form';
 
+function SheetSection({ title, children }: Readonly<{ title: string; children: React.ReactNode }>) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h3 className="text-[0.9375rem]">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+/** A person's details, opened from the Equip page with `?person=<id>`. */
 export function PersonSheet({
   houseSlug,
   details,
-}: Readonly<{ houseSlug: HouseSlug; details: PersonDetails; vacantSeats: readonly SeatOption[]; today: IsoDate }>) {
+  vacantSeats,
+  balances,
+}: Readonly<{
+  houseSlug: HouseSlug;
+  details: PersonDetails;
+  vacantSeats: readonly SeatOption[];
+  today: IsoDate;
+  /** Opening balances section (Task 13). */
+  balances?: React.ReactNode;
+}>) {
   const router = useRouter();
   const close = useCallback(() => router.push(`/${houseSlug}/team`, { scroll: false }), [router, houseSlug]);
+  const { person } = details;
+
   return (
-    <Sheet open onClose={close} title={details.person.fullName} description={describePerson(details.person)}>
-      {null}
+    <Sheet open onClose={close} title={person.fullName} description={describePerson(person)}>
+      <div className="flex flex-col gap-8">
+        {balances}
+        <SheetSection title="Nom">
+          {/* key: a rename refreshes the props, so the form restarts from the saved name. */}
+          <RenameForm key={person.fullName} houseSlug={houseSlug} personId={person.id} fullName={person.fullName} />
+        </SheetSection>
+        {person.active ? (
+          <SheetSection title="Lloc">
+            <p className="text-[0.8125rem] text-muted-foreground">
+              Mou-la a un lloc vacant d&apos;aquesta casa, de l&apos;altra o compartit. Els saldos es queden amb la persona.
+            </p>
+            <PlaceForm houseSlug={houseSlug} personId={person.id} vacantSeats={vacantSeats} mode="move" />
+            <DeactivateForm houseSlug={houseSlug} personId={person.id} fullName={person.fullName} />
+          </SheetSection>
+        ) : (
+          <SheetSection title="Reincorporar">
+            <PlaceForm houseSlug={houseSlug} personId={person.id} vacantSeats={vacantSeats} mode="reactivate" />
+          </SheetSection>
+        )}
+      </div>
     </Sheet>
   );
 }
