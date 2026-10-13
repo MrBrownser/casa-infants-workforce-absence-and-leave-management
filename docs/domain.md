@@ -29,65 +29,73 @@ prototypes do until the director says otherwise.
 - Two Houses: **Paulo Freire** (`paulo-freire`) and **Carme Aymerich** (`carme-aymerich`).
   Casa d'Infants is a 24/7 residential service for children run by FASI.
 - Each House has a fixed set of **posts** (`src/lib/posts.ts`). What changes is **who** covers
-  each post. One active person per post; a post with nobody is "Vacant".
-- Roles (code → Catalan label):
+  each post. Both Houses have the same nine posts (list validated by the product owner):
 
-| Code | Label | Typical shift |
-|---|---|---|
-| PDG | Pedagoga | Equip tècnic, weekdays |
-| PSI | Psicòloga | Equip tècnic, weekdays |
-| ER | Educadora referent | Referents, weekdays |
-| TFM | Treballadora familiar de matins | Matí, weekdays |
-| TFT | Treballadora familiar de tardes | Tarda, weekdays |
-| ET | Educadora de tardes | Tarda, weekdays |
-| ECS | Educadora de cap de setmana | Weekends and public holidays |
-| EN | Educadora de nit | Nights, rotating |
-| CT | **Corretorn** (never "corretor": director's correction) | No fixed shift: covers absences |
+| Code | Label | People | Works |
+|---|---|---|---|
+| PDG | Pedagoga | 1 | Weekdays |
+| PSI | Psicòloga | 1 | Weekdays |
+| ER | Educadora referent | 1 | Weekdays (only one ER at a time; a month can show two names when one leaves and another starts) |
+| TFM | Treballadora familiar de matins | 1 | Weekday mornings |
+| TFT | Treballadora familiar de tardes | 1 | Weekday afternoons |
+| ET | Educadora de tardes | 1 | Weekday afternoons |
+| ECS | Educadora de cap de setmana | 1 | Weekend and public holiday mornings and afternoons |
+| EN | Educadora de nit | **2** | Nights; the two people **alternate by week** (legal rest) |
+| CT | **Corretorn** (never "corretor": director's correction) | 1 | No fixed schedule: covers absences |
 
 - An ER may stand in for the director when she is away; that gives no app access.
-- **(open) Real inventory.** The code starts with the prototypes' inventory: Paulo Freire 11
-  posts (2 ER, 2 EN, TFM, TFT, ET, ECS, PDG, PSI, CT), Carme Aymerich 10 (1 ER, 2 EN, TFM, TFT,
-  ET, ECS, PDG, PSI, CT). The real Paulo Freire spreadsheet suggests about 13 people and
-  **three** night educators rotating. Confirm with the director and edit `posts.ts`.
-- A person can be moved to another post or House (an edit) or marked inactive when they leave
-  (never deleted from the UI). Records (APs, vacations, sick leave, rota changes) store their own
-  House and person, so moving a person does not move their history.
+- A person covers one seat of one post. A seat with nobody is "Vacant". A person can be moved
+  to another post or House (an edit) or marked inactive when they leave or take a long leave
+  such as an excedència; inactive people stay listed so they can be reincorporated. People are
+  never deleted from the UI.
+- **Balances follow the person**, not the House: vacation days, AA, APs and the calendar
+  surplus stay the same if the person moves to the other House.
+- **(later)** History of who covered each post and post changes planned for a future date.
+  The first delivery keeps only the current state.
 - Substitutes who only cover an absence are **not** people with a post: they are written as
   "who covers" on the absence (see §6).
+- The prototypes use an older, invented inventory (two ERs, "Equip tècnic", "Matí" rows…). The
+  code follows this list.
 
-## 3. Shifts and schedules
+## 3. Weekly schedules
 
-- Shifts (`src/lib/shifts.ts`), in display order: Matí, Tarda, Referents, Equip tècnic,
-  Cap de setmana i festius, Nit, Corretorn.
-- Weekday posts work Monday to Friday; the weekend post works Saturdays, Sundays and public
-  holidays; night educators rotate (in the spreadsheet: one person Monday, another Tuesday to
-  Thursday, another Friday to Sunday, changing every week).
-- Known times (from the `FESTIUS` tab): night about **22:00 to 10:30**; holiday day shift about
-  **10:30 to 22:15**; the night after a holiday starts about 22:00. Times vary by person by
-  15 to 45 minutes and are written as notes ("Eva entra 21:30h").
-- **(open)** Exact times of every shift. Arrivals are **staggered**: shifts do not start at the
-  same time. Unknown times are left out, never invented.
-- **(open)** Who works mornings and afternoons at weekends.
+- Each post has a **weekly schedule**: hours per weekday, the **same every week**, but they may
+  differ between weekdays (the ER, for example, has different hours on Monday and Tuesday).
+- Arrivals are **staggered**: posts do not start at the same time.
+- Weekday posts do not work public holidays. The **Educadora de cap de setmana** works weekend
+  and holiday mornings and afternoons. The two night educators alternate by week. The CT has no
+  fixed schedule.
+- Known times (from the `FESTIUS` tab): night about **22:00 to 10:30** before a weekend or
+  holiday day, holiday day shift about **10:30 to 22:15**. Times vary by person by 15 to 45
+  minutes and are written as notes ("Eva entra 21:30h").
+- **(provisional)** All other times are **invented** from the post names (product owner: better
+  invented and visible than empty, so the director corrects them). They live in
+  `src/lib/posts.ts`; see `openspec/changes/prototype-foundation/design.md` D3 for the table.
+- **REE** is the weekly team meeting ("reunió d'equip"), same day and time every week, different
+  per House (Carme Aymerich: Tuesday 9:00; Paulo Freire: Friday about 10:00). Not modelled.
 
 ## 4. APs (assumptes propis)
 
-Personal hours off, counted **in hours**, per calendar year.
+Personal hours off, counted **in hours**, per calendar year, per person (they move with the
+person).
 
 | Type | Limit | Effect |
 |---|---|---|
 | AP no recuperable (APNR) | 24 h a year, in at most 5 days (requests) | Just consumes the allowance. |
 | AP recuperable (APR) | 24 h a year, in at most 3 days | Deducted from the calendar surplus (§5). |
 
-- The spreadsheet notes "Es pot demanar en una sola petició la nit+REE" (a night shift plus its
-  REE can be one request). **(open)** What REE means exactly and how it counts.
-- Hours are typed as `3:45` or `3,75` (also `3h45`, `3.75`, `8`); the director wants both for now.
-  Shown as `3 h 45 min`. The spreadsheet mixes both formats, which causes errors.
+- The spreadsheet notes "Es pot demanar en una sola petició la nit+REE": a night shift plus the
+  following team meeting (REE) can be one request.
+- APs are also how people complete **loose days** that the vacation blocks do not allow (§7).
+- Durations are entered with **one standard field `H:MM`** (product owner decision) and shown as
+  `3 h 45 min`. The prototypes still accept `3,75` too; the app does not.
 - An APR is **never blocked** for lack of surplus (director): the surplus simply goes negative.
 
 ## 5. Calendar surplus ("hores excedent calendari", "hores còmput")
 
 - Each person has a balance of hours worked above (+) or below (−) their annual calendar.
-  It starts each year at an opening value (stored per person and year).
+  It starts each year at an opening value (stored per person and year, in minutes) and follows
+  the person if they move to the other House.
 - APR hours are subtracted from it. A negative surplus means the person **owes hours**.
 - Owed hours are given back "quan hi ha necessitat de treball": the director asks the person to
   work extra when there is a need. **(open)** Recording returned hours so the surplus goes up
@@ -100,7 +108,7 @@ Personal hours off, counted **in hours**, per calendar year.
 - A sick leave can be **open-ended** ("encara no se sap quan torna") and closed later with its
   last day.
 - It can name **who covers** it (free text: "el CT", "Substituta: Júlia R."). If nobody does,
-  the rota shows the shift as uncovered.
+  the rota shows the post as uncovered that day.
 
 ## 7. Vacations
 
@@ -127,7 +135,9 @@ Personal hours off, counted **in hours**, per calendar year.
 | 3 | 7 | 14 | 10 | | 31 |
 | 4 | 7 | 7 | 7 | 10 | 31 |
 
-- **(assumption)** The AA days are one extra block outside this rule.
+- The **AA days are one extra block outside this rule** (confirmed by the product owner, like
+  the spreadsheet's "10AA").
+- Days that the blocks cannot cover (loose days) are taken as **APs** instead.
 - **(open)** How the rule applies to prorated entitlements, and what happens when fewer than
   7 days are left.
 - The forms offer shortcuts: 1, 2 or 3 weeks, and "la resta (N dies)" for the remainder block.
@@ -151,15 +161,15 @@ Personal hours off, counted **in hours**, per calendar year.
 
 - The month sheet is **printed and hung in the House** so everybody sees who works, who is on
   vacation or AP, and who is on sick leave. It must fit **one A4 landscape page**.
-- Layout as in the spreadsheet: one block per week (Monday to Sunday), one row per shift, the
+- Layout as in the spreadsheet: one block per week (Monday to Sunday), one row per post, the
   names of who works each day; absent people struck through with "vac." or "baixa" and who
   covers them below; a row for the Corretorn ("disponible", "cobreix X", "vac."); a notes row.
-- A shift with an absent person and nobody covering is **"Sense cobrir"** (honey: needs a
+- A post with an absent person and nobody covering is **"Sense cobrir"** (honey: needs a
   decision).
-- The director can **change who works a shift on a specific day** and add a **note to the day**
+- The director can **change who works a post on a specific day** and add a **note to the day**
   ("Ivan entra a les 21:30 h", "Sortida a Collserola").
-- **(assumption)** The rota follows a weekly pattern by post (§3) and the director edits the
-  exceptions. **(open)** The real pattern and how often it changes.
+- The rota rows are the **posts** (not invented shift groups): each day shows who works each
+  post according to its weekly schedule (§3), and the director edits the exceptions.
 - **(assumption)** The CT covers the first uncovered absence of the day; a sick leave with its
   own "who covers" uses that instead. **(open)** Who usually covers: always the CT, substitutes,
   someone from the other House?
@@ -198,6 +208,7 @@ ET…") is not prototyped yet.
 
 ## 10. Conventions that come from the director
 
+- Durations are always entered as **H:MM** (one standard field) and shown as `3 h 45 min`.
 - Dates are always **dd/mm/aaaa** (dd/mm inside sentences). Native date inputs follow the
   browser language, so use a field that always reads and writes dd/mm/aaaa (the prototypes'
   `dateInput` in `public/prototypes/shared/ui.js`).
@@ -217,5 +228,16 @@ ET…") is not prototyped yet.
 | Vacances | `VAC` | `vacances.html` | SPEC-006 | Waiting for feedback |
 
 Build each screen from its prototype: same layout, copy, rules and interactions, replacing
-`localStorage` with the database and Server Functions. Every record stores its own House
-and person.
+`localStorage` with the database and Server Functions. Leave records (APs, vacations, sick
+leave) belong to the person; rota changes and day notes belong to a House.
+
+## 12. Roadmap (not yet specified)
+
+- **History of people and posts**: who covered each post and when, and post changes planned
+  for a future date.
+- **GDPR compliance**: research first (retention periods, erasure of personal data when
+  required, backups, rights of the people concerned), then a spec. Required before the first
+  operational use with real data.
+- **Detailed review of El mes and Vacances** with the director before SPEC-005 and SPEC-006.
+- Open questions from §§3 to 9 (real schedules, conflicts between posts, who covers, holidays
+  of 2027, returned hours).

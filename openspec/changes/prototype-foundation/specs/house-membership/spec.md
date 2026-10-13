@@ -2,7 +2,7 @@
 
 ### Requirement: Effective-dated House membership
 
-**Reason**: The director manages who covers each fixed post today; dated membership periods add complexity she does not need (product owner decision after the prototypes).
+**Reason**: Dated membership periods are not needed yet. A history of who covered each post will come in a later spec; this first delivery keeps the simplest model (product owner decision after the prototypes).
 
 **Migration**: A person belongs to one House through the `house_id` of the `people` row (`people-and-posts`). Moving a person is an edit. The `house_memberships` table is dropped with the single initial migration.
 
@@ -20,21 +20,21 @@
 
 ### Requirement: Historical membership
 
-**Reason**: No screen needs a person's House on a past date. Later records (APs, vacations, sick leave, rota changes) store their own House.
+**Reason**: No screen needs a person's House on a past date yet. A history of people and posts is planned for a later spec.
 
-**Migration**: Read the House stored on each record ("House-scoped records keep their own House" in `people-and-posts`).
+**Migration**: None in this change. Until the history spec, a person's House is their current House.
 
 ### Requirement: Transfer does not rewrite history
 
-**Reason**: Transfers become "move the person to another House", an in-place edit. History is preserved because records keep their own House.
+**Reason**: Transfers become "move the person to another House", an in-place edit. Balances and records belong to the person and move with them ("Balances follow the person" in `people-and-posts`).
 
 **Migration**: Use the move action of `people-and-posts` ("Move a person to another post or House").
 
 ### Requirement: House-scoped records keep their own House
 
-**Reason**: The rule still applies but moves to the capability that owns people.
+**Reason**: Vacations, APs and the calendar surplus belong to the person, not to a House (product owner): a person who moves keeps them. Records that do belong to a House (rota changes, day notes) will say so in SPEC-005.
 
-**Migration**: See "House-scoped records keep their own House" in `people-and-posts`.
+**Migration**: See "Balances follow the person" in `people-and-posts`.
 
 ### Requirement: Temporary cross-House work is not membership
 

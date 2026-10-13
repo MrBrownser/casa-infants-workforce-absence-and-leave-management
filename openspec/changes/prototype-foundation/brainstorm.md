@@ -176,3 +176,37 @@ tables from the unmerged branch).
 - Whether to record hours given back so the surplus goes up again (asked in the Saldos
   prototype).
 - Retention and erasure of people who left (GDPR review before the first operational use).
+
+## Review round with the product owner (2026-10-13)
+
+Corrections to the first draft of the artifacts. Where they contradict the sections above,
+these win.
+
+- **AA days** are confirmed as one extra block outside FASI's period rule. Loose days that the
+  blocks do not allow are taken as APs.
+- **Simple model, for now.** Dated history is not "unneeded", it is **not needed yet**: a history
+  of who covered each post, and post changes planned for a future date, will be needed later.
+  The first delivery simplifies to ship sooner and iterate.
+- **Post inventory.** Use the list validated for SPEC-002 (`prisma/seed-data.ts` on the old
+  branch): nine posts per House, PDG Pedagoga, PSI Psicòloga, ER Educadora referent (only
+  **one** ER: the spreadsheet showed two names because one left and another started in the same
+  month), TFM, TFT, **ET Educadora de tardes** (not "Equip tècnic", which was an invented shift
+  name in the prototypes), ECS, EN and CT. Labels are just labels: no special "Corretorn"
+  scenario.
+- **The night post has two people** who alternate by week (legal rest). Model it as one post
+  with two seats.
+- **Schedules: invent them** rather than leave them empty, so they show in the UI and are quick
+  to correct. A schedule is weekly: different times per weekday, the same every week. The
+  weekend educator covers weekend mornings and afternoons.
+- **Inactive people** are listed to reincorporate someone after an excedència or a return
+  (confirmed as the reason).
+- **Durations**: one standard `H:MM` field instead of accepting several formats (shadcn's time
+  picker is a native time input, limited to 23:59 and without sign, so a custom masked field is
+  used; a + / − choice for the surplus).
+- **Balances follow the person.** APs, vacations and the surplus are per person, not per House:
+  a person who moves keeps them. Only rota changes and day notes belong to a House.
+- **REE** = the weekly team meeting (Carme Aymerich Tuesday 9:00, Paulo Freire Friday about
+  10:00); not modelled.
+- **Roadmap** (after this change): history of people and posts; GDPR compliance (research
+  first, then retention and erasure); the other prototype sections after the director's
+  detailed review.

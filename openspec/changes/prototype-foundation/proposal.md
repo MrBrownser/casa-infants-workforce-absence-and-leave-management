@@ -6,12 +6,12 @@ After two specs the director still had no screen for her daily work: vacations, 
 
 **People model**
 - From: `Employee` plus dated `HouseMembership` periods, a Postgres exclusion constraint and transfer logic (SPEC-001).
-- To: a `Person` with a name, a House, a post of that House and an active flag, edited in place; plus per-year opening balances (vacation days, AA days, calendar surplus).
-- Reason: the director manages who covers each fixed post; dated history and transfers add complexity she does not need.
+- To: a `Person` with a name, a House, a post of that House (and a seat, for the night post shared by two people) and an active flag, edited in place; plus per-year opening balances (vacation days, AA days, calendar surplus).
+- Reason: a history of who covered each post, and post changes planned for a future date, will be needed later but not yet. This first delivery keeps the simplest model so the director gets a working app sooner and we can iterate on it.
 - Impact: breaking for the database (single clean initial migration, dev database reset). No production database exists yet.
 
 **Domain in code**
-- New: posts per House, shifts with (provisional) times and the AP and vacation constants live in `src/lib/`. Changing them is a code change. Public holidays are documented now and coded with SPEC-005, the first spec that uses them.
+- New: the posts of each House (the validated list: PDG, PSI, ER, TFM, TFT, ET, ECS, EN with two people alternating weeks, CT "Corretorn"), each with a weekly schedule (invented for now, to be corrected in code), and the AP and vacation constants live in `src/lib/`. Changing them is a code change. Public holidays are documented now and coded with SPEC-005, the first spec that uses them.
 
 **Equip page**
 - From: a read-only list of current members with "Des del <date>".
@@ -31,8 +31,9 @@ After two specs the director still had no screen for her daily work: vacations, 
 
 - Recording APs, vacations, sick leave, the rota or the vacation plan (SPEC-004 Saldos, SPEC-005 El mes, SPEC-006 Vacances).
 - Roles, permissions or access for anyone other than the director and the product owner.
-- Dated membership history, scheduled transfers, cross-House coverage.
-- Editing posts, shifts, rules or holidays from the UI.
+- History of who covered each post and post changes planned for a future date (needed later, not in this first delivery).
+- Cross-House coverage.
+- Editing posts, schedules, rules or holidays from the UI.
 - Staff self-service, notifications, imports from the spreadsheet.
 
 ## Personal data (GDPR)
@@ -40,7 +41,7 @@ After two specs the director still had no screen for her daily work: vacations, 
 - New personal data: a person's full name, House, post, active flag and opening balances (vacation days, AA days, calendar surplus in hours). No contact, identity, contract or health data. Sick leave arrives in SPEC-005 and will be stored only as "Baixa" with dates, never a reason (Art. 9).
 - Residency: Supabase Postgres in the EU, as today.
 - Access: only users with the Clerk `director` flag, checked in every page, data function and Server Function.
-- Retention: marking a person inactive keeps their data. A retention period and an erasure procedure must be defined in the privacy review before the first operational use; this change adds no deletion button.
+- Retention: marking a person inactive keeps their data. GDPR compliance (retention periods, erasure of personal data when required) needs its own research and spec before the first operational use; this change adds no deletion button.
 
 ## Capabilities
 
@@ -55,6 +56,6 @@ After two specs the director still had no screen for her daily work: vacations, 
 
 - Database: `prisma/schema.prisma` rewritten (`House`, `Person`, `PersonYear`); the `house_context` migration replaced by one initial migration; `prisma/seed.ts` rewritten with fictional people from the prototypes; the dev database must be reset.
 - Code removed: `src/lib/house-membership.ts`, `src/server/membership-store.ts`, `src/components/team-list.tsx` and their tests; `transferEmployee` in `src/server/houses.ts`.
-- Code added: `src/lib/posts.ts`, `src/lib/shifts.ts`, `src/lib/rules.ts`, `src/lib/hours.ts`, a people data layer with Server Functions, the new Equip page and forms, section navigation changes.
+- Code added: `src/lib/posts.ts` (posts and weekly schedules), `src/lib/rules.ts`, `src/lib/duration.ts`, a duration input component, a people data layer with Server Functions, the new Equip page and forms, section navigation changes.
 - Docs: `docs/domain.md`, `AGENTS.md`, `README.md`, `openspec/config.yaml` context.
 - No new dependencies.
