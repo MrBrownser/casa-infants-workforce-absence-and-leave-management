@@ -22,6 +22,7 @@ See `README.md` for setup.
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**, full-stack on Vercel.
   Next 16 renamed `middleware` to `proxy`; auth lives in `src/proxy.ts`.
 - **Tailwind v4 + shadcn/ui**, styling. `src/app/globals.css` holds the design tokens.
+  shadcn components come in two flavours: the Drawer uses Base UI (`@base-ui/react`, pinned) and the button uses Radix; prefer the Base UI flavour for new overlay components.
 - **Prisma 7 + Supabase Postgres (EU)**, data. Pooled connection (`:6543`,
   `pgbouncer=true`) at runtime via `DATABASE_URL`; direct connection (`:5432`) for
   migrations via `DIRECT_URL`. Models: `House`, `Person`, `PersonYear`. The current Supabase
@@ -50,13 +51,14 @@ See `README.md` for setup.
   alternation. `src/lib/rules.ts`: AP and vacation rules, default opening balances.
   `src/lib/duration.ts`: `H:MM` durations as integer minutes. `src/lib/team.ts`: the Equip team
   view. `src/lib/people-schemas.ts`: zod schemas shared by forms and Server Functions.
-- `src/server/houses.ts` and `src/server/people.ts`: director-gated reads.
+- `src/server/people.ts`: director-gated reads.
   `src/server/people-store.ts`: Prisma persistence without auth (used by the Server Functions and
   the seed only).
 - `public/prototypes/`: static HTML prototypes with fictional data for the director's feedback
   (not part of the app; see its README).
-- `src/components/team/`: Equip UI. `sheet.tsx`, `field.tsx`, `duration-input.tsx`,
-  `date-input.tsx`: form and sheet primitives.
+- `src/components/team/`: Equip UI. `src/components/field.tsx`, `duration-input.tsx`,
+  `date-input.tsx`: form primitives.
+- `src/components/sheet.tsx`: the app's panel, wrapping the shadcn Drawer (`src/components/ui/drawer.tsx`, Base UI). App code uses `Sheet`, not the Drawer directly.
 - `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: FASI clay-house mark (images in `public/brand/`). `src/components/ui/`: shadcn primitives.
 
 ## Access and data rules

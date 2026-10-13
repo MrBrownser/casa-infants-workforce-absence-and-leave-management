@@ -11,7 +11,7 @@ A web app to manage time off, absences and leave for the Casa d'Infants team.
 | Concern | Choice |
 |---|---|
 | Framework | Next.js 16 (App Router) + React 19 + TypeScript, on Vercel (EU region) |
-| Styling | Tailwind v4 + shadcn/ui; design system in `DESIGN.md` (Fraunces + Figtree, clay-house palette) |
+| Styling | Tailwind v4 + shadcn/ui; design system in `DESIGN.md` (Fraunces + Figtree, clay-house palette); overlays use the shadcn Drawer on Base UI |
 | Database | Prisma 7 + Supabase Postgres (EU) |
 | Auth | Clerk (Catalan UI via `@clerk/localizations`) |
 | Forms | react-hook-form + zod |
