@@ -2,8 +2,9 @@
 
 A web app to manage time off, absences and leave for the Casa d'Infants team.
 
-> Status: skeleton. Auth, a landing page and a protected `/dashboard` placeholder
-> are in place; no time and leave features yet. The UI is in Catalan; code is in English.
+> Status: Houses, the final navigation and the Equip page (people per post, opening balances)
+> are in place. Saldos, Vacances and El mes are next (SPEC-004 to SPEC-006). The UI is in
+> Catalan; code is in English.
 
 ## Stack
 
@@ -70,7 +71,8 @@ cp .env.example .env.local   # then fill in real values (see below)
 npm run dev            # http://localhost:3000
 ```
 
-Routes: `/` landing page, `/sign-in`, `/sign-up`, `/dashboard` (signed-in only).
+Routes: `/` landing page, `/sign-in`, `/sign-up`, `/dashboard` (signed-in only, redirects to the
+last House), `/<house>` (redirects to Equip), `/<house>/team` (Equip).
 
 If you edit `prisma/schema.prisma`, re-run `npm run db:generate` to refresh the
 generated client (`src/generated/prisma`, gitignored) before `npm run typecheck`
@@ -103,8 +105,11 @@ npm run db:studio     # browse data
 
 ### Dev data and access
 
-1. Apply migrations: `npm run db:migrate` (creates the two Houses).
-2. Seed fictional employees (dev only): `npx prisma db seed`. Re-running does nothing once employees exist.
+1. Apply migrations: `npm run db:migrate` (creates the two Houses). **After pulling SPEC-003**
+   (`prototype-foundation`) reset the dev database instead: `npx prisma migrate reset --force`.
+   It drops everything; the dev database only holds fictional data.
+2. Seed fictional people (dev only): `npx prisma db seed` (20 people, 3 inactive). Re-running does
+   nothing once people exist.
 3. In the Clerk dashboard, open your user → **Metadata** → **Public** and set:
 
    ```json

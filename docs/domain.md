@@ -28,8 +28,8 @@ prototypes do until the director says otherwise.
 
 - Two Houses: **Paulo Freire** (`paulo-freire`) and **Carme Aymerich** (`carme-aymerich`).
   Casa d'Infants is a 24/7 residential service for children run by FASI.
-- Each House has a fixed set of **posts** (`src/lib/posts.ts`). What changes is **who** covers
-  each post. Both Houses have the same posts (list validated by the product owner), and two of
+- Each House has a fixed set of **posts** (`src/lib/posts.ts`: keys `er`, `tfm`, `tft`, `et`, `ecs`,
+  `en`, `ct` per House; `pdg` and `psi` shared). What changes is **who** covers each post. Both Houses have the same posts (list validated by the product owner), and two of
   them are **shared by both Houses**:
 
 | Code | Label | People | Works |
@@ -48,6 +48,8 @@ prototypes do until the director says otherwise.
   House, but has vacations, APs and a surplus like everyone else. **(open)** Their exact week:
   the product owner believes a fixed schedule, three days in one House and two in the other,
   alternating every week (to confirm with the director). Both Equip pages show them.
+  **(changed in SPEC-003)** The code assumes Monday to Wednesday in one House and Thursday and
+  Friday in the other, swapping Houses every week (`sharedPostHouseOn`, provisional).
 - An ER may stand in for the director when she is away; that gives no app access.
 - A person covers one seat of one post. A seat with nobody is "Vacant". A person can be moved
   to another post or House (an edit) or marked inactive when they leave or take a long leave
@@ -70,6 +72,9 @@ prototypes do until the director says otherwise.
 - Weekday posts do not work public holidays. The **Educadora de cap de setmana** works weekend
   and holiday mornings and afternoons. The two night educators alternate by week. The CT has no
   fixed schedule.
+- **(changed in SPEC-003)** "Alternate by week" counts weeks from a fixed Monday (`weekIndex` in
+  `src/lib/dates.ts`), not by ISO week number: 2026 has 53 ISO weeks, so weeks 53 and 1 would
+  both be odd and the same person would work two weeks in a row.
 - Known times (from the `FESTIUS` tab): night about **22:00 to 10:30** before a weekend or
   holiday day, holiday day shift about **10:30 to 22:15**. Times vary by person by 15 to 45
   minutes and are written as notes ("Eva entra 21:30h").
@@ -120,7 +125,8 @@ person).
 ### Entitlement
 - **31 natural days** a year. Prorated when someone starts mid-year (the spreadsheet shows 15
   and 16; the app defaults to `round(31 × remaining days / days in year)`, 16 for 1 July;
-  **(open)** FASI's exact formula).
+  **(open)** FASI's exact formula). Code: `defaultVacationDays` in `src/lib/rules.ts`; the director
+  can overwrite the opening balances of each person and year on the Equip page.
 - **AA** ("any anterior"): days carried over from last year, written "10AA" in the spreadsheet.
   **(open)** Until when they can be used and how they are split.
 
@@ -213,10 +219,11 @@ ET…") is not prototyped yet.
 
 ## 10. Conventions that come from the director
 
-- Durations are always entered as **H:MM** (one standard field) and shown as `3 h 45 min`.
+- Durations are always entered as **H:MM** (one standard field, `DurationInput`) and shown as
+  `3 h 45 min` (`src/lib/duration.ts`).
 - Dates are always **dd/mm/aaaa** (dd/mm inside sentences). Native date inputs follow the
   browser language, so use a field that always reads and writes dd/mm/aaaa (the prototypes'
-  `dateInput` in `public/prototypes/shared/ui.js`).
+  `dateInput` in `public/prototypes/shared/ui.js`; in the app, `DateInput`).
 - "Today" is the date in Europe/Madrid (`todayInMadrid()`).
 - Catalan, warm and direct copy ("Apunta-ho", "Falten 7 per planificar", "Deu 9 h 18 min").
 - Honey (`accent`) means only "waiting for the director's decision": pending requests,
@@ -227,7 +234,7 @@ ET…") is not prototyped yet.
 
 | Screen | Replaces in the spreadsheet | Prototype | Spec | Status |
 |---|---|---|---|---|
-| Equip | (nothing: names were typed everywhere) | not prototyped | SPEC-003 `prototype-foundation` | In progress |
+| Equip | (nothing: names were typed everywhere) | not prototyped | SPEC-003 `prototype-foundation` | Built |
 | Saldos | `V I APS` | `saldos.html` | SPEC-004 | Validated by the director |
 | El mes | month tabs | `mes.html` | SPEC-005 | Waiting for feedback |
 | Vacances | `VAC` | `vacances.html` | SPEC-006 | Waiting for feedback |

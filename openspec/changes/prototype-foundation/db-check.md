@@ -63,4 +63,5 @@ write hits one of the partial unique indexes (checked while planning); the store
 
 - Supabase dev reset: `npx prisma migrate reset --force`, then `npx prisma db seed`.
 - Browser check on desktop and mobile (plan Task 14).
-- `npm run build` with real Clerk keys.
+- `npm run build` with real Clerk keys. (It already passes with placeholder keys in the cloud
+  session: routes `/[house]`, `/[house]/team`, `/dashboard`, `/no-access`.)

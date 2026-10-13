@@ -15,8 +15,8 @@ with the decision they imply for the real app.
 | How do people return owed hours today? | "Quan hi ha necessitat de treball se li demana que retorni hores." | Returning hours is ad hoc, on the director's request. Open question: record returned hours in the app so the surplus goes back up. |
 | Both Houses at once or one at a time? | "Una per una." | Keep one House at a time (already the URL model). |
 
-Other: the CT role is called **"corretorn"**, not "corretor". Fixed in the prototypes; the app's
-role catalogue (`src/lib/roles.ts`, staffing migration) still says "Corretor".
+Other: the CT role is called **"corretorn"**, not "corretor". Fixed in the prototypes; the app
+says "Corretorn" (`src/lib/posts.ts`).
 
 ## Still to show
 
