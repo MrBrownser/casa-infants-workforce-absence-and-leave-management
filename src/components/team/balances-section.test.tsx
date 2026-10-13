@@ -79,7 +79,7 @@ describe('BalancesSection', () => {
     expect(screen.getByLabelText('Dies AA (any anterior)')).toHaveValue('0');
   });
 
-  it('shows an error with an icon as soon as letters are typed', async () => {
+  it('shows an error with an icon when leaving a field with letters', async () => {
     render(<BalancesSection houseSlug="paulo-freire" details={mireia(false)} currentYear={2026} />);
     const surplus = screen.getByLabelText("Excedent de calendari a l'inici de l'any");
     await userEvent.clear(surplus);
