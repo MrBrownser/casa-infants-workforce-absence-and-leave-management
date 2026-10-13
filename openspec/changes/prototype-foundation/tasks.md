@@ -1,7 +1,7 @@
 ## 1. Domain in code
 
 - [x] 1.1 Add `src/lib/posts.ts`: role codes and Catalan labels (ET = Educadora de tardes, CT = Corretorn), the shared posts `pdg` and `psi` (no House, with the House of each weekday) and the seven posts per House (`er`, `tfm`, `tft`, `et`, `ecs`, `en` with 2 seats, `ct`) with their weekly schedules from design D3 marked provisional, lookup helpers (`postsOf`, `sharedPosts`, `findPost`), and tests (order, unique keys, seats, valid `HH:MM` ranges, CT without schedule, shared posts without House).
-- [x] 1.2 Add schedule helpers in `src/lib/posts.ts` (compact weekly summary such as "dl–dv 07:30–15:00", night seat for a given ISO week, weekday posts off on holidays) with tests.
+- [x] 1.2 Add schedule helpers in `src/lib/posts.ts` (compact weekly summary such as "dl–dv 07:30–15:00", night seat for a given week (counted from a fixed Monday, see design D3), weekday posts off on holidays) with tests.
 - [x] 1.3 Add `src/lib/rules.ts` with the AP and vacation constants (24 h and 5 days APNR, 24 h and 3 days APR, 31 days, minimum 7, at most 4 periods) and `defaultVacationDays(year, startedOn)` with tests (full year 31, 01/07/2026 gives 16, start after the year gives 0).
 - [x] 1.4 Add `src/lib/duration.ts` (`parseDuration('H:MM')` to minutes, `formatDuration(minutes, { signed })` as `3 h 45 min`) with tests (`3:45`, `0:30`, `55:30`, rejects `9:75`, letters and empty).
 

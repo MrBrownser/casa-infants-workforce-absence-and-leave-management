@@ -35,7 +35,7 @@
 - **Alternatives considered**: a `positions` table editable from the UI (SPEC-002): more code, migrations and screens for data that does not change.
 
 ### D3: A weekly schedule per post, invented for now
-- **Choice**: each post has a weekly schedule: for each weekday (Monday to Sunday) a list of ranges `{ from: 'HH:MM', to: 'HH:MM' }` (a range ending earlier than it starts crosses midnight). The same schedule repeats every week; times may differ between weekdays. Weekday posts do not work public holidays; ECS works weekends and holidays; EN seats alternate by ISO week; CT has no fixed schedule. Invented, plausible times (marked provisional in code and in `docs/domain.md`), with staggered arrivals:
+- **Choice**: each post has a weekly schedule: for each weekday (Monday to Sunday) a list of ranges `{ from: 'HH:MM', to: 'HH:MM' }` (a range ending earlier than it starts crosses midnight). The same schedule repeats every week; times may differ between weekdays. Weekday posts do not work public holidays; ECS works weekends and holidays; EN seats alternate every week (counted from a fixed Monday, see the note below the table); CT has no fixed schedule. Invented, plausible times (marked provisional in code and in `docs/domain.md`), with staggered arrivals:
 
 | Post | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
 |---|---|---|---|---|---|---|---|
@@ -49,7 +49,9 @@
 | EN | 22:00–08:00 | 22:00–08:00 | 22:00–08:00 | 22:00–08:00 | 22:00–10:30 | 22:00–10:30 | 22:00–08:00 |
 | CT | Sense horari fix | | | | | | |
 
-  The night and weekend day times come from the spreadsheet's `FESTIUS` tab; the rest are invented from the post names. Shared posts also say, per weekday, in which House they work (invented: odd ISO weeks Monday to Wednesday in Paulo Freire and Thursday and Friday in Carme Aymerich, even weeks the other way round; to confirm with the director).
+  The night and weekend day times come from the spreadsheet's `FESTIUS` tab; the rest are invented from the post names. Shared posts also say, per weekday, in which House they work (invented: Monday to Wednesday in one House and Thursday and Friday in the other, swapping every week; to confirm with the director).
+
+  *Changed during implementation:* weeks are counted from a fixed Monday (`weekIndex` in `src/lib/dates.ts`), not by ISO week number. 2026 has 53 ISO weeks, so ISO parity would make weeks 53 and 1 both odd and give the same night seat two weeks in a row. Recorded in `docs/domain.md` §3.
 - **Rationale**: the product owner prefers invented times visible in the UI (faster to correct) over empty ones. The schedule is also the base of SPEC-005's rota.
 - **Alternatives considered**: separate "shifts" grouping several posts (the prototypes' Matí, Tarda, Equip tècnic rows): an invented concept the director never used; the rota rows become the posts themselves.
 
@@ -68,7 +70,8 @@
 - **Alternatives considered**: storing them on `people` (breaks with a new year); computing AA automatically (needs SPEC-004/006 data; later).
 
 ### D7: One standard duration input
-- **Choice**: a `DurationInput` component: a text field with a mask that only accepts `H:MM` (digits, the colon inserted automatically, minutes 00 to 59, hours may exceed 24), plus a + / − segmented choice when the value is a surplus. `src/lib/duration.ts` parses to and formats from integer minutes (`3 h 45 min`, signed for the surplus).
+- **Choice**: a `DurationInput` component: a text field for `H:MM` (digits get the colon inserted automatically, minutes 00 to 59, hours may exceed 24), plus a + / − segmented choice when the value is a surplus. `src/lib/duration.ts` parses to and formats from integer minutes (`3 h 45 min`, signed for the surplus).
+  *Changed during implementation:* anything other than digits and the colon is kept as typed instead of being dropped, so the field shows the H:MM error with an icon when it loses focus (spec "Invalid duration"); the server rejects it too.
 - **Rationale**: the product owner asked to standardise time entry instead of accepting several formats. shadcn's time picker is a native `<input type="time">`: it stops at 23:59, cannot be negative and shows AM/PM in some browser languages, so it does not fit durations such as a 55-hour surplus.
 - **Alternatives considered**: the prototypes' free-text parser (`3:45`, `3,75`…): more ambiguity, and the director had no preference.
 
