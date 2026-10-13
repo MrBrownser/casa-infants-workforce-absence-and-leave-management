@@ -4,8 +4,11 @@ import {
   dateToIsoDate,
   daysBetween,
   formatDateCa,
+  formatDateDdMmYyyy,
   isIsoDate,
   isoDateToDate,
+  maskDate,
+  parseDateDdMmYyyy,
   todayInMadrid,
   weekIndex,
   weekdayOf,
@@ -79,5 +82,26 @@ describe('weekIndex', () => {
   it('keeps counting across a 53-week ISO year', () => {
     // 2026-12-28 is ISO week 53 and 2027-01-04 ISO week 1: both odd, yet consecutive.
     expect(weekIndex('2027-01-04') - weekIndex('2026-12-28')).toBe(1);
+  });
+});
+
+describe('dd/mm/aaaa', () => {
+  it('parses real dates only', () => {
+    expect(parseDateDdMmYyyy('01/07/2026')).toBe('2026-07-01');
+    expect(parseDateDdMmYyyy(' 29/02/2028 ')).toBe('2028-02-29');
+    for (const text of ['31/02/2026', '1/7/2026', '2026-07-01', '', 'abc']) expect(parseDateDdMmYyyy(text)).toBeNull();
+  });
+
+  it('formats an IsoDate', () => {
+    expect(formatDateDdMmYyyy('2026-07-01')).toBe('01/07/2026');
+  });
+
+  it('masks typing into dd/mm/aaaa', () => {
+    expect(maskDate('01')).toBe('01');
+    expect(maskDate('010')).toBe('01/0');
+    expect(maskDate('01072026')).toBe('01/07/2026');
+    expect(maskDate('01/07/2026')).toBe('01/07/2026');
+    expect(maskDate('01/07/20269')).toBe('01/07/2026');
+    expect(maskDate('ab')).toBe('');
   });
 });
