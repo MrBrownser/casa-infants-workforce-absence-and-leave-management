@@ -138,13 +138,38 @@ This repo is configured for OpenSpec with the **superpowers-bridge** schema
 ## Deployment (Vercel)
 
 `vercel.json` pins the Function region to `dub1` (Dublin), next to Supabase `eu-west-1`
-(GDPR: EU only). The build needs no database access: `postinstall` runs `prisma generate`,
-which works without `DIRECT_URL` or `DATABASE_URL`, and `next build` needs only the Clerk keys.
-**Migrations are not run by the Vercel build.** Apply them by hand against the target database:
+(GDPR: EU only). `postinstall` runs `prisma generate`, which works without `DIRECT_URL` or
+`DATABASE_URL`, and `next build` needs only the Clerk keys.
 
-```bash
-DIRECT_URL="<target direct url>" npx prisma migrate deploy
-```
+The GitHub repo is connected to the Vercel project: every merge to `main` deploys to
+Production, every other branch gets a preview URL.
+
+### CI
+
+`.github/workflows/ci.yml` runs on every PR and on `main`: lint, typecheck and tests, plus a
+migrations job that applies all migrations to a throwaway Postgres and fails if
+`schema.prisma` has changes no migration covers. Make both jobs required checks on `main`
+(GitHub, Settings, Branches) so a red PR cannot be merged.
+
+### Migrations
+
+`vercel.json` runs `scripts/vercel-build.sh`: it builds, then on **Production** deployments
+only runs `prisma migrate deploy`. A failed build never touches the database; a failed migration
+fails the deployment and the previous one stays live. Previews never migrate (they share the
+dev database with Production), so a preview of a PR that adds a migration may break until it
+is merged. Production needs `DIRECT_URL` (session pooler, `:5432`) set for the Production
+environment only; without it the production build fails on purpose.
+
+Rules for migrations:
+
+- **Backward compatible only.** For a few seconds the old code runs on the new schema, and a
+  Vercel instant rollback does not roll back the database. Add columns as nullable or with a
+  default; never rename or drop in one step.
+- **Destructive changes take two PRs** (expand, then contract): first add the new shape and
+  stop using the old one, merge and deploy; then drop the old column or table in a later PR.
+- **Never edit a merged migration.** Fix forward with a new one.
+
+By hand, against any database: `DIRECT_URL="<target direct url>" npx prisma migrate deploy`.
 
 ### Preview with dev keys (first target)
 
@@ -154,7 +179,8 @@ A preview deployment uses the Clerk **development** instance and the Supabase **
 - `DATABASE_URL`: pooled Supabase URL (`:6543`, `pgbouncer=true`). It is the only database
   variable the running app reads. If you see "too many connections" under load, add
   `connection_limit=1` to this URL (not needed so far; untested).
-- `DIRECT_URL`: not needed on Vercel (only `prisma migrate` uses it); leave unset.
+- `DIRECT_URL`: not for Preview (previews never migrate). Set it for **Production** only, where
+  the build runs `prisma migrate deploy` (see Migrations).
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`: the `pk_test_` / `sk_test_` keys.
 - `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`,
   `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL`:
@@ -165,7 +191,7 @@ Do not set `ALLOWED_DEV_ORIGINS` (dev server only).
 **A dev-only Vercel project** (for example `casa-infants-dev`): its main URL and every
 `vercel deploy --prod` or push to the production branch use Vercel's **Production**
 environment, not Preview. Add the same variables (dev keys, dev database) to Production too,
-then redeploy; variables only apply to new deployments. Without them the proxy fails with
+plus `DIRECT_URL` for the dev database, then redeploy; variables only apply to new deployments. Without them the proxy fails with
 "Clerk keys are missing from your environment" and every page returns 500.
 
 **Clerk side.** Clerk's Vercel guide says preview and development deployments can use the
@@ -201,7 +227,8 @@ Authentication) can add a second gate if wanted.
 
 ### Production (later)
 
-- A separate Supabase EU project; apply `npx prisma migrate deploy` against it. No data migration.
+- A separate Supabase EU project; its `DIRECT_URL` in the Production environment makes the first
+  production build apply all migrations. No data migration.
 - The Clerk production instance with its own custom domain (`*.vercel.app` is not allowed), its
   `pk_live_` / `sk_live_` keys, set for the Production environment only.
 - Set `publicMetadata.role` to `director` on the director's production account.

@@ -129,3 +129,7 @@ Requires the Superpowers plugin and the `openspec` CLI (see README → Prerequis
 - `npm run dev` — dev server. `npm run build` — production build (needs env vars).
 - `npm run lint` — ESLint. `npm run typecheck` — `tsc --noEmit`. `npm test` — Vitest.
 - `npm run db:generate | db:push | db:migrate | db:studio` — Prisma.
+- CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and a migrations check on every PR.
+  Merging to `main` deploys to Vercel Production, whose build (`scripts/vercel-build.sh`) applies
+  pending migrations. **Migrations must be backward compatible** (expand, then contract in a later
+  PR); see README → Migrations.
