@@ -26,14 +26,17 @@ Beyond Node 24 + npm, the spec-driven workflow relies on tooling installed
 - **Superpowers plugin** for your coding agent (`superpowers@claude-plugins-official`),
   providing the `brainstorming`, `writing-plans`, `using-git-worktrees`,
   `subagent-driven-development`, and `finishing-a-development-branch` skills.
+- **Vercel plugin** (`vercel@claude-plugins-official`), providing Next.js, React
+  best-practices, Cache Components and Vercel platform skills. Enabled for the project
+  instead of copying those skills into the repo, so they stay current.
 - Optional: **gstack** skills (`/browse`, `/ship`, `/review`, …) if used by the team.
 
 ### Tooling provisioning (developers and cloud agents)
 
-Two prerequisites, provisioned differently because one is a plugin and one is a
-plain binary. Both are handled by `.claude/ensure-tooling.sh`.
+Two kinds of prerequisite, provisioned differently: plugins and a plain binary.
+All are handled by `.claude/ensure-tooling.sh`.
 
-**Superpowers plugin.** Plugin skills load at Claude Code startup, so the plugin
+**Superpowers and Vercel plugins.** Plugin skills load at Claude Code startup, so the plugins
 must be installed *before* the session launches. In a cloud/remote environment
 that means the environment's **Setup script** (a one-time, snapshotted, pre-launch
 step). Set it to:
@@ -60,7 +63,8 @@ precheck STOPS (by design) rather than implementing by hand.
 Remote troubleshooting: confirm the session is on a branch that contains
 `.claude/`, that the environment's network level reaches `github.com`, and that
 the Setup script above is configured. `claude plugin list` should show
-`superpowers@claude-plugins-official`; `openspec --version` should resolve.
+`superpowers@claude-plugins-official` and `vercel@claude-plugins-official`;
+`openspec --version` should resolve.
 
 ## Getting started
 

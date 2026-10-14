@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Provision the spec-driven-development tooling for Claude Code sessions:
 #   1. the Superpowers plugin (skills used by the superpowers-bridge apply phase)
+#      and the Vercel plugin (Next.js, React and Vercel platform skills)
 #   2. the OpenSpec CLI (@fission-ai/openspec)
 # so that /opsx:apply's precheck passes with no manual per-developer setup.
 #
@@ -53,23 +54,32 @@ if ! command -v openspec >/dev/null 2>&1; then
   fi
 fi
 
-# --- Superpowers plugin ----------------------------------------------------
+# --- Claude Code plugins ---------------------------------------------------
 # Only effective when run pre-launch (Setup script), since Claude Code loads
-# plugin skills at startup. The repo's .claude/settings.json then ENABLES it.
+# plugin skills at startup. The repo's .claude/settings.json then ENABLES them.
+plugins="superpowers vercel"
 if command -v claude >/dev/null 2>&1; then
-  if claude plugin list 2>/dev/null | grep -q 'superpowers@claude-plugins-official'; then
-    log "superpowers plugin already installed"
-  else
-    log "installing Superpowers plugin..."
-    claude plugin marketplace add anthropics/claude-plugins-official --scope user >/dev/null 2>&1 || true
-    if claude plugin install superpowers@claude-plugins-official --scope user >/dev/null 2>&1; then
-      log "superpowers plugin installed"
-    else
-      log "WARN: could not install superpowers plugin. Check the environment network level allows github.com, and that this runs in the pre-launch Setup script."
+  installed="$(claude plugin list 2>/dev/null)"
+  marketplace_added=0
+  for name in $plugins; do
+    plugin="$name@claude-plugins-official"
+    if printf '%s\n' "$installed" | grep -q "$plugin"; then
+      log "$name plugin already installed"
+      continue
     fi
-  fi
+    if [ "$marketplace_added" -eq 0 ]; then
+      claude plugin marketplace add anthropics/claude-plugins-official --scope user >/dev/null 2>&1 || true
+      marketplace_added=1
+    fi
+    log "installing $name plugin..."
+    if claude plugin install "$plugin" --scope user >/dev/null 2>&1; then
+      log "$name plugin installed"
+    else
+      log "WARN: could not install $name plugin. Check the environment network level allows github.com, and that this runs in the pre-launch Setup script."
+    fi
+  done
 else
-  log "WARN: claude CLI not found; cannot preinstall the superpowers plugin. Run this from the cloud environment Setup script."
+  log "WARN: claude CLI not found; cannot preinstall the plugins ($plugins). Run this from the cloud environment Setup script."
 fi
 
 exit 0

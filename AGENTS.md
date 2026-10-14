@@ -1,7 +1,11 @@
 <!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
 <!-- END:nextjs-agent-rules -->
 
 # Casa d'Infants: Operations Manual
@@ -46,7 +50,8 @@ See `README.md` for setup.
   - `dashboard/`: redirects to the last visited House (`active-house` cookie, set in `src/proxy.ts`).
   - `no-access/`: shown to signed-in users without the director flag.
 - `src/lib/houses.ts`: the two Houses (keep in sync with the `init` migration).
-- `src/lib/dates.ts`: `IsoDate` helpers; "today" is always `todayInMadrid()`.
+- `src/lib/dates.ts`: `IsoDate` helpers; "today" is always `todayInMadrid()`. *Why:* the Houses
+  are in Catalonia and the server runs on UTC, so around midnight the server's date is the wrong day.
 - `src/lib/posts.ts`: posts per House and shared posts, weekly schedules (provisional times), week
   alternation. `src/lib/rules.ts`: AP and vacation rules, default opening balances.
   `src/lib/duration.ts`: `H:MM` durations as integer minutes. `src/lib/team.ts`: the Equip team
@@ -58,7 +63,7 @@ See `README.md` for setup.
   (not part of the app; see its README).
 - `src/components/team/`: Equip UI. `src/components/field.tsx`, `duration-input.tsx`,
   `date-input.tsx`: form primitives.
-- `src/components/sheet.tsx`: the app's panel, wrapping the shadcn Drawer (`src/components/ui/drawer.tsx`, Base UI). App code uses `Sheet`, not the Drawer directly.
+- `src/components/sheet.tsx`: the app's panel, wrapping the shadcn Drawer (`src/components/ui/drawer.tsx`, Base UI). App code uses `Sheet`, not the Drawer directly. *Why:* `Sheet` opens from the right on desktop and from the bottom on mobile, and always renders a title.
 - `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: FASI clay-house mark (images in `public/brand/`). `src/components/ui/`: shadcn primitives.
 
 ## Access and data rules
@@ -67,13 +72,41 @@ See `README.md` for setup.
   (set by hand in the Clerk dashboard; currently the director and the developer). **Call it in
   every page and data function**, not only in a layout: layouts and pages render in parallel.
 - Server Functions call `requireDirector()`, validate the House slug and re-parse their input with
-  the form's own zod schema; a person or seat of the other House is rejected.
+  the form's own zod schema; a person or seat of the other House is rejected. *Why:* a Server
+  Function is reachable by a direct POST, whatever the form sent.
 - Balances, APs and vacations belong to the **person**, never to a House: moving a person keeps
   them. Records that belong to a House (rota changes, day notes) store their own `house_id`.
+  *Why:* the product owner decided each person keeps their APs and vacations whatever House they
+  are in.
 - A person covers one seat of one post (`house_id` null for the shared posts PDG and PSI). One
   active person per seat is enforced by two partial unique indexes written by hand in the `init`
   migration, with CHECKs on seats and balances. Prisma does not show them in `schema.prisma`.
-- Posts, schedules and rules are code: changing them is a code change, not data.
+  *Why:* the database itself refuses a second active person on a seat, even when two writes race.
+- Posts, schedules and rules are code: changing them is a code change, not data. *Why:* the
+  product owner decided posts are fixed and only the people change; a constant is testable and
+  versioned, with no screens or migrations for data that does not change.
+
+## Next.js rules
+
+Next 16 changed the cache APIs, so habits from older Next are often wrong here. Check
+`node_modules/next/dist/docs/` when in doubt.
+
+- **After a write, `revalidatePath` every route that shows the data** (as `team/actions.ts` does),
+  and do not follow the Server Function with `router.refresh()` on the client. *Why:* the Server
+  Function's response already carries the re-rendered page; a client refresh renders the route a
+  second time.
+- **`refresh()`** (from `next/cache`, Server Functions only) re-renders the current page without
+  invalidating anything. `updateTag(tag)` only affects `"use cache"` reads, and this app has none.
+- **Never call `revalidateTag(tag)` with one argument.** *Why:* deprecated in Next 16 and a type
+  error; outside a Server Function use `revalidateTag(tag, 'max')`.
+- **Write new pages so they survive Cache Components.** `cacheComponents` is off in
+  `next.config.ts`, and turning it on is an app-wide decision. Keep the page frame (heading,
+  static copy) in the page and put request-time reads (the gated data functions, `params`,
+  `searchParams`, `cookies()`, `headers()`) in an async child inside `<Suspense>`, close to where
+  they are used. No route segment config (`export const dynamic`, `revalidate`, `fetchCache`).
+  *Why:* with the flag on, segment configs error and a request-time read with no `<Suspense>`
+  above it fails the build (`02-guides/streaming.md`, `02-guides/migrating-to-cache-components.md`).
+  With the flag off the same shape costs nothing and shows the frame before slow balance queries.
 
 ## Design system
 
@@ -87,12 +120,17 @@ rules enforced without asking:
   for dates, day counts and balances. Both are self-hosted via `next/font`.
 - Palette from the clay house: Crema background, Terracota primary, Salvia secondary,
   Espresso text. Leave types use the `leave-*` tokens.
+- **No Tailwind `dark:` utilities.** Every colour is a token, which gets its dark value from
+  `html[data-theme="dark"]`. *Why:* there is no `@custom-variant dark`, so `dark:` follows the
+  operating system (`prefers-color-scheme`), not the app's theme.
 - **Honey (`accent`, `#E9B44C`) means only "waiting for the coordinator's decision"**
-  (pending requests, coverage conflicts). Never decoration, success or active states.
+  (pending requests, coverage conflicts). Never decoration, success or active states. *Why:* it
+  keeps the pending queue unmistakable for the coordinator.
 - Status via texture, not badges: solid = approved, dashed honey = pending.
 - Sick leave is shown only as "Baixa", never with a reason (GDPR Art. 9).
 - Errors always carry an icon and text (crimson is close to terracotta).
-- No sidebar: top bar on desktop, bottom tab bar on mobile.
+- No sidebar: top bar on desktop, bottom tab bar on mobile. *Why:* the app has four sections,
+  too few to justify a sidebar.
 - Soft radii: `rounded-2xl` panels, `rounded-xl` cards, `rounded-lg` buttons/inputs,
   `rounded-md` in dense contexts. Cards use `shadow-clay`.
 - 150–200ms transitions, purposeful only; filled buttons "press in" on click.
