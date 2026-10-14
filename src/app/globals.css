@@ -68,6 +68,7 @@
 
   /* ── Clay depth ── */
   --shadow-clay: inset 0 1px 0 rgb(255 255 255 / 0.7), 0 1px 2px rgb(46 33 27 / 0.06), 0 8px 20px -10px rgb(46 33 27 / 0.18);
+  --shadow-sheet: 0 24px 60px -20px rgb(46 33 27 / 0.35);
 }
 
 /* Fonts are self-hosted by next/font (src/app/layout.tsx), which defines

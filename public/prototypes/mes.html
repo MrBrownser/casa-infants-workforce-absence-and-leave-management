@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>El mes · Casa d'Infants (prototip)</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/casa-plastelina-256.webp" />
+  <link rel="stylesheet" href="shared/fonts.css" />
+  <script src="shared/theme.js"></script>
+  <script src="vendor/tailwindcss-browser-4.1.11.js"></script>
+  <script src="vendor/lucide-0.469.0.min.js"></script>
+  <script src="shared/data.js"></script>
+  <script src="shared/ui.js"></script>
+  <script src="shared/rota.js"></script>
+  <style>
+    .chip-vac { background: #F2D3C6; color: #8A3015; }
+    .chip-ap { background: #E6E2D0; color: #55583F; }
+    .chip-baixa { background: #DDEBEF; color: #2F5F6E; }
+    .chip-open { background: repeating-linear-gradient(135deg, #DDEBEF 0 6px, #EAF3F5 6px 12px); color: #2F5F6E; }
+    @page { size: A4 landscape; margin: 8mm; }
+    @media print {
+      header, nav, .no-print { display: none !important; }
+      main { max-width: none !important; padding: 0 !important; }
+      .card { box-shadow: none !important; }
+      .print-quad table { min-width: 0 !important; }
+      .print-quad, .print-quad * { font-size: 8px !important; line-height: 1.2 !important; }
+      .print-quad td, .print-quad th { padding: 1px 4px !important; }
+      .print-quad thead, .print-quad tbody tr:first-child th { padding-top: 2px !important; }
+      .print-quad tbody { break-inside: avoid; }
+      .print-quad .slot { display: inline; margin-right: 5px; padding: 0 !important; }
+      .print-quad .slot .block:not([style*="display: none"]) { display: inline !important; }
+      .print-quad .size-6, .print-quad .size-5 { width: auto !important; height: auto !important; }
+      h1 { font-size: 18px !important; }
+      body { background: white; padding: 0; }
+      .print-wide { overflow: visible !important; }
+    }
+  </style>
+</head>
+<body class="min-h-dvh pb-24 md:pb-10">
+  <div id="shell-top"></div>
+
+  <main x-data="month()" x-cloak class="max-w-[1280px] mx-auto px-4 md:px-6 pt-6 md:pt-10">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end gap-4 md:gap-6">
+      <div class="flex-1 min-w-0">
+        <p class="eyebrow" x-text="house.name"></p>
+        <div class="flex items-center gap-2 mt-1">
+          <h1 class="text-[1.875rem] tracking-[-0.015em]" x-text="title"></h1>
+          <div class="flex items-center gap-1 ml-2 no-print">
+            <button class="btn btn-outline btn-icon size-9" @click="shift(-1)" :disabled="month === `${YEAR}-01`" aria-label="Mes anterior"><span x-icon="'chevron-left'"></span></button>
+            <button class="btn btn-outline btn-icon size-9" @click="shift(1)" :disabled="month === `${YEAR}-12`" aria-label="Mes següent"><span x-icon="'chevron-right'"></span></button>
+            <button class="btn btn-ghost btn-sm" x-show="month !== today.slice(0, 7)" @click="month = today.slice(0, 7)">Avui</button>
+          </div>
+        </div>
+        <p class="text-muted-foreground mt-1.5 max-w-prose no-print">Qui treballa cada dia i qui és fora (vacances, AP i baixes), amb qui cobreix cada absència. És el full del mes que s'imprimeix i es penja a la casa.</p>
+      </div>
+      <div class="flex flex-wrap gap-2 no-print">
+        <button class="btn btn-outline" @click="printQuad()"><span x-icon="'printer'"></span> Imprimeix el quadrant</button>
+        <button class="btn btn-primary" @click="openForm()"><span x-icon="'plus'"></span> Apunta una absència</button>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="flex flex-col lg:flex-row lg:items-center gap-3 mt-6 mb-3 no-print">
+      <div class="segmented self-start">
+        <button :aria-pressed="view === 'quad'" @click="view = 'quad'"><span x-icon="'users'" class="mr-1.5"></span>Quadrant</button>
+        <button :aria-pressed="view === 'cal'" @click="view = 'cal'"><span x-icon="'calendar-days'" class="mr-1.5"></span>Absències</button>
+        <button :aria-pressed="view === 'grid'" @click="view = 'grid'"><span x-icon="'table'" class="mr-1.5"></span>Per persona</button>
+        <button :aria-pressed="view === 'agenda'" @click="view = 'agenda'"><span x-icon="'list'" class="mr-1.5"></span>Agenda</button>
+      </div>
+      <div class="lg:ml-auto flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.8125rem] text-muted-foreground">
+        <span class="inline-flex items-center gap-1.5"><span class="w-5 h-3 rounded-sm chip-vac"></span>Vacances</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-5 h-3 rounded-sm chip-ap"></span>AP</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-5 h-3 rounded-sm chip-baixa"></span>Baixa</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-5 h-3 rounded-sm chip-open"></span>Baixa sense data de tornada</span>
+        <span class="inline-flex items-center gap-1.5"><span class="size-4 rounded-full bg-accent grid place-items-center text-[0.625rem] font-bold text-accent-foreground">3</span><span x-text="`Més de ${maxOff} fora`"></span></span>
+        <span x-show="view === 'quad'" class="inline-flex items-center gap-1.5"><span class="rounded px-1 text-[0.6875rem] font-semibold bg-accent text-accent-foreground">Sense cobrir</span>Cal decidir qui hi va</span>
+      </div>
+    </div>
+
+    <div class="grid gap-4 items-start" :class="!['grid', 'quad'].includes(view) && 'lg:grid-cols-[1fr_310px]'">
+
+      <!-- ═════════ Quadrant: who works each day (this is what gets printed) ═════════ -->
+      <div x-show="view === 'quad'" class="card overflow-hidden print-quad">
+        <div class="overflow-x-auto print-wide">
+          <table class="w-full min-w-[980px] table-fixed border-collapse text-[0.8125rem]">
+            <template x-for="(week, wi) in weeks" :key="week[0]">
+              <tbody :class="wi > 0 && 'border-t-4 border-background'">
+                <tr class="bg-background/70">
+                  <th class="w-[124px] text-left px-3 py-2 text-[0.75rem] font-semibold uppercase tracking-wider text-muted-foreground" x-text="`Setmana ${wi + 1}`"></th>
+                  <template x-for="d in week" :key="d">
+                    <th class="text-left px-2 py-1.5 border-l border-border font-medium align-top cursor-pointer hover:bg-hover" :class="!inMonth(d) && 'opacity-40'" @click="openDay(d)">
+                      <span class="flex items-center gap-1.5">
+                        <span class="text-[0.75rem] uppercase text-muted-foreground" x-text="weekdayLetter(d)"></span>
+                        <span class="num font-semibold size-6 grid place-items-center rounded-full" :class="d === today && 'bg-primary text-primary-foreground'" x-text="Number(d.slice(8))"></span>
+                        <span x-show="over(d)" class="ml-auto size-5 rounded-full bg-accent text-accent-foreground grid place-items-center text-[0.6875rem] font-bold num" :title="`${count(d)} persones fora (màxim ${maxOff})`" x-text="count(d)"></span>
+                      </span>
+                      <span x-show="holiday(d)" class="block text-[0.6875rem] font-normal text-muted-foreground truncate" x-text="holiday(d)"></span>
+                    </th>
+                  </template>
+                </tr>
+                <template x-for="sh in SHIFTS" :key="sh.key">
+                  <tr class="border-t border-border">
+                    <th class="text-left px-3 py-1.5 font-medium text-muted-foreground align-top" x-text="sh.label"></th>
+                    <template x-for="d in week" :key="d">
+                      <td class="align-top border-l border-border px-2 py-1.5 cursor-pointer hover:bg-hover" :class="[!inMonth(d) && 'opacity-40', isFreeDay(d) && 'bg-background/70']" @click="openDay(d)">
+                        <template x-for="slot in slotsOf(d, sh.key)" :key="slot.p.id">
+                          <div class="slot leading-snug py-px">
+                            <span class="font-medium" :class="slot.away && 'line-through font-normal text-muted-foreground'" x-text="firstName(slot.p.name)"></span>
+                            <span x-show="slot.away" class="rounded px-1 text-[0.6875rem] font-semibold" :class="slot.away?.kind === 'vac' ? 'chip-vac' : 'chip-baixa'" x-text="slot.away?.label"></span>
+                            <span x-show="slot.ap" class="rounded px-1 text-[0.6875rem] font-semibold chip-ap" x-text="`AP ${compact(slot.ap)}`"></span>
+                            <span x-show="slot.away && slot.cover" class="block text-[0.75rem] font-semibold" x-text="`→ ${slot.cover?.text}`"></span>
+                            <span x-show="slot.away && !slot.cover" class="inline-block mt-0.5 rounded px-1 text-[0.6875rem] font-semibold bg-accent text-accent-foreground">Sense cobrir</span>
+                          </div>
+                        </template>
+                      </td>
+                    </template>
+                  </tr>
+                </template>
+                <tr class="border-t border-border" x-show="ctPerson">
+                  <th class="text-left px-3 py-1.5 font-medium text-muted-foreground align-top">CT (corretorn)</th>
+                  <template x-for="d in week" :key="d">
+                    <td class="align-top border-l border-border px-2 py-1.5 text-[0.75rem]" :class="[!inMonth(d) && 'opacity-40', isFreeDay(d) && 'bg-background/70']">
+                      <span x-text="ctText(d)" :class="ctState(d) === 'free' ? 'text-muted-foreground' : 'font-medium'"></span>
+                    </td>
+                  </template>
+                </tr>
+                <tr class="border-t border-border">
+                  <th class="text-left px-3 py-1.5 font-medium text-muted-foreground align-top">Notes</th>
+                  <template x-for="d in week" :key="d">
+                    <td class="align-top border-l border-border px-2 py-1.5 text-[0.75rem] italic cursor-pointer hover:bg-hover" :class="!inMonth(d) && 'opacity-40'" @click="openDay(d)" x-text="rotaDay(d).note || ''"></td>
+                  </template>
+                </tr>
+              </tbody>
+            </template>
+          </table>
+        </div>
+        <p class="px-4 py-2.5 text-[0.8125rem] text-muted-foreground border-t border-border flex items-center gap-1.5 no-print">
+          <span x-icon="'mouse-pointer-click'"></span>
+          Fes clic en un dia per canviar qui treballa, apuntar una absència o afegir-hi una nota. El quadrant d'exemple segueix un patró setmanal per lloc.
+        </p>
+      </div>
+
+      <!-- ═════════ Calendar ═════════ -->
+      <div x-show="view === 'cal'" class="card overflow-hidden">
+        <div class="overflow-x-auto print-wide">
+          <div class="min-w-[720px]">
+            <div class="grid grid-cols-7 border-b border-border bg-background/60">
+              <template x-for="(wd, i) in WEEKDAYS" :key="wd">
+                <div class="px-2.5 py-2 text-[0.75rem] font-semibold uppercase tracking-wider text-muted-foreground" :class="i > 4 && 'text-muted-foreground/70'" x-text="wd"></div>
+              </template>
+            </div>
+            <template x-for="week in weeks" :key="week[0]">
+              <div class="grid grid-cols-7 border-b border-border last:border-0">
+                <template x-for="d in week" :key="d">
+                  <button class="relative min-h-[118px] p-1.5 text-left border-r border-border last:border-r-0 flex flex-col gap-1 transition-colors duration-150 hover:bg-hover cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                          :class="[!inMonth(d) && 'opacity-45', (isWeekend(d) || holiday(d)) && 'bg-background/70']"
+                          @click="openDay(d)" :aria-label="dayLabel(d)">
+                    <div class="flex items-center gap-1 px-1">
+                      <span class="text-[0.8125rem] font-semibold num size-6 grid place-items-center rounded-full"
+                            :class="d === today ? 'bg-primary text-primary-foreground' : ''" x-text="Number(d.slice(8))"></span>
+                      <span x-show="holiday(d)" class="text-[0.6875rem] text-muted-foreground truncate" x-text="holiday(d)"></span>
+                      <span x-show="over(d)" class="ml-auto size-5 rounded-full bg-accent text-accent-foreground grid place-items-center text-[0.6875rem] font-bold num" :title="`${count(d)} persones fora (màxim ${maxOff})`" x-text="count(d)"></span>
+                    </div>
+                    <template x-for="a in on(d).slice(0, 3)" :key="a.key">
+                      <span class="block rounded-md px-1.5 py-0.5 text-[0.75rem] font-medium leading-snug truncate" :class="a.cls" x-text="a.short"></span>
+                    </template>
+                    <span x-show="on(d).length > 3" class="px-1.5 text-[0.75rem] text-muted-foreground" x-text="`+${on(d).length - 3} més`"></span>
+                  </button>
+                </template>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═════════ Per person grid (like the spreadsheet) ═════════ -->
+      <div x-show="view === 'grid'" class="card overflow-hidden">
+        <div class="overflow-x-auto print-wide">
+          <table class="text-[0.75rem] num border-collapse">
+            <thead>
+              <tr>
+                <th class="sticky left-0 z-10 bg-card text-left font-medium text-muted-foreground px-3 py-2 min-w-[150px] border-b border-border">Persona</th>
+                <template x-for="d in monthDays" :key="d">
+                  <th class="w-7 min-w-7 py-1.5 font-medium border-b border-l border-border/60 cursor-pointer hover:bg-hover"
+                      :class="[(isWeekend(d) || holiday(d)) && 'bg-background', d === today && 'text-primary']" @click="openDay(d)" :title="dayLabel(d)">
+                    <span class="block text-[0.625rem] text-muted-foreground" x-text="weekdayLetter(d)"></span>
+                    <span class="block" :class="over(d) && 'bg-accent text-accent-foreground rounded-sm mx-0.5'" x-text="Number(d.slice(8))"></span>
+                  </th>
+                </template>
+                <th class="text-left font-medium text-muted-foreground px-3 py-2 border-b border-l border-border min-w-[150px]">Aquest mes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="p in people" :key="p.id">
+                <tr class="border-b border-border last:border-0">
+                  <td class="sticky left-0 z-10 bg-card px-3 py-1.5 whitespace-nowrap">
+                    <span class="inline-flex items-center gap-2"><span class="size-2.5 rounded-full" :style="`background:${p.color}`"></span><span class="text-[0.8125rem] font-medium font-sans" x-text="p.name"></span></span>
+                  </td>
+                  <template x-for="d in monthDays" :key="d">
+                    <td class="h-8 border-l border-border/60 text-center p-0.5 cursor-pointer" :class="(isWeekend(d) || holiday(d)) && 'bg-background'" @click="openDay(d)">
+                      <template x-if="cellOf(p, d)">
+                        <span class="h-full w-full rounded-[4px] grid place-items-center font-semibold" :class="cellOf(p, d).cls" :title="cellOf(p, d).label" x-text="cellOf(p, d).letter"></span>
+                      </template>
+                    </td>
+                  </template>
+                  <td class="px-3 py-1.5 border-l border-border whitespace-nowrap text-muted-foreground font-sans" x-text="monthSummary(p).text || '—'"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+        <p class="px-4 py-2.5 text-[0.8125rem] text-muted-foreground border-t border-border flex flex-wrap gap-x-4 gap-y-1">
+          <span><b class="font-semibold">V</b> vacances</span><span><b class="font-semibold">A</b> AP</span><span><b class="font-semibold">B</b> baixa</span>
+          <span class="no-print">Fes clic en un dia per veure'l o apuntar-hi alguna cosa.</span>
+        </p>
+      </div>
+
+      <!-- ═════════ Agenda ═════════ -->
+      <div x-show="view === 'agenda'" class="space-y-2.5">
+        <template x-for="d in agendaDays" :key="d">
+          <button class="card rounded-xl w-full text-left p-3.5 hover:bg-hover transition-colors duration-150 cursor-pointer" :class="(over(d) || rotaOf(d).uncovered) && 'border-l-4 border-l-accent'" @click="openDay(d)">
+            <div class="flex items-center gap-2">
+              <span class="font-semibold num" :class="d === today && 'text-primary'" x-text="`${weekday(d)} ${fmtDate(d)}`"></span>
+              <span x-show="d === today" class="text-[0.75rem] font-semibold bg-secondary rounded-md px-1.5 py-0.5">Avui</span>
+              <span x-show="holiday(d)" class="text-[0.8125rem] text-muted-foreground" x-text="`· ${holiday(d)}`"></span>
+              <span x-show="over(d)" class="ml-auto text-[0.75rem] font-semibold bg-accent text-accent-foreground rounded-md px-1.5 py-0.5 num" x-text="`${count(d)} fora`"></span>
+            </div>
+            <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[0.8125rem]">
+              <template x-for="sh in rotaOf(d).shifts" :key="sh.key">
+                <div class="contents">
+                  <dt class="text-muted-foreground" x-text="sh.label"></dt>
+                  <dd>
+                    <template x-for="slot in sh.slots" :key="slot.p.id">
+                      <span class="mr-2 inline-flex items-center gap-1">
+                        <span :class="slot.away && 'line-through text-muted-foreground'" x-text="firstName(slot.p.name)"></span>
+                        <span x-show="slot.away && slot.cover" class="font-semibold" x-text="`→ ${slot.cover?.text}`"></span>
+                        <span x-show="slot.away && !slot.cover" class="rounded px-1 text-[0.6875rem] font-semibold bg-accent text-accent-foreground">Sense cobrir</span>
+                        <span x-show="slot.ap" class="rounded px-1 text-[0.6875rem] font-semibold chip-ap" x-text="`AP ${compact(slot.ap)}`"></span>
+                      </span>
+                    </template>
+                  </dd>
+                </div>
+              </template>
+              <template x-if="ctPerson">
+                <div class="contents">
+                  <dt class="text-muted-foreground">CT</dt>
+                  <dd x-text="ctText(d)"></dd>
+                </div>
+              </template>
+            </dl>
+            <p x-show="rotaDay(d).note" class="mt-1.5 text-[0.8125rem] italic" x-text="rotaDay(d).note"></p>
+          </button>
+        </template>
+        
+      </div>
+
+      <!-- ═════════ Side column ═════════ -->
+      <aside class="no-print gap-4" :class="['grid', 'quad'].includes(view) ? 'grid md:grid-cols-3 items-start' : 'space-y-4'">
+        <section class="card rounded-xl p-4">
+          <p class="eyebrow">Avui</p>
+          <h2 class="text-xl mt-1 num" x-text="`${weekdayLong(today)} ${fmtDate(today)}`"></h2>
+          <ul class="mt-3 space-y-2">
+            <template x-for="a in on(today)" :key="a.key">
+              <li class="flex items-start gap-2.5">
+                <span class="size-2.5 rounded-full mt-1.5 shrink-0" :style="`background:${a.p.color}`"></span>
+                <div class="min-w-0">
+                  <p class="text-[0.9375rem] font-medium leading-tight" x-text="a.p.name"></p>
+                  <p class="text-[0.8125rem] text-muted-foreground" x-text="a.detail"></p>
+                </div>
+              </li>
+            </template>
+          </ul>
+          <p x-show="!on(today).length" class="mt-2 text-[0.875rem] text-muted-foreground">Avui hi és tothom.</p>
+        </section>
+
+        <section class="card rounded-xl p-4" x-show="openBaixes.length">
+          <h3 class="font-semibold flex items-center gap-1.5"><span x-icon="'heart-pulse'" class="text-info"></span>Baixes sense data de tornada</h3>
+          <ul class="mt-2.5 space-y-3">
+            <template x-for="b in openBaixes" :key="b.e.id">
+              <li class="text-[0.875rem]">
+                <p class="font-medium" x-text="b.p.name"></p>
+                <p class="text-muted-foreground num" x-text="`Des del ${fmtDate(b.e.from)} · ${days(b.e.from, today)} dies`"></p>
+                <p x-show="b.e.cover" class="text-muted-foreground" x-text="`Cobreix: ${b.e.cover}`"></p>
+                <button class="text-primary font-semibold text-[0.8125rem] mt-0.5 hover:underline cursor-pointer" @click="openDay(today)">Ha tornat? Tanca la baixa</button>
+              </li>
+            </template>
+          </ul>
+        </section>
+
+        <section class="card rounded-xl p-4">
+          <h3 class="font-semibold" x-text="`${monthName} en xifres`"></h3>
+          <ul class="mt-2.5 space-y-1.5">
+            <template x-for="p in peopleWithAbsences" :key="p.id">
+              <li class="flex items-baseline gap-2 text-[0.875rem]">
+                <span class="size-2 rounded-full shrink-0 translate-y-[-1px]" :style="`background:${p.color}`"></span>
+                <span class="font-medium" x-text="p.name.split(' ')[0]"></span>
+                <span class="ml-auto text-muted-foreground num text-right" x-text="monthSummary(p).text"></span>
+              </li>
+            </template>
+          </ul>
+          <p x-show="!peopleWithAbsences.length" class="mt-2 text-[0.875rem] text-muted-foreground">Cap absència aquest mes.</p>
+          <p x-show="uncoveredDays.length" class="mt-3 pt-3 border-t border-border text-[0.8125rem] flex gap-1.5">
+            <span x-icon="'triangle-alert'" class="mt-0.5 text-[#B07A12]"></span>
+            <span x-text="`Torns sense cobrir ${uncoveredDays.length === 1 ? 'el dia' : 'els dies'} ${uncoveredDays.map((d) => Number(d.slice(8))).join(', ')}.`"></span>
+          </p>
+          <p x-show="overDays.length" class="mt-3 pt-3 border-t border-border text-[0.8125rem] flex gap-1.5">
+            <span x-icon="'triangle-alert'" class="mt-0.5 text-[#B07A12]"></span>
+            <span x-text="`${overDays.length} ${overDays.length === 1 ? 'dia' : 'dies'} amb més de ${maxOff} persones fora: ${overDays.map((d) => Number(d.slice(8))).join(', ')}.`"></span>
+          </p>
+        </section>
+      </aside>
+    </div>
+
+    <p class="text-[0.8125rem] text-muted-foreground mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 no-print">
+      <span class="inline-flex items-center gap-1.5"><span x-icon="'flask-conical'"></span> Prototip amb dades inventades. Comparteix les dades amb Saldos: el que apuntis aquí hi surt, i al revés.</span>
+      <button class="underline underline-offset-2 hover:text-foreground cursor-pointer" @click="reset()">Torna a les dades d'exemple</button>
+    </p>
+
+    <!-- ═════════ Day panel ═════════ -->
+    <div x-show="day" class="fixed inset-0 z-40" @keydown.escape.window="day = null" role="dialog" aria-modal="true" aria-labelledby="day-title">
+      <div x-show="day" x-transition.opacity.duration.200ms class="absolute inset-0 bg-foreground/30" @click="day = null"></div>
+      <aside x-show="day"
+             x-transition:enter="transition ease-out duration-250" x-transition:enter-start="translate-y-full md:translate-y-0 md:translate-x-full" x-transition:enter-end="translate-y-0 md:translate-x-0"
+             x-transition:leave="transition ease-in duration-200" x-transition:leave-start="translate-y-0 md:translate-x-0" x-transition:leave-end="translate-y-full md:translate-y-0 md:translate-x-full"
+             class="absolute bottom-0 inset-x-0 max-h-[92dvh] rounded-t-2xl md:rounded-none md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[440px] bg-card shadow-sheet flex flex-col">
+        <template x-if="day">
+          <div class="flex flex-col min-h-0 h-full">
+            <div class="px-5 pt-5 pb-4 border-b border-border flex items-start gap-3">
+              <div class="flex-1">
+                <p class="eyebrow" x-text="day === today ? 'Avui' : (holiday(day) || house.name)"></p>
+                <h2 id="day-title" class="text-xl mt-1 num" x-text="`${weekdayLong(day)} ${fmtDate(day)}`"></h2>
+              </div>
+              <button class="btn btn-ghost btn-icon -mr-2 -mt-1" @click="day = null" aria-label="Tanca"><span x-icon="'x'"></span></button>
+            </div>
+            <div class="overflow-y-auto px-5 py-5 space-y-4 flex-1">
+              <section>
+                <h3 class="font-semibold mb-2">Qui treballa</h3>
+                <div class="rounded-xl border border-border divide-y divide-border">
+                  <template x-for="sh in rotaOf(day).shifts" :key="sh.key">
+                    <div class="p-3">
+                      <p class="text-[0.8125rem] text-muted-foreground flex items-center gap-2">
+                        <span x-text="sh.label"></span>
+                        <button x-show="sh.manual" class="ml-auto text-primary font-semibold hover:underline cursor-pointer" @click="resetShift(day, sh.key)">Torna al quadrant habitual</button>
+                      </p>
+                      <template x-for="(slot, i) in sh.slots" :key="sh.key + i">
+                        <div class="mt-1.5">
+                          <select class="input h-9 text-[0.875rem]" @change="setSlot(day, sh.key, i, $event.target.value)" :aria-label="`${sh.label}: qui hi treballa`">
+                            <template x-for="p in people" :key="p.id"><option :value="p.id" :selected="p.id === slot.p.id" x-text="p.name"></option></template>
+                          </select>
+                          <p x-show="slot.away" class="text-[0.8125rem] mt-1 flex flex-wrap items-center gap-1.5">
+                            <span class="rounded px-1.5 font-semibold" :class="slot.away?.kind === 'vac' ? 'chip-vac' : 'chip-baixa'" x-text="slot.away?.kind === 'vac' ? 'De vacances' : 'De baixa'"></span>
+                            <span x-show="slot.cover" x-text="`Cobreix: ${slot.cover?.text}`"></span>
+                            <span x-show="!slot.cover" class="rounded px-1.5 font-semibold bg-accent text-accent-foreground">Sense cobrir: tria qui hi va</span>
+                          </p>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                  <p x-show="!rotaOf(day).shifts.length" class="p-3 text-[0.875rem] text-muted-foreground">Cap torn aquest dia.</p>
+                </div>
+                <label class="label text-[0.8125rem] mt-3" for="day-note">Nota del dia (surt al quadrant)</label>
+                <input id="day-note" class="input h-9 text-[0.875rem]" placeholder="p. ex. Ivan entra a les 21:30 h" :value="rotaDay(day).note" @change="setNote(day, $event.target.value)" />
+              </section>
+              <h3 class="font-semibold pt-1">Absències</h3>
+              <div x-show="over(day)" class="rounded-lg border-2 border-dashed border-accent bg-accent/10 p-3 text-[0.875rem] text-accent-foreground">
+                <p class="font-semibold flex items-center gap-1.5"><span x-icon="'triangle-alert'"></span>Cal que ho decideixis</p>
+                <p class="mt-1" x-text="`Hi ha ${count(day)} persones fora i el màxim és ${maxOff}. Mira qui pot cobrir-ho o mou alguna absència.`"></p>
+              </div>
+
+              <ul class="space-y-2.5">
+                <template x-for="a in on(day)" :key="a.key">
+                  <li class="rounded-xl border border-border p-3.5">
+                    <div class="flex items-start gap-3">
+                      <span class="rounded-md px-2 py-0.5 text-[0.75rem] font-semibold shrink-0 mt-0.5" :class="a.cls" x-text="a.type"></span>
+                      <div class="flex-1 min-w-0">
+                        <p class="font-semibold leading-tight" x-text="a.p.name"></p>
+                        <p class="text-[0.8125rem] text-muted-foreground num" x-text="a.detail"></p>
+                      </div>
+                      <button class="btn btn-ghost btn-icon size-8 text-muted-foreground hover:text-error" @click="remove(a)" aria-label="Esborra"><span x-icon="'trash-2'"></span></button>
+                    </div>
+                    <template x-if="a.kind === 'baixa'">
+                      <div class="mt-3 pt-3 border-t border-border space-y-3">
+                        <div>
+                          <label class="label text-[0.8125rem]" :for="`cover-${a.e.id}`">Qui la cobreix</label>
+                          <input :id="`cover-${a.e.id}`" class="input h-9 text-[0.875rem]" placeholder="p. ex. el CT, una substituta…" :value="a.e.cover" @change="a.e.cover = $event.target.value.trim(); persist(); flash('Desat qui la cobreix.')" />
+                        </div>
+                        <div x-show="!a.e.to" x-data="{ last: day }">
+                          <p class="label text-[0.8125rem]">Ha tornat? Últim dia de baixa</p>
+                          <div class="flex gap-2">
+                            <div class="relative flex-1" x-data="dateInput(() => last, (v) => (last = v))">
+                              <input class="input h-9 num pr-10 text-[0.875rem]" inputmode="numeric" placeholder="dd/mm/aaaa" autocomplete="off" maxlength="10" :value="text" @input="onInput($event)" aria-label="Últim dia de baixa" />
+                              <button type="button" class="absolute right-0.5 top-0.5 size-8 grid place-items-center rounded-md text-muted-foreground hover:bg-hover cursor-pointer" @click="openPicker()" aria-label="Obre el calendari"><span x-icon="'calendar'"></span></button>
+                              <input type="date" x-ref="native" class="absolute left-0 bottom-0 w-full h-0 opacity-0 pointer-events-none" tabindex="-1" aria-hidden="true" :min="a.e.from" :value="iso()" @change="pick($event.target.value)" />
+                            </div>
+                            <button class="btn btn-secondary btn-sm h-9" :disabled="!last || last < a.e.from" @click="closeBaixa(a, last)">Tanca-la</button>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </li>
+                </template>
+              </ul>
+              <p x-show="!on(day).length" class="text-[0.9375rem] text-muted-foreground">Aquest dia hi és tothom.</p>
+            </div>
+            <div class="px-5 py-4 border-t border-border bg-background/50">
+              <button class="btn btn-primary w-full" @click="openForm('', 'baixa', day)"><span x-icon="'plus'"></span>Apunta una absència aquest dia</button>
+            </div>
+          </div>
+        </template>
+      </aside>
+    </div>
+
+    <!-- ═════════ Add form ═════════ -->
+    <div x-show="form.open" class="fixed inset-0 z-50 grid md:place-items-center items-end" @keydown.escape.window="form.open = false" role="dialog" aria-modal="true" aria-labelledby="form-title">
+      <div x-show="form.open" x-transition.opacity.duration.200ms class="absolute inset-0 bg-foreground/35" @click="form.open = false"></div>
+      <form x-show="form.open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
+            @submit.prevent="save()" novalidate
+            class="relative w-full md:w-[540px] max-h-[94dvh] overflow-y-auto bg-card rounded-t-2xl md:rounded-2xl shadow-sheet">
+        <div class="px-5 md:px-6 pt-5 pb-4 flex items-center border-b border-border">
+          <h2 id="form-title" class="text-xl flex-1">Apunta una absència</h2>
+          <button type="button" class="btn btn-ghost btn-icon -mr-2" @click="form.open = false" aria-label="Tanca"><span x-icon="'x'"></span></button>
+        </div>
+        <template x-if="form.open">
+        <div>
+        <div class="px-5 md:px-6 py-5 space-y-5">
+          <div>
+            <label class="label" for="m-person">Persona</label>
+            <select id="m-person" class="input" x-model="form.personId">
+              <option value="" disabled>Tria una persona</option>
+              <template x-for="p in people" :key="p.id"><option :value="p.id" x-text="p.name" :selected="p.id === form.personId"></option></template>
+            </select>
+          </div>
+
+          <div x-show="formPerson" class="-mt-2">
+            <p class="text-[0.8125rem] text-muted-foreground mb-1.5" x-text="formPerson ? `Saldo de ${formPerson.name.split(' ')[0]} avui` : ''"></p>
+            <div class="grid grid-cols-3 gap-2">
+              <template x-for="t in (formPerson ? balanceTiles(formPerson) : [])" :key="t.key">
+                <div class="rounded-lg p-2.5 transition-colors duration-150" :class="t.kinds.includes(form.kind) ? 'bg-secondary ring-1 ring-sage' : 'bg-background'">
+                  <p class="text-[0.75rem] text-muted-foreground leading-tight" x-text="t.label"></p>
+                  <p class="font-semibold num leading-tight mt-1" :class="t.warn && 'text-warning-fg'" x-text="t.value"></p>
+                  <p class="text-[0.6875rem] text-muted-foreground num leading-snug mt-0.5" x-text="t.sub"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <fieldset>
+            <legend class="label">Què és?</legend>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="choice"><input type="radio" name="mkind" value="baixa" x-model="form.kind" /><span><span class="font-semibold block">Baixa</span><span class="text-[0.8125rem] text-muted-foreground">Sense motiu, mai.</span></span></label>
+              <label class="choice"><input type="radio" name="mkind" value="vac" x-model="form.kind" /><span><span class="font-semibold block">Vacances</span><span class="text-[0.8125rem] text-muted-foreground">Per setmanes.</span></span></label>
+              <label class="choice"><input type="radio" name="mkind" value="apnr" x-model="form.kind" /><span><span class="font-semibold block">AP no recuperable</span><span class="text-[0.8125rem] text-muted-foreground num" x-text="`${RULES.apnrHours} h l'any, ${RULES.apnrMaxDays} dies`"></span></span></label>
+              <label class="choice"><input type="radio" name="mkind" value="apr" x-model="form.kind" /><span><span class="font-semibold block">AP recuperable</span><span class="text-[0.8125rem] text-muted-foreground">Surt de l'excedent.</span></span></label>
+            </div>
+          </fieldset>
+
+          <!-- First day: all kinds -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="label" for="m-from" x-text="form.kind === 'apnr' || form.kind === 'apr' ? 'Dia' : 'Primer dia'"></label>
+              <div class="relative" x-data="dateInput(() => form.from, (v) => (form.from = v))">
+                <input id="m-from" class="input num pr-10" inputmode="numeric" placeholder="dd/mm/aaaa" autocomplete="off" maxlength="10" :value="text" @input="onInput($event)" :aria-invalid="!!errors.dates" />
+                <button type="button" class="absolute right-1 top-1 size-8 grid place-items-center rounded-md text-muted-foreground hover:bg-hover cursor-pointer" @click="openPicker()" aria-label="Obre el calendari"><span x-icon="'calendar'"></span></button>
+                <input type="date" x-ref="native" class="absolute left-0 bottom-0 w-full h-0 opacity-0 pointer-events-none" tabindex="-1" aria-hidden="true" :min="`${YEAR}-01-01`" :max="`${YEAR}-12-31`" :value="iso()" @change="pick($event.target.value)" />
+              </div>
+            </div>
+            <div x-show="form.kind === 'vac' || (form.kind === 'baixa' && !form.openEnded)">
+              <label class="label" for="m-to">Últim dia</label>
+              <div class="relative" x-data="dateInput(() => form.to, (v) => (form.to = v))">
+                <input id="m-to" class="input num pr-10" inputmode="numeric" placeholder="dd/mm/aaaa" autocomplete="off" maxlength="10" :value="text" @input="onInput($event)" :aria-invalid="!!errors.dates" />
+                <button type="button" class="absolute right-1 top-1 size-8 grid place-items-center rounded-md text-muted-foreground hover:bg-hover cursor-pointer" @click="openPicker()" aria-label="Obre el calendari"><span x-icon="'calendar'"></span></button>
+                <input type="date" x-ref="native" class="absolute left-0 bottom-0 w-full h-0 opacity-0 pointer-events-none" tabindex="-1" aria-hidden="true" :min="form.from || `${YEAR}-01-01`" :max="`${YEAR}-12-31`" :value="iso()" @change="pick($event.target.value)" />
+              </div>
+            </div>
+            <div x-show="form.kind === 'apnr' || form.kind === 'apr'">
+              <label class="label" for="m-hours">Hores</label>
+              <input id="m-hours" class="input num" inputmode="decimal" placeholder="p. ex. 3:45" x-model="form.hours" :aria-invalid="!!errors.hours" />
+              <p class="hint num" x-show="!isNaN(parsedHours) && parsedHours > 0" x-text="`= ${fmtHours(parsedHours)}`"></p>
+            </div>
+          </div>
+
+          <div x-show="form.kind === 'vac'" class="-mt-2">
+            <div class="flex flex-wrap gap-1.5">
+              <template x-for="w in [1, 2, 3]" :key="w">
+                <button type="button" class="btn btn-sm btn-outline" :disabled="!form.from"
+                        :class="form.from && form.to && days(form.from, form.to) === w * 7 && 'bg-secondary border-sage'"
+                        @click="form.to = addDays(form.from, w * 7 - 1)" x-text="w === 1 ? '1 setmana' : `${w} setmanes`"></button>
+              </template>
+              <button type="button" x-show="formRest >= 7 && formRest % 7" class="btn btn-sm btn-outline num" :disabled="!form.from"
+                      :class="form.from && form.to && days(form.from, form.to) === formRest && 'bg-secondary border-sage'"
+                      @click="form.to = addDays(form.from, formRest - 1)" x-text="`La resta (${formRest} dies)`"></button>
+            </div>
+          </div>
+
+          <div x-show="form.kind === 'baixa'" class="space-y-4 -mt-1">
+            <label class="flex items-center gap-2 text-[0.9375rem] cursor-pointer">
+              <input type="checkbox" class="accent-primary size-4" x-model="form.openEnded" />
+              Encara no se sap quan torna
+            </label>
+            <div>
+              <label class="label" for="m-cover">Qui la cobreix <span class="text-muted-foreground font-normal">(opcional)</span></label>
+              <input id="m-cover" class="input" placeholder="p. ex. el CT, una substituta…" x-model="form.cover" />
+            </div>
+            <p class="flex gap-2 text-[0.8125rem] rounded-lg bg-info-bg text-info p-3">
+              <span x-icon="'shield-check'" class="mt-0.5"></span>
+              <span>Només s'apunta que és una baixa i les dates. No escriguis el motiu ni cap dada de salut.</span>
+            </p>
+          </div>
+
+          <div class="space-y-2" aria-live="polite">
+            <template x-for="msg in Object.values(errors)">
+              <p class="flex gap-2 text-[0.875rem] rounded-lg bg-error-bg text-error p-3"><span x-icon="'circle-alert'" class="mt-0.5"></span><span x-text="msg"></span></p>
+            </template>
+            <template x-if="preview && !Object.keys(errors).length">
+              <p class="flex gap-2 text-[0.875rem] rounded-lg p-3" :class="preview.tone === 'warn' ? 'bg-warning-bg text-warning-fg' : 'bg-success-bg text-success'">
+                <span x-icon="preview.tone === 'warn' ? 'hourglass' : 'circle-check'" class="mt-0.5"></span><span x-text="preview.text"></span>
+              </p>
+            </template>
+            <template x-if="coverage && !Object.keys(errors).length">
+              <div class="rounded-lg border-2 border-dashed border-accent bg-accent/10 p-3 text-[0.875rem] text-accent-foreground">
+                <p class="font-semibold flex items-center gap-1.5"><span x-icon="'triangle-alert'"></span>Cobertura</p>
+                <p class="mt-1" x-text="coverage"></p>
+              </div>
+            </template>
+          </div>
+        </div>
+        <div class="px-5 md:px-6 py-4 border-t border-border flex flex-col-reverse sm:flex-row sm:justify-end gap-2 bg-background/50 rounded-b-2xl">
+          <button type="button" class="btn btn-outline" @click="form.open = false">Cancel·la</button>
+          <button type="submit" class="btn btn-primary" :disabled="!canSave">Apunta-ho</button>
+        </div>
+        </div>
+        </template>
+      </form>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast" x-transition.opacity.duration.200ms class="fixed z-50 left-1/2 -translate-x-1/2 bottom-36 md:bottom-8 w-[calc(100%-2rem)] max-w-md no-print">
+      <div class="flex items-center gap-3 rounded-xl bg-foreground text-background px-4 py-3 shadow-sheet">
+        <span x-icon="'circle-check'" class="text-[#B9D3B4]"></span>
+        <p class="flex-1 text-[0.875rem]" x-text="toast?.text"></p>
+        <button class="text-[0.875rem] font-semibold underline underline-offset-2 cursor-pointer" x-show="toast?.canUndo" @click="undo()">Desfés</button>
+      </div>
+    </div>
+
+    <!-- Feedback questions for the director -->
+    <div class="fixed z-30 right-4 bottom-20 md:bottom-6 no-print" x-data="{ open: false }">
+      <div x-show="open" x-transition class="card absolute bottom-14 right-0 w-[min(23rem,calc(100vw-2rem))] p-5 max-h-[70dvh] overflow-y-auto">
+        <p class="eyebrow">Per a la directora</p>
+        <h2 class="text-xl mt-1">Què en penses?</h2>
+        <ol class="list-decimal pl-5 mt-3 space-y-2 text-[0.875rem]">
+          <li>El quadrant s'assembla al que penges a la casa? Hi falta alguna fila o informació (horaris d'entrada i sortida…)?</li>
+          <li>Com és el quadrant real: quins torns hi ha, i qui fa els matins i les tardes del cap de setmana?</li>
+          <li>Quan algú falta, qui el cobreix normalment: sempre el CT, substitutes, algú de l'altra casa…?</li>
+          <li>Un AP de poques hores (p. ex. 2 h), compta com a persona fora per a la cobertura?</li>
+          <li>De les baixes, n'hi ha prou amb les dates i qui la cobreix?</li>
+          <li>"Qui la cobreix": prefereixes triar-ho d'una llista (CT, substitutes…) o escriure-ho?</li>
+          <li>Què et va millor: el calendari, la taula per persona (com l'Excel) o l'agenda?</li>
+          <li>Imprimeixes el mes per penjar-lo a la casa?</li>
+        </ol>
+        <p class="text-[0.8125rem] text-muted-foreground mt-3">Apunta-ho com vulguis: ens ho comentes després.</p>
+      </div>
+      <button class="btn btn-secondary rounded-full shadow-clay max-sm:size-12 max-sm:px-0" @click="open = !open" :aria-expanded="open" aria-label="Què en penses?">
+        <span x-icon="open ? 'x' : 'message-circle-question'"></span><span class="hidden sm:inline" x-text="open ? 'Tanca' : 'Què en penses?'"></span>
+      </button>
+    </div>
+  </main>
+
+  <div id="shell-bottom"></div>
+
+  <script>
+    PROTO.renderShell('mes');
+
+    const WEEKDAYS_LONG = ['diumenge', 'dilluns', 'dimarts', 'dimecres', 'dijous', 'divendres', 'dissabte'];
+    const WEEKDAY_LETTERS = ['dg', 'dl', 'dt', 'dc', 'dj', 'dv', 'ds'];
+    const cap = (s) => s[0].toUpperCase() + s.slice(1);
+    const first = (name) => name.split(' ')[0];
+    // 3.5 -> "3h30", 8 -> "8h": fits in a calendar chip.
+    const compactHours = (h) => { const m = Math.round(h * 60); return m % 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}` : `${m / 60}h`; };
+
+    function month() {
+      const house = PROTO.currentHouse();
+      const all = PROTO.loadPeople();
+      all[house.slug].forEach((p) => { p.baixes ??= []; });
+      return {
+        house, all,
+        RULES: PROTO.RULES,
+        YEAR: PROTO.YEAR,
+        WEEKDAYS: ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'],
+        today: PROTO.TODAY,
+        month: PROTO.TODAY.slice(0, 7),
+        view: window.matchMedia('(max-width: 767px)').matches ? 'agenda' : 'quad',
+        rota: PROTO.loadRota(),
+        SHIFTS: PROTO.SHIFTS,
+        maxOff: PROTO.PLAN[house.slug]?.maxOff ?? 2,
+        day: null,
+        toast: null,
+        form: { open: false, personId: '', kind: 'baixa', from: '', to: '', openEnded: true, hours: '', cover: '' },
+
+        balanceTiles: PROTO.balanceTiles,
+        fmtDate: PROTO.fmtDate, fmtHours: PROTO.fmtHours, days: PROTO.daysInclusive, addDays: PROTO.addDays,
+        weekday: PROTO.weekdayShort,
+        weekdayLong: (iso) => cap(WEEKDAYS_LONG[PROTO.d(iso).getUTCDay()]),
+        weekdayLetter: (iso) => WEEKDAY_LETTERS[PROTO.d(iso).getUTCDay()],
+        holiday: (iso) => PROTO.HOLIDAYS[iso] ?? '',
+        isWeekend: (iso) => [0, 6].includes(PROTO.d(iso).getUTCDay()),
+
+        get people() { return this.all[house.slug]; },
+
+        // ── Month layout ──
+        get monthStart() { return `${this.month}-01`; },
+        get monthEnd() {
+          const [y, m] = this.month.split('-').map(Number);
+          return PROTO.addDays(m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`, -1);
+        },
+        get monthName() { return cap(PROTO.monthName(Number(this.month.slice(5)) - 1)); },
+        get title() { return `${this.monthName} ${this.month.slice(0, 4)}`; },
+        inMonth(d) { return d.startsWith(this.month); },
+        get monthDays() {
+          const out = [];
+          for (let d = this.monthStart; d <= this.monthEnd; d = PROTO.addDays(d, 1)) out.push(d);
+          return out;
+        },
+        get weeks() {
+          let start = this.monthStart;
+          while (PROTO.d(start).getUTCDay() !== 1) start = PROTO.addDays(start, -1);
+          const weeks = [];
+          for (; start <= this.monthEnd; start = PROTO.addDays(start, 7)) {
+            weeks.push(Array.from({ length: 7 }, (_, i) => PROTO.addDays(start, i)));
+          }
+          return weeks;
+        },
+        shift(n) {
+          const [y, m] = this.month.split('-').map(Number);
+          const nm = Math.min(12, Math.max(1, m + n));
+          this.month = `${y}-${String(nm).padStart(2, '0')}`;
+        },
+        dayLabel(d) {
+          const n = this.on(d).length;
+          return `${this.weekdayLong(d)} ${PROTO.fmtDate(d)}${this.holiday(d) ? `, ${this.holiday(d)}` : ''}: ${n ? `${n} absències` : 'hi és tothom'}`;
+        },
+
+        // ── Absences on a day ──
+        on(d) {
+          const out = [];
+          for (const p of this.people) {
+            for (const e of p.v) {
+              if (e.from <= d && d <= e.to) out.push({ key: `${e.id}${d}`, p, e, kind: 'vac', type: 'Vacances', cls: 'chip-vac', letter: 'V',
+                short: `${first(p.name)} · vac.`, detail: `Vacances ${PROTO.fromTo(e.from, e.to)} (${PROTO.fmtWeeks(PROTO.daysInclusive(e.from, e.to))})` });
+            }
+            for (const kind of ['apnr', 'apr']) {
+              for (const e of p[kind]) {
+                if (e.date === d) out.push({ key: `${e.id}${d}`, p, e, kind, type: 'AP', cls: 'chip-ap', letter: 'A',
+                  short: `${first(p.name)} · AP ${compactHours(e.hours)}`, detail: `AP ${kind === 'apnr' ? 'no recuperable' : 'recuperable'} de ${PROTO.fmtHours(e.hours)}` });
+              }
+            }
+            for (const e of p.baixes) {
+              if (e.from <= d && (!e.to || d <= e.to)) {
+                const open = !e.to;
+                out.push({ key: `${e.id}${d}`, p, e, kind: 'baixa', type: 'Baixa', cls: open && d > this.today ? 'chip-open' : 'chip-baixa', letter: 'B',
+                  short: `${first(p.name)} · baixa`,
+                  detail: `Baixa des del ${PROTO.fmtDate(e.from)}${e.to ? ` fins al ${PROTO.fmtDate(e.to)}` : ', sense data de tornada'}${e.cover ? ` · Cobreix: ${e.cover}` : ''}` });
+              }
+            }
+          }
+          const order = { baixa: 0, vac: 1, apnr: 2, apr: 2 };
+          return out.sort((a, b) => order[a.kind] - order[b.kind]);
+        },
+        count(d) { return new Set(this.on(d).map((a) => a.p.id)).size; },
+        over(d) { return this.count(d) > this.maxOff; },
+        cellOf(p, d) {
+          const a = this.on(d).find((x) => x.p.id === p.id);
+          return a ? { cls: a.cls, letter: a.letter, label: `${p.name}: ${a.detail}` } : null;
+        },
+        get agendaDays() { return this.monthDays; },
+
+        // ── Rota (who works) ──
+        firstName: (name) => first(name),
+        compact: (h) => compactHours(h),
+        isFreeDay: (iso) => PROTO.isFreeDay(iso),
+        rotaDay(d) { return this.rota[house.slug]?.[d] ?? {}; },
+        rotaOf(d) { return PROTO.rotaFor(this.people, d, this.rotaDay(d)); },
+        slotsOf(d, key) { return this.rotaOf(d).shifts.find((s) => s.key === key)?.slots ?? []; },
+        get ctPerson() { return this.people.find((p) => PROTO.postCode(p.role) === 'CT') ?? null; },
+        ctState(d) {
+          const ct = this.rotaOf(d).ct;
+          if (!ct) return 'none';
+          return ct.away ? 'away' : ct.covering ? 'covering' : 'free';
+        },
+        ctText(d) {
+          const ct = this.rotaOf(d).ct;
+          if (!ct) return '';
+          const name = first(ct.p.name);
+          if (ct.away) return `${name} · ${ct.away.label}`;
+          if (ct.covering) return `${name} cobreix ${first(ct.covering.name)}`;
+          return `${name} · disponible`;
+        },
+        get uncoveredDays() { return this.monthDays.filter((d) => this.rotaOf(d).uncovered > 0); },
+        editRotaDay(d) {
+          this.rota[house.slug] ??= {};
+          this.rota[house.slug][d] ??= {};
+          return this.rota[house.slug][d];
+        },
+        setSlot(d, key, i, personId) {
+          const ids = this.rotaOf(d).shifts.find((s) => s.key === key).slots.map((x) => x.p.id);
+          const day = this.editRotaDay(d), before = day.shifts?.[key];
+          ids[i] = personId;
+          day.shifts = { ...(day.shifts ?? {}), [key]: ids };
+          this.persistRota();
+          this.flash(`Canviat qui treballa ${PROTO.fromTo(d, d)}.`, () => {
+            const x = this.editRotaDay(d);
+            if (before) x.shifts[key] = before; else delete x.shifts[key];
+          });
+        },
+        resetShift(d, key) {
+          const day = this.editRotaDay(d);
+          if (day.shifts) { const { [key]: _, ...rest } = day.shifts; day.shifts = rest; }
+          this.persistRota();
+        },
+        setNote(d, text) {
+          this.editRotaDay(d).note = text.trim();
+          this.persistRota();
+          this.flash('Nota desada.');
+        },
+        persistRota() { PROTO.saveRota(this.rota); },
+        printQuad() {
+          this.view = 'quad';
+          this.$nextTick(() => setTimeout(() => window.print(), 50));
+        },
+        get overDays() { return this.monthDays.filter((d) => this.over(d)); },
+        get openBaixes() { return this.people.flatMap((p) => p.baixes.filter((e) => !e.to).map((e) => ({ p, e }))); },
+
+        monthSummary(p) {
+          let vac = 0, ap = 0, baixa = 0;
+          for (const d of this.monthDays) {
+            if (p.v.some((e) => e.from <= d && d <= e.to)) vac++;
+            if (p.baixes.some((e) => e.from <= d && (e.to ? d <= e.to : d <= this.today))) baixa++;
+          }
+          for (const e of [...p.apnr, ...p.apr]) if (this.inMonth(e.date)) ap += e.hours;
+          const parts = [];
+          if (vac) parts.push(`${vac} d vac.`);
+          if (ap) parts.push(`AP ${PROTO.fmtHours(ap)}`);
+          if (baixa) parts.push(`${baixa} d baixa`);
+          return { vac, ap, baixa, text: parts.join(' · ') };
+        },
+        get peopleWithAbsences() { return this.people.filter((p) => this.monthSummary(p).text); },
+
+        // ── Day panel actions ──
+        openDay(d) { this.day = d; },
+        remove(a) {
+          const p = a.p, key = a.kind === 'vac' ? 'v' : a.kind === 'baixa' ? 'baixes' : a.kind, e = a.e;
+          p[key] = p[key].filter((x) => x.id !== e.id);
+          this.persist();
+          this.flash(`Esborrat: ${a.type.toLowerCase()} de ${first(p.name)}.`, () => p[key].push(e));
+        },
+        closeBaixa(a, last) {
+          a.e.to = last;
+          this.persist();
+          this.flash(`Baixa de ${first(a.p.name)} tancada el ${PROTO.fmtDate(last)}.`, () => { a.e.to = null; });
+        },
+
+        // ── Add form ──
+        openForm(personId = '', kind = 'baixa', from = '') {
+          this.form = { open: true, personId, kind, from, to: '', openEnded: true, hours: '', cover: '' };
+        },
+        get formPerson() { return this.people.find((p) => p.id === this.form.personId) ?? null; },
+        get formRest() { return this.formPerson ? PROTO.balances(this.formPerson).vacLeft : 0; },
+        get parsedHours() { return PROTO.parseHours(this.form.hours); },
+        get formRange() {
+          const f = this.form;
+          if (!f.from) return null;
+          if (f.kind === 'apnr' || f.kind === 'apr') return { from: f.from, to: f.from };
+          if (f.kind === 'baixa' && f.openEnded) return { from: f.from, to: f.from > this.today ? f.from : this.today };
+          return f.to ? { from: f.from, to: f.to } : null;
+        },
+        get errors() {
+          const f = this.form, p = this.formPerson, R = PROTO.RULES, out = {};
+          if (!p || !f.from) return out;
+          if (!f.from.startsWith(`${PROTO.YEAR}-`)) { out.dates = `Les dates han de ser del ${PROTO.YEAR}.`; return out; }
+          if (f.kind === 'vac' || (f.kind === 'baixa' && !f.openEnded)) {
+            if (!f.to) return out;
+            if (f.to < f.from) { out.dates = "L'últim dia no pot ser abans del primer."; return out; }
+          }
+          if (f.kind === 'vac') {
+            const ruleError = PROTO.vacationRuleError([...p.v.map((e) => PROTO.daysInclusive(e.from, e.to)), PROTO.daysInclusive(f.from, f.to)], p.carried);
+            if (ruleError) { out.dates = ruleError; return out; }
+            const clash = p.v.find((e) => e.from <= f.to && f.from <= e.to);
+            if (clash) { out.dates = `Ja té vacances apuntades ${PROTO.fromTo(clash.from, clash.to)}.`; return out; }
+            const used = p.v.reduce((a, e) => a + PROTO.daysInclusive(e.from, e.to), 0);
+            const left = p.entitled + (p.carried || 0) - used, n = PROTO.daysInclusive(f.from, f.to);
+            if (n > left) out.dates = `Són ${n} dies i només li ${left === 1 ? 'queda 1' : `en queden ${left}`} per planificar.`;
+            return out;
+          }
+          if (f.kind === 'baixa') {
+            const r = this.formRange;
+            const clash = p.baixes.find((e) => e.from <= r.to && r.from <= (e.to ?? '9999-12-31'));
+            if (clash) out.dates = `Ja té una baixa des del ${PROTO.fmtDate(clash.from)}${clash.to ? ` fins al ${PROTO.fmtDate(clash.to)}` : ' sense data de tornada'}.`;
+            return out;
+          }
+          const list = p[f.kind], cap = f.kind === 'apnr' ? R.apnrHours : R.aprHours, maxDays = f.kind === 'apnr' ? R.apnrMaxDays : R.aprMaxDays;
+          if (list.length >= maxDays) out.dates = `Ja ha fet servir els ${maxDays} dies que permet aquest tipus d'AP.`;
+          if (f.hours) {
+            const h = this.parsedHours, used = list.reduce((a, e) => a + e.hours, 0);
+            if (isNaN(h) || h <= 0 || h > 24) out.hours = 'Escriu les hores així: 3:45 o 3,75.';
+            else if (used + h > cap) out.hours = `Supera el màxim de ${cap} h: només li ${cap - used > 0 ? `queden ${PROTO.fmtHours(cap - used)}` : 'queda 0 h'}.`;
+          }
+          return out;
+        },
+        get preview() {
+          const f = this.form, p = this.formPerson;
+          if (!p || !f.from) return null;
+          if (f.kind === 'vac') {
+            if (!f.to || f.to < f.from) return null;
+            return { text: `${PROTO.fmtWeeks(PROTO.daysInclusive(f.from, f.to))} de vacances, ${PROTO.fromTo(f.from, f.to)}.` };
+          }
+          if (f.kind === 'baixa') {
+            if (f.openEnded) return { text: `Baixa des del ${PROTO.fmtDate(f.from)}. Quan torni, la tanques des del calendari.` };
+            if (!f.to || f.to < f.from) return null;
+            return { text: `Baixa ${PROTO.fromTo(f.from, f.to)} (${PROTO.daysInclusive(f.from, f.to)} dies).` };
+          }
+          const h = this.parsedHours;
+          if (isNaN(h) || h <= 0) return null;
+          const used = p[f.kind].reduce((a, e) => a + e.hours, 0);
+          if (f.kind === 'apnr') return { text: `Li quedaran ${PROTO.fmtHours(PROTO.RULES.apnrHours - used - h)} d'AP no recuperables.` };
+          const surplus = p.surplus - p.apr.reduce((a, e) => a + e.hours, 0) - h;
+          return surplus < 0
+            ? { tone: 'warn', text: `L'excedent quedarà a ${PROTO.fmtHours(surplus, { signed: true })}: haurà de retornar ${PROTO.fmtHours(-surplus)}. Es pot apuntar igualment.` }
+            : { text: `L'excedent quedarà a ${PROTO.fmtHours(surplus, { signed: true })}.` };
+        },
+        // Days in the new absence where the house would go over the limit.
+        get coverage() {
+          const r = this.formRange, p = this.formPerson;
+          if (!r || !p || r.to < r.from) return '';
+          const bad = [];
+          for (let d = r.from; d <= r.to && bad.length < 40; d = PROTO.addDays(d, 1)) {
+            const others = new Set(this.on(d).filter((a) => a.p.id !== p.id).map((a) => a.p.id));
+            if (others.size + 1 > this.maxOff) bad.push(d);
+          }
+          if (!bad.length) return '';
+          const list = bad.slice(0, 6).map((d) => PROTO.fmtShort(d)).join(', ') + (bad.length > 6 ? '…' : '');
+          return `${bad.length === 1 ? 'Aquell dia' : `${bad.length} dies`} hi hauria més de ${this.maxOff} persones fora (${list}). Ho pots apuntar igualment i decidir qui cobreix.`;
+        },
+        get canSave() {
+          const f = this.form;
+          if (!this.formPerson || !f.from || Object.keys(this.errors).length) return false;
+          if (f.kind === 'vac') return !!f.to;
+          if (f.kind === 'baixa') return f.openEnded || !!f.to;
+          return this.parsedHours > 0;
+        },
+        save() {
+          if (!this.canSave) return;
+          const f = this.form, p = this.formPerson;
+          let key, entry, text;
+          if (f.kind === 'vac') { key = 'v'; entry = { id: PROTO.newId(), from: f.from, to: f.to }; text = `Vacances de ${first(p.name)} apuntades.`; }
+          else if (f.kind === 'baixa') { key = 'baixes'; entry = { id: PROTO.newId(), from: f.from, to: f.openEnded ? null : f.to, cover: f.cover.trim() }; text = `Baixa de ${first(p.name)} apuntada.`; }
+          else { key = f.kind; entry = { id: PROTO.newId(), date: f.from, hours: this.parsedHours }; text = `AP de ${first(p.name)} apuntat.`; }
+          p[key].push(entry);
+          this.persist();
+          this.form.open = false;
+          this.month = f.from.slice(0, 7);
+          this.flash(text, () => { p[key] = p[key].filter((x) => x.id !== entry.id); });
+        },
+
+        // ── Toast with undo ──
+        flash(text, undoFn) {
+          // Keep the function out of reactive state: Alpine calls functions returned by expressions.
+          this._undo = undoFn;
+          this.toast = { text, canUndo: !!undoFn };
+          clearTimeout(this._t);
+          this._t = setTimeout(() => (this.toast = null), 6000);
+        },
+        undo() { this._undo?.(); this._undo = null; this.persist(); this.toast = null; },
+        persist() { PROTO.savePeople(this.all); },
+        reset() { PROTO.resetPeople(); PROTO.resetRota(); location.reload(); },
+      };
+    }
+  </script>
+  <script defer src="vendor/alpinejs-3.14.9.min.js"></script>
+</body>
+</html>

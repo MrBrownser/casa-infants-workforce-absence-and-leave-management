@@ -1,5 +1,5 @@
 // The two Cases d'Infants (FR-001). Keep in sync with the rows inserted by the
-// house_context migration (a test checks it). The proxy uses this list, so it
+// init migration (a test checks it). The proxy uses this list, so it
 // must stay a plain constant with no database access.
 export const HOUSES = [
   { slug: 'paulo-freire', name: 'Paulo Freire' },

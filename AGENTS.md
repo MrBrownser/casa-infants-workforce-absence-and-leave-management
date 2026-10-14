@@ -7,9 +7,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # Casa d'Infants: Operations Manual
 
 A time and leave (absence) management web app for the Casa d'Infants team.
-The House context (SPEC-001; specs in `openspec/specs/house-context/` and `openspec/specs/house-membership/`, history in `openspec/changes/archive/2026-10-05-house-context/`) is in place: two Houses,
-House-scoped routes, dated employee membership and a read-only team page. Other domain
-features (APs, calendar, vacations, absences) are not built yet.
+The House context (SPEC-001) and the prototype foundation (SPEC-003, change
+`openspec/changes/archive/2026-10-14-prototype-foundation/`; specs in `openspec/specs/`) are in place: two Houses, House-scoped routes, the final
+navigation (Saldos, Vacances, El mes, Equip) and the Equip page, where the director manages who
+covers each post and each person's opening balances. Dated membership (SPEC-001) was replaced by
+people per post. Saldos, El mes and Vacances (SPEC-004 to SPEC-006) are next: **before working on
+them, read `docs/domain.md`, the prototypes in `public/prototypes/` and
+`docs/prototypes/director-feedback.md`.**
 
 See `README.md` for setup.
 
@@ -18,9 +22,10 @@ See `README.md` for setup.
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**, full-stack on Vercel.
   Next 16 renamed `middleware` to `proxy`; auth lives in `src/proxy.ts`.
 - **Tailwind v4 + shadcn/ui**, styling. `src/app/globals.css` holds the design tokens.
+  shadcn components come in two flavours: the Drawer uses Base UI (`@base-ui/react`, pinned) and the button uses Radix; prefer the Base UI flavour for new overlay components.
 - **Prisma 7 + Supabase Postgres (EU)**, data. Pooled connection (`:6543`,
   `pgbouncer=true`) at runtime via `DATABASE_URL`; direct connection (`:5432`) for
-  migrations via `DIRECT_URL`. Models: `House`, `Employee`, `HouseMembership`. The current Supabase
+  migrations via `DIRECT_URL`. Models: `House`, `Person`, `PersonYear`. The current Supabase
   project (`eu-west-1`) is the **dev** database; production will get its own project.
 - **Clerk**, auth, with the Catalan localization (`caES` from `@clerk/localizations`)
   and the shadcn theme (`@clerk/ui/themes`, mapped to our tokens in `globals.css`).
@@ -34,14 +39,26 @@ See `README.md` for setup.
 - `src/app/(app)/`: signed-in area (layout runs `requireUser()`).
   - `[house]/`: House-scoped area. The first URL segment is the active House
     (`/paulo-freire`, `/carme-aymerich`). **Add House-specific features as
-    `[house]/<section>/`** and register the section in `src/components/section-nav.tsx`.
+    `[house]/<section>/`**: flip the section's `available` flag in `src/lib/sections.ts` (a test
+    checks flag and route agree) and set its icon in `src/components/section-nav.tsx`.
+    `/[house]` redirects to the first available section.
+  - `[house]/team/`: Equip page; `actions.ts` holds its Server Functions.
   - `dashboard/`: redirects to the last visited House (`active-house` cookie, set in `src/proxy.ts`).
   - `no-access/`: shown to signed-in users without the director flag.
-- `src/lib/houses.ts`: the two Houses (keep in sync with the `house_context` migration).
+- `src/lib/houses.ts`: the two Houses (keep in sync with the `init` migration).
 - `src/lib/dates.ts`: `IsoDate` helpers; "today" is always `todayInMadrid()`.
-- `src/lib/house-membership.ts`: pure membership rules (current/historical members, transfers).
-- `src/server/houses.ts`: House data, director-only. `src/server/membership-store.ts`: Prisma
-  persistence without auth (seed only; app code uses `houses.ts`).
+- `src/lib/posts.ts`: posts per House and shared posts, weekly schedules (provisional times), week
+  alternation. `src/lib/rules.ts`: AP and vacation rules, default opening balances.
+  `src/lib/duration.ts`: `H:MM` durations as integer minutes. `src/lib/team.ts`: the Equip team
+  view. `src/lib/people-schemas.ts`: zod schemas shared by forms and Server Functions.
+- `src/server/people.ts`: director-gated reads.
+  `src/server/people-store.ts`: Prisma persistence without auth (used by the Server Functions and
+  the seed only).
+- `public/prototypes/`: static HTML prototypes with fictional data for the director's feedback
+  (not part of the app; see its README).
+- `src/components/team/`: Equip UI. `src/components/field.tsx`, `duration-input.tsx`,
+  `date-input.tsx`: form primitives.
+- `src/components/sheet.tsx`: the app's panel, wrapping the shadcn Drawer (`src/components/ui/drawer.tsx`, Base UI). App code uses `Sheet`, not the Drawer directly.
 - `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: FASI clay-house mark (images in `public/brand/`). `src/components/ui/`: shadcn primitives.
 
 ## Access and data rules
@@ -49,10 +66,14 @@ See `README.md` for setup.
 - Access is temporary: `requireDirector()` checks Clerk `publicMetadata.role === "director"`
   (set by hand in the Clerk dashboard; currently the director and the developer). **Call it in
   every page and data function**, not only in a layout: layouts and pages render in parallel.
-- Every House-scoped record stores its own `houseId` at creation time. Never derive it from an
-  employee's current membership (a transfer must not move history).
-- One House at a time per employee is enforced by a Postgres exclusion constraint written by
-  hand in the `house_context` migration. Prisma does not show it in `schema.prisma`.
+- Server Functions call `requireDirector()`, validate the House slug and re-parse their input with
+  the form's own zod schema; a person or seat of the other House is rejected.
+- Balances, APs and vacations belong to the **person**, never to a House: moving a person keeps
+  them. Records that belong to a House (rota changes, day notes) store their own `house_id`.
+- A person covers one seat of one post (`house_id` null for the shared posts PDG and PSI). One
+  active person per seat is enforced by two partial unique indexes written by hand in the `init`
+  migration, with CHECKs on seats and balances. Prisma does not show them in `schema.prisma`.
+- Posts, schedules and rules are code: changing them is a code change, not data.
 
 ## Design system
 

@@ -15,6 +15,10 @@ context: |
   health data (Art. 9 special category): data minimisation, restricted access,
   defined retention and erasure.
 
+  Domain reference: docs/domain.md (read before any spec). Approved UI: public/prototypes/ and
+  docs/prototypes/director-feedback.md. People cover seats of posts defined in src/lib/posts.ts;
+  balances belong to the person, never to a House.
+
 rules:
   proposal:
     - Always include a "Non-goals" section.
