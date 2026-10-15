@@ -111,7 +111,11 @@ The director SHALL be able to delete an AP from the person's details. Right afte
 - **THEN** nothing is saved and the message "Ja ha fet servir els 5 dies que permet aquest tipus d'AP." is shown with an icon
 
 ### Requirement: Saldos lists the balances of a House
-The Saldos page of a House (`/<house>/saldos`) SHALL show, for one year, every active person of that House and of the shared posts with: their vacation days of the year including AA days ("31 dies (3 AA)"), their AP no recuperable hours left and requests used of 5, their AP recuperable hours used and requests of 3, and their current calendar surplus. It MUST NOT show people of the other House. Until vacation periods are recorded (SPEC-006), the vacation figures MUST show the entitlement only.
+The Saldos page of a House (`/<house>/saldos`) SHALL show, for one year, every active person of that House and of the shared posts with: their vacation days of the year including AA days, their AP no recuperable hours left and requests used of 5, their AP recuperable hours used and requests of 3, and their current calendar surplus. It MUST NOT show people of the other House. Until vacation periods are recorded (SPEC-006), the vacation figures MUST show the entitlement only.
+
+#### Scenario: Vacation days with AA
+- **WHEN** a person has 31 vacation days and 3 AA days in 2026
+- **THEN** Saldos 2026 shows "34 dies (3 AA)" for that person
 
 #### Scenario: Paulo Freire in 2026
 - **WHEN** the director opens `/paulo-freire/saldos`
