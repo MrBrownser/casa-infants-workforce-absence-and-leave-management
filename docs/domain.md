@@ -227,8 +227,6 @@ shifts to cover: the night before, the day and the night after. 2026:
 | 11/09 | Diada |
 | 24/09 | La Mercè (local) |
 | 12/10 | Festa Nacional d'Espanya |
-| 01/11 | Tots Sants |
-| 06/12 | Constitució |
 | 08/12 | La Puríssima |
 | 25/12 | Nadal |
 | 26/12 | Sant Esteve |
@@ -237,9 +235,10 @@ shifts to cover: the night before, the day and the night after. 2026:
 published. The holiday rota (who covers each holiday, fairly spread: "3 festius EN, 2 festius
 ET…") is not prototyped yet.
 
-2026 is coded in `src/lib/holidays.ts` (SPEC-004 warns when an AP falls on one). The list has 16
-entries, while FPOL32 §2 speaks of 14 annual holidays. **(open)** Confirm the exact list with the
-director.
+2026 is coded in `src/lib/holidays.ts` (SPEC-004 warns when an AP falls on one). The list has the
+14 days off of the official calendars, as FPOL32 §2 says (12 of Catalonia and 2 local of
+Barcelona). Tots Sants (01/11) and Constitució (06/12) fall on a Sunday in 2026 and are not moved,
+so they are not in it (confirmed by the product owner).
 
 ## 10. Conventions that come from the director
 
