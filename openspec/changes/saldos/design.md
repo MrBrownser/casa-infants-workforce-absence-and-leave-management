@@ -117,3 +117,6 @@
 - The board's `UndoToast` `onDismiss` clears the toast only if it is still the current one (`current?.key === toast.key`), so a late dismiss from an older toast (for example after a slow undo) cannot clear a newer toast.
 - Test plan fix: in `person-saldo-sheet.test.tsx` the matcher is `/31 dies ·/` (without the trailing space), because Testing Library trims the text it matches. The board actions test also covers an inactive person with no data that year (GONE), which opens no sheet either.
 - The seed (Task 14) adds 15 fictional APs, not the 16 the plan text says: the plan's AP list has 15 entries (5+2+2+1+3+1+1), so the list is the source of truth and the seed prints "Seeded 15 fictional APs." (verified: 15 rows in the database).
+- The undo toast's 6 s countdown pauses while an undo is pending and restarts when it settles (its effect depends on `[failure, pending]`), so a slow Server Function cannot unmount the toast before a failure message or error is shown.
+- Equip's Server Functions also `revalidatePath('/[house]/saldos', 'page')`, because the people, moves and opening balances they write are what Saldos shows.
+- `createAp`'s transaction is pinned to `READ_COMMITTED` (Prisma `isolationLevel`): the person-row lock only stops a sixth AP when each statement takes a fresh snapshot after the lock is granted.
