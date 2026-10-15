@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2 } from 'lucide-react';
+import { Hourglass, Plus, Trash2 } from 'lucide-react';
 import { Callout } from '@/components/callout';
 import { Sheet } from '@/components/sheet';
 import { personHref } from '@/components/team/post-card';
@@ -20,7 +20,10 @@ function Tile({ label, value, warn = false }: Readonly<{ label: string; value: s
   return (
     <div className={cn('rounded-xl p-3', warn ? 'bg-warning-bg' : 'bg-background')}>
       <dt className="text-[0.75rem] text-muted-foreground">{label}</dt>
-      <dd className="text-base font-semibold tabular-nums">{value}</dd>
+      <dd className="flex items-center gap-1 text-base font-semibold tabular-nums">
+        {warn && <Hourglass aria-hidden="true" className="size-4 shrink-0 text-warning" />}
+        {value}
+      </dd>
     </div>
   );
 }

@@ -42,6 +42,7 @@ describe('PersonSaldoSheet', () => {
     await openSheet();
     expect(screen.getByText('Ha de retornar 9 h 15 min treballant quan calgui.')).toBeInTheDocument();
     expect(screen.getByText('Deu 9 h 15 min')).toBeInTheDocument();
+    expect(screen.getByText('Deu 9 h 15 min').parentElement!.querySelector('svg')).not.toBeNull();
     expect(screen.getByText(/31 dies ·/)).toHaveTextContent("31 dies · Els períodes s'apuntaran a Vacances.");
   });
 

@@ -37,7 +37,10 @@ function Tile({ label, value, warn = false }: Readonly<{ label: string; value: s
   return (
     <span className={cn('block rounded-lg p-2.5', warn ? 'bg-warning-bg' : 'bg-background')}>
       <span className="block text-muted-foreground">{label}</span>
-      <span className="block font-semibold tabular-nums">{value}</span>
+      <span className="flex items-center gap-1 font-semibold tabular-nums">
+        {warn && <Hourglass aria-hidden="true" className="size-4 shrink-0 text-warning" />}
+        {value}
+      </span>
     </span>
   );
 }

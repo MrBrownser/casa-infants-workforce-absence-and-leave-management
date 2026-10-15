@@ -76,6 +76,9 @@ describe('SaldosBoard list', () => {
     const roger = within(table).getByRole('link', { name: 'Roger Beltrán Camps' }).closest('tr')!;
     expect(roger).toHaveTextContent('33 dies (2 AA)');
     expect(roger).toHaveTextContent('Deu 4 h');
+    // The mobile card's "Excedent" tile carries the warning icon too.
+    const card = screen.getAllByText('Excedent').find((label) => label.nextElementSibling?.textContent === 'Deu 4 h')!;
+    expect(card.nextElementSibling!.querySelector('svg')).not.toBeNull();
     expect(within(table).getByRole('link', { name: 'David Valls Medina' })).toHaveAttribute('href', `/paulo-freire/saldos?year=2026&person=${DAVID}`);
   });
 
