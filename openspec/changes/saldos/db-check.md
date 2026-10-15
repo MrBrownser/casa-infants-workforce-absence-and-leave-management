@@ -27,7 +27,19 @@ A person with 4 APs no recuperables in 2026; two `createAp` calls at once for th
 
 ## 3. Browser check (task 5.6)
 
-Pending for the product owner on the Vercel preview. This container has no `.env.local`, no Clerk development keys and no user with the director flag, so `/paulo-freire` cannot be opened here and nothing was run in a browser. The nine items of the checklist (redirect and navigation link, totals and card filter, "nuria" search and "Antics membres", Carla's 5 of 5 notice, David's 25/12/2026 AP with the holiday notice and "Desfés", Mireia's January 2027 AP, delete and undo, Carme Aymerich's shared Pedagoga and Júlia's "Deu 6 h 30 min", and the 390 px layout with the bottom sheet and the toast above the tab bar) are still to be checked.
+Run on 2026-10-15 on the developer's machine: `npm run dev` (Node 24) against a throwaway local Postgres 14 (port 54329, migrations applied, `npx prisma db seed`: 20 people, 15 APs), Clerk development keys, signed in as a user with the director flag. Headed Chromium driven by gstack browse; desktop 1280x800, mobile 390x844. Every write below was undone, leaving the 15 seeded APs.
+
+1. `/paulo-freire` opens `/paulo-freire/saldos`, "Saldos 2026". The navigation shows Saldos as a link (`/paulo-freire/saldos`); Vacances and El mes are text with "aviat".
+2. Totals: "Han de retornar hores · 2 persones · 13 h 15 min en total" (Roger and David). Clicking the card filters the list to David Valls Medina and Roger Beltrán Camps and presses "Deuen hores"; "Tothom" restores the list.
+3. Search "nuria": the list shows "Ningú coincideix amb aquest filtre."; "Antics membres (1)" shows Núria Roca Ferrer.
+4. Carla Ribas Solé in "Apuntar AP": tiles "4 h queden · 5/5 dies", error with icon "Ja ha fet servir els 5 dies que permet aquest tipus d'AP.", "Apunta-ho" disabled.
+5. David Valls Medina, AP no recuperable 2:00 on 25/12/2026: warning "És festiu (Nadal): segons la instrucció no es poden demanar AP en festius." and preview "Li quedaran 0 h d'AP no recuperables (dia 3 de 5)." Saved (row 2026-12-25, 120 min in `aps`); toast "Apuntat AP no recuperable de 2 h a David Valls Medina." with "Desfés"; "Desfés" deleted the row.
+6. Mireia Santos Rovira's sheet on Saldos 2026 shows "dv. 15/01/2027 (gener 2027)" (2 h) and the APR "dv. 19/06/2026 · Descomptat de l'excedent" (9 h 45 min). On Saldos 2027 her sheet shows "Cap AP no recuperable aquest any."
+7. Deleted Mireia's APR of 19/06/2026 from the sheet: toast "Esborrat." with "Desfés", the row left `aps`; "Desfés" restored it with the same kind, year, date, 585 minutes and House (`paulo-freire`), back in the sheet.
+8. Carme Aymerich: Meritxell Torres Vila (Pedagoga, shared post, AP recorded in Carme Aymerich) shows "Queden 22 h 30 min · 1/5 dies" on both Houses; Júlia Romero Bosch shows "6 h 30 min usades · 1/3" and "Deu 6 h 30 min".
+9. 390 px: no horizontal scroll; cards with three tiles (Vacances, AP no rec., Excedent; Júlia's Excedent tile on the warning background with the hourglass); "Apuntar AP" opens as a bottom sheet; the toast sits above the tab bar; the last card clears the tab bar.
+
+Extra (final review): in a desktop table row, the point at the centre of a non-link cell resolves (`elementFromPoint`) to that row's own person link, so the whole-row click target stays inside its row in Chromium. Not checked in Safari.
 
 ## 4. Checks and build (task 6.3)
 
