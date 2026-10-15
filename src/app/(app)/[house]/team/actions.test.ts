@@ -50,6 +50,7 @@ describe('addPersonAction', () => {
     await expect(addPersonAction('paulo-freire', { fullName: 'Carla Ribas Solé', startedOn: '', seat: 'paulo-freire:er:1' })).resolves.toEqual({ ok: true });
     expect(store.addPerson).toHaveBeenCalledWith({}, { fullName: 'Carla Ribas Solé', startedOn: null, seat: { house: 'paulo-freire', postKey: 'er', seat: 1 } });
     expect(revalidatePath).toHaveBeenCalledWith('/[house]/team', 'page');
+    expect(revalidatePath).toHaveBeenCalledWith('/[house]/saldos', 'page');
   });
 
   it('adds to a shared seat from either House', async () => {

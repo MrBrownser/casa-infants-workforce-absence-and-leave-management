@@ -47,6 +47,8 @@ async function run<S extends z.ZodType>(
   }
   // Both Houses: shared people and moves show on both Equip pages.
   revalidatePath('/[house]/team', 'page');
+  // Saldos lists the same people, moves and opening balances.
+  revalidatePath('/[house]/saldos', 'page');
   return { ok: true };
 }
 
