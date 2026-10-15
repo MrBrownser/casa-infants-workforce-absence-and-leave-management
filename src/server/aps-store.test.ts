@@ -1,7 +1,7 @@
 // src/server/aps-store.test.ts
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import type { PrismaClient } from '@/generated/prisma/client';
+import { Prisma, type PrismaClient } from '@/generated/prisma/client';
 import { ApRuleError, createAp, deleteAp, findAp, listApsOf, listOpeningBalancesOf, type NewAp } from './aps-store';
 
 const PERSON = '0b6f2a52-1c4e-4f7a-9a51-2f3d7c1e8a90';
@@ -24,7 +24,7 @@ function fakeDb({
       deleteMany: vi.fn(async () => ({ count: 1 })),
     },
   };
-  return Object.assign(db, { $transaction: vi.fn(async (fn: (tx: typeof db) => unknown) => fn(db)) });
+  return Object.assign(db, { $transaction: vi.fn<(fn: (tx: typeof db) => unknown, options?: unknown) => Promise<unknown>>(async (fn) => fn(db)) });
 }
 const asDb = (db: ReturnType<typeof fakeDb>) => db as unknown as PrismaClient;
 
@@ -35,6 +35,8 @@ describe('createAp', () => {
     const db = fakeDb();
     await expect(createAp(asDb(db), input)).resolves.toBe(AP_ID);
     expect(db.$transaction).toHaveBeenCalledTimes(1);
+    // The row lock only prevents a sixth AP when each statement takes its own snapshot.
+    expect(db.$transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
     const [strings, ...values] = db.$queryRaw.mock.calls[0] as unknown as [TemplateStringsArray, ...unknown[]];
     expect(strings.join('?')).toContain('FOR UPDATE');
     expect(values).toEqual([PERSON]);

@@ -1,7 +1,7 @@
 // AP persistence with the Prisma client passed in. No auth and no
 // `server-only` here so the dev seed can use it; app code goes through
 // src/server/saldos.ts and the Server Functions, which check the director first.
-import type { Prisma, PrismaClient } from '@/generated/prisma/client';
+import { Prisma, type PrismaClient } from '@/generated/prisma/client';
 import { checkNewAp, personBalances, type ApKind, type ApRecord } from '@/lib/balances';
 import { dateToIsoDate, isoDateToDate, type IsoDate } from '@/lib/dates';
 import { isHouseSlug, type HouseSlug } from '@/lib/houses';
@@ -59,6 +59,9 @@ export async function findAp(db: PrismaClient, id: string): Promise<ApRecord | n
   return row ? toRecord(row) : null;
 }
 
+// Pinned: only READ COMMITTED takes a fresh snapshot per statement, so the AP count read after the row lock sees an AP a concurrent save just committed.
+const READ_COMMITTED = { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted };
+
 /**
  * Checks the yearly limits and inserts in one transaction that first locks the
  * person's row (design D5), so two saves at once cannot both pass the limits.
@@ -93,7 +96,7 @@ export async function createAp(db: PrismaClient, input: NewAp): Promise<string> 
       select: { id: true },
     });
     return created.id;
-  });
+  }, READ_COMMITTED);
 }
 
 /**
