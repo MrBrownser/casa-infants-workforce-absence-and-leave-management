@@ -56,6 +56,16 @@ describe('buildSaldosView', () => {
     expect(meritxellRow.balances).toMatchObject({ vacationTotal: 31, surplusMinutes: 0 });
   });
 
+  it('shows a moved person on the new House with the APs recorded in the old one, each keeping its House', () => {
+    const moved = { ...roger, house: 'carme-aymerich' as const };
+    const rogerAps = [ap('roger', '2026-03-02', 120), ap('roger', '2026-04-14', 180)];
+    const carme = buildSaldosView({ house: 'carme-aymerich', year: 2026, people: [moved], openings, aps: rogerAps });
+    const [row] = carme.rows;
+    expect(row.person.fullName).toBe('Roger Beltrán Camps');
+    expect(row.balances.nonRecoverable.count).toBe(2);
+    expect(row.aps.map((a) => a.house)).toEqual(['paulo-freire', 'paulo-freire']);
+  });
+
   it('keeps former members apart, only when they have data that year', () => {
     expect(view().former.map((r) => r.person.fullName)).toEqual(['Núria Roca Ferrer']);
   });
