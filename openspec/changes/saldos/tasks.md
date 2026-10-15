@@ -1,6 +1,6 @@
 ## 1. Rules in code
 
-- [ ] 1.1 Add `src/lib/holidays.ts` with the 2026 public holidays of `docs/domain.md` §9 and `holidayOn(date)`; tests (16 dates, names, a year without a list returns nothing).
+- [x] 1.1 Add `src/lib/holidays.ts` with the 2026 public holidays of `docs/domain.md` §9 and `holidayOn(date)`; tests (16 dates, names, a year without a list returns nothing).
 - [ ] 1.2 Add `src/lib/balances.ts`: `personBalances` (vacation total with AA, APNR used / left / count, APR used / count, current surplus), `remainingFor` (minutes left capped at 24 h, last request flag) and `checkNewAp` (errors, notices and preview line with the Catalan copy of design D4); tests for every edge in design D14.
 - [ ] 1.3 Add `src/lib/ap-schemas.ts` (add: person, kind, year, `dd/mm/aaaa` date, `H:MM` hours from 0:01 to 24:00; id; restore snapshot with the original House) with Catalan messages; tests.
 - [ ] 1.4 Add `src/lib/saldos.ts`: `buildSaldosView` (rows of active people of the House and shared posts sorted by name, former members with data that year, totals from active people) and the accent- and case-insensitive name matcher; tests.
