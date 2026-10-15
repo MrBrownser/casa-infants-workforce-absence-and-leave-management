@@ -118,9 +118,15 @@ describe('reads and delete', () => {
     await expect(findAp(asDb(db), AP_ID)).resolves.toMatchObject({ id: AP_ID, date: '2027-01-15' });
   });
 
-  it('deletes by id, quietly when it is already gone', async () => {
+  it('deletes by id and reports true when it removed the row', async () => {
     const db = fakeDb();
-    await deleteAp(asDb(db), AP_ID);
+    await expect(deleteAp(asDb(db), AP_ID)).resolves.toBe(true);
     expect(db.ap.deleteMany).toHaveBeenCalledWith({ where: { id: AP_ID } });
+  });
+
+  it('reports false, without throwing, when the AP is already gone', async () => {
+    const db = fakeDb();
+    db.ap.deleteMany.mockResolvedValueOnce({ count: 0 });
+    await expect(deleteAp(asDb(db), AP_ID)).resolves.toBe(false);
   });
 });

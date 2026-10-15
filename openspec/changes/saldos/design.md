@@ -107,3 +107,7 @@
 - Recording returned hours so the surplus goes back up (director).
 - FPOL32: are APs on holidays forbidden, or allowed with another holiday assigned? (the form warns meanwhile).
 - 2027 public holidays.
+
+## Changed during implementation
+
+- `deleteAp` returns a boolean (true when it removed the row, false when the AP was already gone) so the delete action can tell a concurrent second delete that the AP is already gone, and only one of two concurrent deletes hands out an undo snapshot.

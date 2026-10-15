@@ -96,7 +96,12 @@ export async function createAp(db: PrismaClient, input: NewAp): Promise<string> 
   });
 }
 
-/** A real delete (GDPR minimisation); deleting an AP that is already gone does nothing. */
-export async function deleteAp(db: PrismaClient, id: string): Promise<void> {
-  await db.ap.deleteMany({ where: { id } });
+/**
+ * A real delete (GDPR minimisation). Returns true when this call removed the
+ * row and false when the AP was already gone, so of two concurrent deletes only
+ * one reports success.
+ */
+export async function deleteAp(db: PrismaClient, id: string): Promise<boolean> {
+  const { count } = await db.ap.deleteMany({ where: { id } });
+  return count === 1;
 }
