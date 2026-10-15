@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TOAST_MS, UndoToast } from './undo-toast';
@@ -42,6 +42,29 @@ describe('UndoToast', () => {
     expect(screen.getByRole('status').querySelector('svg')).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Desfés' })).toBeNull();
     expect(onDismiss).not.toHaveBeenCalled();
+  });
+
+  it('keeps the toast open while an undo is pending and shows a late failure', async () => {
+    vi.useFakeTimers();
+    let resolve!: (result: { ok: false; message: string }) => void;
+    const undo = vi.fn(() => new Promise<{ ok: false; message: string }>((r) => (resolve = r)));
+    const onDismiss = vi.fn();
+    render(<UndoToast toast={{ key: 1, text: 'Esborrat.', undo }} onDismiss={onDismiss} />);
+    act(() => vi.advanceTimersByTime(TOAST_MS - 100));
+    fireEvent.click(screen.getByRole('button', { name: 'Desfés' }));
+    expect(undo).toHaveBeenCalledTimes(1);
+    // The undo is slower than the countdown: the toast must not go away yet.
+    act(() => vi.advanceTimersByTime(TOAST_MS * 2));
+    expect(onDismiss).not.toHaveBeenCalled();
+    await act(async () => resolve({ ok: false, message: RULE }));
+    expect(screen.getByText(RULE)).toBeInTheDocument();
+    expect(screen.getByRole('status').querySelector('svg')).not.toBeNull();
+    expect(onDismiss).not.toHaveBeenCalled();
+    // The countdown restarts after the undo settles.
+    act(() => vi.advanceTimersByTime(TOAST_MS - 1));
+    expect(onDismiss).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
   it('shows an error message without "Desfés"', () => {

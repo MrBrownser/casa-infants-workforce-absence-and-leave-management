@@ -23,11 +23,14 @@ export function UndoToast({ toast, onDismiss }: Readonly<{ toast: ToastMessage; 
   const [pending, startTransition] = useTransition();
   const dismiss = useEffectEvent(onDismiss);
 
-  // A failed undo restarts the countdown so its message can be read.
+  // The countdown waits while an undo is pending (a slow Server Function must not
+  // unmount the toast before its result shows) and restarts when the undo settles,
+  // so a failure message can be read.
   useEffect(() => {
+    if (pending) return;
     const timer = setTimeout(() => dismiss(), TOAST_MS);
     return () => clearTimeout(timer);
-  }, [failure]);
+  }, [failure, pending]);
 
   const { undo } = toast;
   const isError = failure !== null || toast.error === true;
