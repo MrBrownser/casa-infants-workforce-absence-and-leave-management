@@ -14,7 +14,7 @@
 ## 3. Data layer
 
 - [x] 3.1 Add `src/server/aps-store.ts`: `createAp` in an interactive transaction that locks the person row and runs `checkNewAp` (throws `ApRuleError`), `deleteAp` reporting whether it deleted the row, `listApsOf(personIds, year)`, `listOpeningBalancesOf(personIds, year)`; tests with a mocked Prisma client.
-- [x] 3.2 Check by hand on the local Postgres that two concurrent fifth APNRs for the same person save exactly one; record it in `db-check.md`. Pending for the product owner on the Vercel preview: this container has no Clerk keys and no director user (see `db-check.md` section 3).
+- [x] 3.2 Check by hand on the local Postgres that two concurrent fifth APNRs for the same person save exactly one; record it in `db-check.md`.
 - [x] 3.3 Add `src/server/saldos.ts` with the director-gated `getSaldos(house, year)`; tests (non-director redirected, three reads, view built).
 - [x] 3.4 Make `ActionResult` generic (`ActionResult<T = void>`) without changing existing callers.
 - [x] 3.5 Add `src/app/(app)/[house]/saldos/actions.ts` (`addApAction`, `deleteApAction`, `restoreApAction`) following design D7; tests (non-director, unknown House, person of the other House, rule error message, delete snapshot, restore over the limit, `revalidatePath`).
@@ -31,7 +31,7 @@
 - [x] 5.3 Add the stats, toolbar (filter and search), desktop table, mobile cards and the collapsed "Antics membres" group in `src/components/saldos/`, following the prototype and `DESIGN.md`; component tests ("Deu" chip, owe filter, search, empty state).
 - [x] 5.4 Add the person sheet (`?person=<id>`): tiles, owe reminder, APNR and APR lists with delete and the "gener" label, vacation line, opening surplus with the link to Equip; component tests.
 - [x] 5.5 Add the "Apuntar AP" form in the `Dialog` (person, tiles, type, day, hours, shortcut, last-request prefill, errors, notices, preview), wired to the Server Functions and the undo toast; component tests.
-- [~] 5.6 Check the page in the browser on desktop and mobile for both Houses (record, delete, undo, a negative surplus, a January AP of the next year, a holiday notice); record it in `db-check.md`.
+- [~] 5.6 Check the page in the browser on desktop and mobile for both Houses (record, delete, undo, a negative surplus, a January AP of the next year, a holiday notice); record it in `db-check.md`. Pending for the product owner on the Vercel preview: this container has no Clerk keys and no director user (see `db-check.md` section 3).
 
 ## 6. Docs
 
