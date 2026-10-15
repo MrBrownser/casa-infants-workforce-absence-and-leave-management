@@ -61,9 +61,12 @@ export function SaldosTable({ houseSlug, year, rows }: Readonly<{ houseSlug: Hou
               <th scope="col" className="w-10 py-3 pr-4"><span className="sr-only">Obre</span></th>
             </tr>
           </thead>
+          {/* The name link's ::after covers its whole row. The row is that overlay's containing block through a
+              no-op transform, not `relative`: Safari ignores `position: relative` on table rows, so every overlay
+              would span the page and the last row would catch every click. */}
           <tbody>
             {rows.map(({ person, postLabel, balances: b }) => (
-              <tr key={person.id} className="relative border-b border-border transition-colors duration-150 ease-out last:border-0 hover:bg-hover">
+              <tr key={person.id} className="[transform:translate(0)] border-b border-border transition-colors duration-150 ease-out last:border-0 hover:bg-hover">
                 <td className="py-3.5 pl-5 pr-3">
                   <div className="flex items-center gap-3">
                     <Avatar name={person.fullName} />
