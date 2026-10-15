@@ -7,7 +7,7 @@ import type { HouseSlug } from './houses';
 export type Section = { readonly segment: string; readonly label: string; readonly available: boolean };
 
 export const SECTIONS: readonly Section[] = [
-  { segment: 'saldos', label: 'Saldos', available: false },
+  { segment: 'saldos', label: 'Saldos', available: true },
   { segment: 'vacances', label: 'Vacances', available: false },
   { segment: 'mes', label: 'El mes', available: false },
   { segment: 'team', label: 'Equip', available: true },

@@ -9,6 +9,7 @@ import {
   isoDateToDate,
   maskDate,
   parseDateDdMmYyyy,
+  parseYearParam,
   todayInMadrid,
   weekIndex,
   weekdayOf,
@@ -103,5 +104,16 @@ describe('dd/mm/aaaa', () => {
     expect(maskDate('01/07/2026')).toBe('01/07/2026');
     expect(maskDate('01/07/20269')).toBe('01/07/2026');
     expect(maskDate('ab')).toBe('');
+  });
+});
+
+describe('parseYearParam', () => {
+  it('reads a four-digit year from 2000 to 2100', () => {
+    expect(parseYearParam('2025')).toBe(2025);
+    expect(parseYearParam('2100')).toBe(2100);
+  });
+
+  it.each([undefined, '', 'abcd', '1999', '2101', '20250', ['2025', '2027']])('ignores %o', (value) => {
+    expect(parseYearParam(value)).toBeNull();
   });
 });

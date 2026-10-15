@@ -91,3 +91,10 @@ export function maskDate(raw: string): string {
   if (digits.length > 2) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
   return digits;
 }
+
+/** A `?year=` value: four digits from 2000 to 2100, or null so the page falls back to the current year. */
+export function parseYearParam(value: string | string[] | undefined): number | null {
+  if (typeof value !== 'string' || !/^\d{4}$/.test(value)) return null;
+  const year = Number(value);
+  return year >= 2000 && year <= 2100 ? year : null;
+}

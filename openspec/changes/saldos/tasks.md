@@ -26,9 +26,9 @@
 
 ## 5. Saldos page
 
-- [ ] 5.1 Make Saldos available in `src/lib/sections.ts` with the `scale` icon in `src/components/section-nav.tsx`; update the navigation and House home tests (`/[house]` opens Saldos).
-- [ ] 5.2 Add `src/app/(app)/[house]/saldos/page.tsx`: the frame (eyebrow, "Saldos <year>", year switcher) and an async child in `<Suspense>` reading `params`, `searchParams` and `getSaldos()`; unknown House 404; page tests.
-- [ ] 5.3 Add the stats, toolbar (filter and search), desktop table, mobile cards and the collapsed "Antics membres" group in `src/components/saldos/`, following the prototype and `DESIGN.md`; component tests ("Deu" chip, owe filter, search, empty state).
+- [x] 5.1 Make Saldos available in `src/lib/sections.ts` with the `scale` icon in `src/components/section-nav.tsx`; update the navigation and House home tests (`/[house]` opens Saldos).
+- [x] 5.2 Add `src/app/(app)/[house]/saldos/page.tsx`: the frame (eyebrow, "Saldos <year>", year switcher) and an async child in `<Suspense>` reading `params`, `searchParams` and `getSaldos()`; unknown House 404; page tests.
+- [x] 5.3 Add the stats, toolbar (filter and search), desktop table, mobile cards and the collapsed "Antics membres" group in `src/components/saldos/`, following the prototype and `DESIGN.md`; component tests ("Deu" chip, owe filter, search, empty state).
 - [ ] 5.4 Add the person sheet (`?person=<id>`): tiles, owe reminder, APNR and APR lists with delete and the "gener" label, vacation line, opening surplus with the link to Equip; component tests.
 - [ ] 5.5 Add the "Apuntar AP" form in the `Dialog` (person, tiles, type, day, hours, shortcut, last-request prefill, errors, notices, preview), wired to the Server Functions and the undo toast; component tests.
 - [ ] 5.6 Check the page in the browser on desktop and mobile for both Houses (record, delete, undo, a negative surplus, a January AP of the next year, a holiday notice); record it in `db-check.md`.

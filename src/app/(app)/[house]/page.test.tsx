@@ -21,7 +21,7 @@ describe('House home', () => {
   it('redirects the director to the first available section', async () => {
     vi.mocked(requireDirector).mockResolvedValue({ userId: 'user_1', name: 'Marta' });
     await expect(HouseHomePage(params('carme-aymerich'))).rejects.toThrow('NEXT_REDIRECT');
-    expect(redirect).toHaveBeenCalledWith('/carme-aymerich/team');
+    expect(redirect).toHaveBeenCalledWith('/carme-aymerich/saldos');
   });
 
   it('checks the director before redirecting', async () => {
