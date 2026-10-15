@@ -33,6 +33,6 @@ Pending for the product owner on the Vercel preview. This container has no `.env
 
 - `npm run lint`: clean.
 - `npm run typecheck`: clean.
-- `npm test`: 47 files, 354 tests passed (209 before this change).
-- `npm run build`: ran as is, with no `.env.local` and no Clerk or database variables exported, and did not stop on missing variables. "Compiled successfully", TypeScript finished, 12 static pages generated. The route list includes `ƒ /[house]/saldos` (dynamic, server-rendered on demand) next to `/[house]`, `/[house]/team`, `/dashboard` and `/no-access`. No placeholder values were needed. Local Node is v22 (the repo targets 24); CI and the Vercel preview build on Node 24.
+- `npm test`: 47 files, 355 tests passed (209 before this change), re-run after the final review fixes.
+- `npm run build`: re-run after the final review fixes with the same result. It ran as is, with no `.env.local` and no Clerk or database variables exported, and did not stop on missing variables. "Compiled successfully", TypeScript finished, 12 static pages generated. The route list includes `ƒ /[house]/saldos` (dynamic, server-rendered on demand) next to `/[house]`, `/[house]/team`, `/dashboard` and `/no-access`. No placeholder values were needed. Local Node is v22 (the repo targets 24); CI and the Vercel preview build on Node 24.
 
