@@ -15,7 +15,7 @@ The House context (SPEC-001) and the prototype foundation (SPEC-003, change
 `openspec/changes/archive/2026-10-14-prototype-foundation/`; specs in `openspec/specs/`) are in place: two Houses, House-scoped routes, the final
 navigation (Saldos, Vacances, El mes, Equip) and the Equip page, where the director manages who
 covers each post and each person's opening balances. Dated membership (SPEC-001) was replaced by
-people per post. Saldos, El mes and Vacances (SPEC-004 to SPEC-006) are next: **before working on
+people per post. Saldos (SPEC-004, change `openspec/changes/archive/2026-10-15-saldos/`) records APs and shows balances. El mes and Vacances (SPEC-005, SPEC-006) are next: **before working on
 them, read `docs/domain.md`, the prototypes in `public/prototypes/` and
 `docs/prototypes/director-feedback.md`.**
 
@@ -29,7 +29,7 @@ See `README.md` for setup.
   shadcn components come in two flavours: the Drawer uses Base UI (`@base-ui/react`, pinned) and the button uses Radix; prefer the Base UI flavour for new overlay components.
 - **Prisma 7 + Supabase Postgres (EU)**, data. Pooled connection (`:6543`,
   `pgbouncer=true`) at runtime via `DATABASE_URL`; direct connection (`:5432`) for
-  migrations via `DIRECT_URL`. Models: `House`, `Person`, `PersonYear`. The current Supabase
+  migrations via `DIRECT_URL`. Models: `House`, `Person`, `PersonYear`, `Ap`. The current Supabase
   project (`eu-west-1`) is the **dev** database; production will get its own project.
 - **Clerk**, auth, with the Catalan localization (`caES` from `@clerk/localizations`)
   and the shadcn theme (`@clerk/ui/themes`, mapped to our tokens in `globals.css`).
@@ -47,6 +47,8 @@ See `README.md` for setup.
     checks flag and route agree) and set its icon in `src/components/section-nav.tsx`.
     `/[house]` redirects to the first available section.
   - `[house]/team/`: Equip page; `actions.ts` holds its Server Functions.
+  - `[house]/saldos/`: Saldos page (the House home); `saldos-content.tsx` is the async child
+    that reads the request; `actions.ts` records, deletes and restores APs.
   - `dashboard/`: redirects to the last visited House (`active-house` cookie, set in `src/proxy.ts`).
   - `no-access/`: shown to signed-in users without the director flag.
 - `src/lib/houses.ts`: the two Houses (keep in sync with the `init` migration).
@@ -56,14 +58,22 @@ See `README.md` for setup.
   alternation. `src/lib/rules.ts`: AP and vacation rules, default opening balances.
   `src/lib/duration.ts`: `H:MM` durations as integer minutes. `src/lib/team.ts`: the Equip team
   view. `src/lib/people-schemas.ts`: zod schemas shared by forms and Server Functions.
-- `src/server/people.ts`: director-gated reads.
-  `src/server/people-store.ts`: Prisma persistence without auth (used by the Server Functions and
+- `src/lib/balances.ts`: AP kinds and limits, balances of a person and year, `checkNewAp` (errors
+  block, notices warn). `src/lib/holidays.ts`: public holidays per year. `src/lib/ap-schemas.ts`:
+  AP form schemas. `src/lib/saldos.ts`: the Saldos view and its labels. *Why:* one implementation
+  of the rules for the page, the live form and the server.
+- `src/server/people.ts`, `src/server/saldos.ts`: director-gated reads.
+  `src/server/people-store.ts`, `src/server/aps-store.ts`: Prisma persistence without auth
+  (`createAp` checks the AP limits under a lock on the person row; used by the Server Functions and
   the seed only).
 - `public/prototypes/`: static HTML prototypes with fictional data for the director's feedback
   (not part of the app; see its README).
-- `src/components/team/`: Equip UI. `src/components/field.tsx`, `duration-input.tsx`,
+- `src/components/team/`: Equip UI. `src/components/saldos/`: Saldos UI. `src/components/callout.tsx`: error, warning and success messages with an icon. `src/components/undo-toast.tsx`: "Desfés" toast (portalled, so it stays reachable over an open Sheet). `src/components/field.tsx`, `duration-input.tsx`,
   `date-input.tsx`: form primitives.
 - `src/components/sheet.tsx`: the app's panel, wrapping the shadcn Drawer (`src/components/ui/drawer.tsx`, Base UI). App code uses `Sheet`, not the Drawer directly. *Why:* `Sheet` opens from the right on desktop and from the bottom on mobile, and always renders a title.
+- `src/components/dialog.tsx`: the app's dialog for short forms, wrapping the shadcn Dialog
+  (`src/components/ui/dialog.tsx`, Base UI): centred on desktop, a bottom sheet on mobile. Use
+  `Sheet` for detail panels and `Dialog` for short forms, rendered next to the Sheet, not inside it.
 - `src/components/top-bar.tsx`: shared contextual top bar. `src/components/house-mark.tsx`: FASI clay-house mark (images in `public/brand/`). `src/components/ui/`: shadcn primitives.
 
 ## Access and data rules

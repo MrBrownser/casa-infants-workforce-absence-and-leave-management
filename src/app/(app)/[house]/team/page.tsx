@@ -4,19 +4,13 @@ import { HousePageHeader } from '@/components/house-page-header';
 import { PersonSheet } from '@/components/team/person-sheet';
 import { TeamBoard } from '@/components/team/team-board';
 import { requireDirector } from '@/lib/auth';
-import { todayInMadrid } from '@/lib/dates';
+import { parseYearParam, todayInMadrid } from '@/lib/dates';
 import { findHouseBySlug } from '@/lib/houses';
 import { getPersonDetails, getTeam, getVacantSeats } from '@/server/people';
 
 export const metadata: Metadata = {
   title: "Equip · Casa d'Infants",
 };
-
-function parseYear(value: string | string[] | undefined): number | null {
-  if (typeof value !== 'string' || !/^\d{4}$/.test(value)) return null;
-  const year = Number(value);
-  return year >= 2000 && year <= 2100 ? year : null;
-}
 
 // `?person=<id>&year=<yyyy>` opens a person's details and balances in a sheet.
 export default async function TeamPage({
@@ -33,7 +27,7 @@ export default async function TeamPage({
 
   const { person: personId, year: yearParam } = await searchParams;
   const today = todayInMadrid();
-  const year = parseYear(yearParam) ?? Number(today.slice(0, 4));
+  const year = parseYearParam(yearParam) ?? Number(today.slice(0, 4));
 
   const [team, details] = await Promise.all([
     getTeam(house.slug),

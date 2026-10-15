@@ -1,13 +1,15 @@
 // Dev seed with FICTIONAL people only (GDPR: never seed real staff). The names
 // come from the list the product owner validated for SPEC-002; PDG and PSI are
 // shared by both Houses. Writes through the people store, so every row passes
-// the app's seat rules. Safe to re-run: it does nothing when people exist.
+// the app's seat rules. Safe to re-run: people and APs are each added only when none exist.
 import { config } from 'dotenv';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
 import type { IsoDate } from '../src/lib/dates';
+import type { ApKind } from '../src/lib/balances';
 import type { HouseSlug } from '../src/lib/houses';
 import type { OpeningBalances } from '../src/lib/rules';
+import { createAp } from '../src/server/aps-store';
 import { addPerson, deactivatePerson, saveOpeningBalances } from '../src/server/people-store';
 
 config({ path: ['.env.local', '.env'], quiet: true });
@@ -58,9 +60,9 @@ const PEOPLE: readonly SeedPerson[] = [
   { fullName: 'Àlex García Martí', house: 'carme-aymerich', postKey: 'ct', active: false },
 ];
 
-async function main() {
+async function seedPeople() {
   if ((await db.person.count()) > 0) {
-    console.log('Seed skipped: people already exist.');
+    console.log('People skipped: people already exist.');
     return;
   }
 
@@ -77,6 +79,48 @@ async function main() {
   }
 
   console.log(`Seeded ${PEOPLE.length} fictional people (${PEOPLE.filter((p) => p.active === false).length} inactive).`);
+}
+
+type SeedAp = { fullName: string; house: HouseSlug; kind: ApKind; date: IsoDate; minutes: number; year?: number };
+
+// 2026 APs (SPEC-004), fictional. Paulo Freire: two people owe hours (Roger
+// Beltrán Camps −4 h from his opening balance, David Valls Medina −9 h 15 min);
+// Carla Ribas Solé has used her 5 APs no recuperables; Mireia Santos Rovira has a
+// January 2027 AP counted toward 2026; Núria Roca Ferrer (inactive) shows under
+// "Antics membres". Carme Aymerich: Júlia Romero Bosch owes hours after an AP
+// recuperable; the shared Pedagoga has an AP recorded there.
+const APS: readonly SeedAp[] = [
+  ...['2026-02-20', '2026-05-15', '2026-06-12', '2026-09-25', '2026-10-09'].map(
+    (date): SeedAp => ({ fullName: 'Carla Ribas Solé', house: 'paulo-freire', kind: 'non_recoverable', date, minutes: 240 }),
+  ),
+  { fullName: 'David Valls Medina', house: 'paulo-freire', kind: 'non_recoverable', date: '2026-03-18', minutes: 660 },
+  { fullName: 'David Valls Medina', house: 'paulo-freire', kind: 'non_recoverable', date: '2026-03-19', minutes: 660 },
+  { fullName: 'Mireia Santos Rovira', house: 'paulo-freire', kind: 'recoverable', date: '2026-06-19', minutes: 585 },
+  { fullName: 'Mireia Santos Rovira', house: 'paulo-freire', kind: 'non_recoverable', date: '2027-01-15', minutes: 120, year: 2026 },
+  { fullName: 'Núria Roca Ferrer', house: 'paulo-freire', kind: 'non_recoverable', date: '2026-02-06', minutes: 480 },
+  ...['2026-03-02', '2026-06-12', '2026-10-15'].map(
+    (date): SeedAp => ({ fullName: 'Laia Vidal Mas', house: 'carme-aymerich', kind: 'non_recoverable', date, minutes: 240 }),
+  ),
+  { fullName: 'Júlia Romero Bosch', house: 'carme-aymerich', kind: 'recoverable', date: '2026-09-29', minutes: 390 },
+  { fullName: 'Meritxell Torres Vila', house: 'carme-aymerich', kind: 'non_recoverable', date: '2026-01-05', minutes: 90 },
+];
+
+async function seedAps() {
+  if ((await db.ap.count()) > 0) {
+    console.log('APs skipped: APs already exist.');
+    return;
+  }
+  for (const ap of APS) {
+    const person = await db.person.findFirst({ where: { fullName: ap.fullName }, select: { id: true } });
+    if (!person) throw new Error(`Seed person ${ap.fullName} is missing.`);
+    await createAp(db, { personId: person.id, house: ap.house, kind: ap.kind, year: ap.year ?? 2026, date: ap.date, minutes: ap.minutes });
+  }
+  console.log(`Seeded ${APS.length} fictional APs.`);
+}
+
+async function main() {
+  await seedPeople();
+  await seedAps();
 }
 
 main()

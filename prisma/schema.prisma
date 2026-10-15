@@ -20,6 +20,7 @@ model House {
   slug   String   @unique
   name   String
   people Person[]
+  aps    Ap[]
 
   @@map("houses")
 }
@@ -41,6 +42,7 @@ model Person {
   updatedAt DateTime     @updatedAt @map("updated_at")
   house     House?       @relation(fields: [houseId], references: [id], onDelete: Restrict)
   years     PersonYear[]
+  aps       Ap[]
 
   @@index([houseId])
   @@map("people")
@@ -59,4 +61,34 @@ model PersonYear {
 
   @@unique([personId, year])
   @@map("person_years")
+}
+
+/// AP type (SPEC-004, design D1). Adding a type later is an additive
+/// ALTER TYPE ... ADD VALUE.
+enum ApKind {
+  non_recoverable
+  recoverable
+
+  @@map("ap_kind")
+}
+
+/// An AP (assumpte propi) of a person, counted toward `year` (design D1 to D3).
+/// It belongs to the person; houseId is the House where it was recorded and
+/// never changes when the person moves. The migration adds CHECKs on year, the
+/// date window (1 January of `year` to 31 January of the next, FPOL32 §1) and
+/// minutes (1 to 1440). The yearly limits live in src/lib/balances.ts.
+model Ap {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  personId  String   @map("person_id") @db.Uuid
+  houseId   String   @map("house_id") @db.Uuid
+  kind      ApKind
+  year      Int
+  date      DateTime @db.Date
+  minutes   Int
+  createdAt DateTime @default(now()) @map("created_at")
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  house     House    @relation(fields: [houseId], references: [id], onDelete: Restrict)
+
+  @@index([personId, year])
+  @@map("aps")
 }

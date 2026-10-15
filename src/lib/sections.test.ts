@@ -14,8 +14,8 @@ describe('SECTIONS', () => {
     ]);
   });
 
-  it('opens Equip first until Saldos ships', () => {
-    expect(firstAvailableSection().segment).toBe('team');
+  it('opens Saldos first', () => {
+    expect(firstAvailableSection().segment).toBe('saldos');
   });
 
   it('builds hrefs inside the active House', () => {
