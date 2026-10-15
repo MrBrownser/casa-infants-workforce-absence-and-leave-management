@@ -35,6 +35,6 @@
 
 ## 6. Docs
 
-- [ ] 6.1 Update `docs/domain.md`: FPOL32 summary as a source (rules for SPEC-004, SPEC-005 and SPEC-006: 31 January close, holidays, Monday night plus REE, absence incompatibility table, vacation rules, holiday hours), §4 and §5 updates, §11 Saldos built, open questions.
-- [ ] 6.2 Update `AGENTS.md` (layout: Saldos route, new lib and server modules, `Dialog` vs `Sheet`; models now include `Ap`) and `README.md` (seed with APs).
+- [x] 6.1 Update `docs/domain.md`: FPOL32 summary as a source (rules for SPEC-004, SPEC-005 and SPEC-006: 31 January close, holidays, Monday night plus REE, absence incompatibility table, vacation rules, holiday hours), §4 and §5 updates, §11 Saldos built, open questions.
+- [x] 6.2 Update `AGENTS.md` (layout: Saldos route, new lib and server modules, `Dialog` vs `Sheet`; models now include `Ap`) and `README.md` (seed with APs).
 - [ ] 6.3 Run lint, typecheck, tests and the production build; all green.

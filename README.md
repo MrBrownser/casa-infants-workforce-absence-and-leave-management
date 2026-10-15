@@ -120,8 +120,9 @@ npm run db:studio     # browse data
 1. Apply migrations: `npm run db:migrate` (creates the two Houses). **After pulling SPEC-003**
    (`prototype-foundation`) reset the dev database instead: `npx prisma migrate reset --force`.
    It drops everything; the dev database only holds fictional data.
-2. Seed fictional people (dev only): `npx prisma db seed` (20 people, 3 inactive). Re-running does
-   nothing once people exist.
+2. Seed fictional people and APs (dev only): `npx prisma db seed` (20 people, 3 inactive, 15 APs of
+   2026). Re-running adds nothing once people (or APs) exist. After pulling SPEC-004 (`saldos`) run
+   `npm run db:migrate` and the seed again: it adds the APs.
 3. In the Clerk dashboard, open your user → **Metadata** → **Public** and set:
 
    ```json

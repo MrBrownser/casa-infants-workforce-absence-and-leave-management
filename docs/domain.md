@@ -10,6 +10,9 @@ Sources:
 - The approved UI: static prototypes in `public/prototypes/` (see its `README.md`). Open them
   with `python3 -m http.server -d public/prototypes`.
 - The director's answers: `docs/prototypes/director-feedback.md`.
+- FASI's instruction **FPOL32 núm. 04** (17/12/2019, "gestió i organització del temps de treball i
+  de descans a partir del dia 01/01/2020"), shared by the product owner. Summarised in §13; the
+  PDF is not committed (internal FASI document).
 - The decision log: `openspec/changes/archive/2026-10-14-prototype-foundation/brainstorm.md`.
 
 Items marked **(open)** are not confirmed yet; items marked **(assumption)** are what the
@@ -93,8 +96,18 @@ person).
 | AP no recuperable (APNR) | 24 h a year, in at most 5 days (requests) | Just consumes the allowance. |
 | AP recuperable (APR) | 24 h a year, in at most 3 days | Deducted from the calendar surplus (§5). |
 
-- The spreadsheet notes "Es pot demanar en una sola petició la nit+REE": a night shift plus the
-  following team meeting (REE) can be one request.
+- A night shift plus the following team meeting (REE) can be one request: the spreadsheet notes
+  "Es pot demanar en una sola petició la nit+REE", and FPOL32 §2 says an AP on the Monday night
+  shift includes Tuesday's REE. One request is at most 24 h.
+- **The year closes on 31 January** (FPOL32 §1): APs of a year can be taken until 31 January of
+  the next year and count toward that year's allowance and surplus. Each AP stores the year it
+  counts toward (SPEC-004).
+- APs need **5 days' notice** (FPOL32 §2). The director records only APs she approved; the app
+  does not check the notice.
+- **(open)** APs on public holidays: FPOL32 §2 says "No es podran demanar AP en els 14 festius
+  anuals" but also that whoever asks for an AP on a holiday they were scheduled to work gets
+  another holiday assigned. The app warns and allows it.
+- **(built, SPEC-004)** Saldos records APs: rules in `src/lib/balances.ts`, table `aps`.
 - APs are also how people complete **loose days** that the vacation blocks do not allow (§7).
 - Durations are entered with **one standard field `H:MM`** (product owner decision) and shown as
   `3 h 45 min`. The prototypes still accept `3,75` too; the app does not.
@@ -109,6 +122,9 @@ person).
 - Owed hours are given back "quan hi ha necessitat de treball": the director asks the person to
   work extra when there is a need. **(open)** Recording returned hours so the surplus goes up
   again (asked in the Saldos prototype).
+- FPOL32 §1 and §2: hours worked below the agreed year are regularised with occasional cover of
+  holidays or other shifts, communicated with 5 days' notice; hours above it are compensated with
+  rest. Neither is recorded in the app yet: the director adjusts the opening surplus on Equip.
 
 ## 6. Sick leave ("Baixa")
 
@@ -151,6 +167,9 @@ person).
 - **(open)** How the rule applies to prorated entitlements, and what happens when fewer than
   7 days are left.
 - The forms offer shortcuts: 1, 2 or 3 weeks, and "la resta (N dies)" for the remainder block.
+- **(open)** FPOL32 §4 says blocks of 7 days apply "si es volen fraccionar en més de dos
+  períodes": with two periods, any split of at least 7 days might be allowed (for example
+  12 + 19), which is looser than the table above. To confirm with the director (SPEC-006).
 
 ### The yearly plan ("negociació de vacances")
 - At the **end of the year**, House by House, the director enters what each person asks for
@@ -185,6 +204,8 @@ person).
   someone from the other House?
 - Days with more people off than the House limit are flagged. **(open)** Whether a short AP
   (for example 2 h) counts as a person off.
+- FPOL32 §3 lists which posts cannot be absent at the same time (see §13). It answers the open
+  question "which posts may overlap" for El mes and Vacances.
 - Other views in the prototype: absences calendar, a per person table (V/A/B per day, like the
   spreadsheet) and an agenda (default on mobile).
 
@@ -216,6 +237,11 @@ shifts to cover: the night before, the day and the night after. 2026:
 published. The holiday rota (who covers each holiday, fairly spread: "3 festius EN, 2 festius
 ET…") is not prototyped yet.
 
+2026 is coded in `src/lib/holidays.ts` (SPEC-004 warns when an AP falls on one). The code list has
+16 entries: the four the table above leaves out are Dilluns de Pasqua (06/04), Festa del Treball
+(01/05), Segona Pasqua (25/05) and Sant Joan (24/06). **(open)** FPOL32 §2 speaks of 14 annual
+holidays: confirm the exact list with the director.
+
 ## 10. Conventions that come from the director
 
 - Durations are always entered as **H:MM** (one standard field, `DurationInput`) and shown as
@@ -234,7 +260,7 @@ ET…") is not prototyped yet.
 | Screen | Replaces in the spreadsheet | Prototype | Spec | Status |
 |---|---|---|---|---|
 | Equip | (nothing: names were typed everywhere) | not prototyped | SPEC-003 `prototype-foundation` | Built |
-| Saldos | `V I APS` | `saldos.html` | SPEC-004 | Validated by the director |
+| Saldos | `V I APS` | `saldos.html` | SPEC-004 `saldos` | Built |
 | El mes | month tabs | `mes.html` | SPEC-005 | Waiting for feedback |
 | Vacances | `VAC` | `vacances.html` | SPEC-006 | Waiting for feedback |
 
@@ -252,3 +278,38 @@ leave) belong to the person; rota changes and day notes belong to a House.
 - **Detailed review of El mes and Vacances** with the director before SPEC-005 and SPEC-006.
 - Open questions from §§3 to 9 (real schedules, conflicts between posts, who covers, holidays
   of 2027, returned hours).
+
+## 13. FASI instruction FPOL32 (summary)
+
+"Instrucció relativa a gestió i organització del temps de treball i de descans a partir del dia
+01/01/2020", núm. 04, 17/12/2019, from Direcció Persones and Direcció Tècnica to the Houses. The
+rules that matter to the app, by spec:
+
+| Rule | Where | Spec |
+|---|---|---|
+| Annual working time 1,701 h; the calendar closes on 31 January of the next year | §1 | SPEC-004 (AP year) |
+| 12 h rest between shifts; weekly rest of 36 h, accumulable over two weeks; never more than 10 days of work in two weeks | §1 | SPEC-005 |
+| APs depend on the person; 5 days' notice; no APs on the 14 annual holidays (see §4, open) | §2 | SPEC-004 |
+| AP no recuperable counts as worked time and can be joined to vacations; AP recuperable does not count, must be recovered and **cannot be joined to vacations** | §2 | SPEC-004, SPEC-006 |
+| An AP on the Monday night shift includes Tuesday's REE | §2 | SPEC-004 |
+| Absence incompatibilities between posts (table below) | §3 | SPEC-005, SPEC-006 |
+| Vacation calendar closed on 15 February; periods fixed for the year; cancelling needs Direcció de Persones' approval, at least two months before | §4 | SPEC-006 |
+| Vacations in periods of at least 7 days; blocks of 7 when split in more than two periods; 10 days to reach 31 | §4 | SPEC-006 |
+| Choosing order: EIF (DS, ER, then PSI/PDG/TS) and EE (CT first, then the six educators) by seniority, then rotating | §4 | SPEC-006 |
+| A vacation starting on a night shift counts from 22:00 that day; ending on Monday, Tuesday's REE is a working day | §4 | SPEC-006 |
+| Holidays shared out in December; the CT picks two holidays off; 12 h holiday shifts; a holiday hour counts 1.5 | §5 | SPEC-005 |
+
+Absence incompatibilities (§3, "Incompatibilitats absències"; "Cobertures previstes" in brackets):
+
+| Post | Cannot be absent at the same time as | Planned cover |
+|---|---|---|
+| Direcció | PSI, PDG, ER | EIF |
+| Psicòleg (PSI) | Direcció, PDG, ER | none |
+| Pedagog / TS (PDG) | Direcció, PSI, ER | none |
+| ER | ES Tarda, ES CS, ES Nits, ES CT, TF Tarda, TF Matí, Direcció, PSI, PDG, TS | ES CT, EE |
+| ES Tarda (ET) | ER, TF Tarda, ES Nit | ES CT |
+| ES Cap de setmana (ECS) | ER | ES CT |
+| ES Nit 1 (EN) | ER, ES Nit 2, ES Tarda | ES CT |
+| ES Nit 2 (EN) | ER, ES Nit 1, ES Tarda | ES CT |
+| TF Matí (TFM) | ER, TF Tarda | discretionary, external |
+| TF Tarda (TFT) | ER, ES Tarda, TF Matí | ES CT |
