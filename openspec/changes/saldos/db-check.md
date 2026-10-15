@@ -39,7 +39,7 @@ Run on 2026-10-15 on the developer's machine: `npm run dev` (Node 24) against a 
 8. Carme Aymerich: Meritxell Torres Vila (Pedagoga, shared post, AP recorded in Carme Aymerich) shows "Queden 22 h 30 min · 1/5 dies" on both Houses; Júlia Romero Bosch shows "6 h 30 min usades · 1/3" and "Deu 6 h 30 min".
 9. 390 px: no horizontal scroll; cards with three tiles (Vacances, AP no rec., Excedent; Júlia's Excedent tile on the warning background with the hourglass); "Apuntar AP" opens as a bottom sheet; the toast sits above the tab bar; the last card clears the tab bar.
 
-Extra (final review): in a desktop table row, the point at the centre of a non-link cell resolves (`elementFromPoint`) to that row's own person link, so the whole-row click target stays inside its row in Chromium. Not checked in Safari.
+Safari (Mac, 26.6.2): with `relative` on the row, every row's whole-row overlay spanned the page and the last row (the last former member with "Antics membres" open) caught every click and hover. Reproduced through `safaridriver`: the centre of every cell, and the margin beside the table, resolved (`elementFromPoint`) to the last row's link. After the fix (a no-op `transform` on the row) every cell resolves to its own row and the margin to nothing, in Safari and Chromium. The product owner then checked it by hand in Safari: each row highlights under the cursor, nothing highlights outside the table, and clicking a row opens that row's person, with "Antics membres" open or closed.
 
 ## 4. Checks and build (task 6.3)
 
