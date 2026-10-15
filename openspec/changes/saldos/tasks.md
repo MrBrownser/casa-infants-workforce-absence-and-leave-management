@@ -13,8 +13,8 @@
 
 ## 3. Data layer
 
-- [ ] 3.1 Add `src/server/aps-store.ts`: `createAp` in an interactive transaction that locks the person row and runs `checkNewAp` (throws `ApRuleError`), `deleteAp` returning the deleted row, `listApsOf(personIds, year)`, `listOpeningBalancesOf(personIds, year)`; tests with a mocked Prisma client.
-- [ ] 3.2 Check by hand on the local Postgres that two concurrent fifth APNRs for the same person save exactly one; record it in `db-check.md`.
+- [x] 3.1 Add `src/server/aps-store.ts`: `createAp` in an interactive transaction that locks the person row and runs `checkNewAp` (throws `ApRuleError`), `deleteAp` returning the deleted row, `listApsOf(personIds, year)`, `listOpeningBalancesOf(personIds, year)`; tests with a mocked Prisma client.
+- [x] 3.2 Check by hand on the local Postgres that two concurrent fifth APNRs for the same person save exactly one; record it in `db-check.md`.
 - [ ] 3.3 Add `src/server/saldos.ts` with the director-gated `getSaldos(house, year)`; tests (non-director redirected, three reads, view built).
 - [ ] 3.4 Make `ActionResult` generic (`ActionResult<T = void>`) without changing existing callers.
 - [ ] 3.5 Add `src/app/(app)/[house]/saldos/actions.ts` (`addApAction`, `deleteApAction`, `restoreApAction`) following design D7; tests (non-director, unknown House, person of the other House, rule error message, delete snapshot, restore over the limit, `revalidatePath`).

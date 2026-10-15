@@ -17,3 +17,10 @@ Checks that unit tests cannot make, run by hand. Supabase is not touched.
 | 1441 minutes | `aps_minutes_check` | `violates check constraint "aps_minutes_check"` |
 | kind `vacation` | invalid enum value | `invalid input value for enum ap_kind: "vacation"` |
 | Delete the person | APs removed (cascade), count 0 | `DELETE 1`, then `count = 0` |
+
+## 2. Two concurrent fifth APs (task 3.2)
+
+A person with 4 APs no recuperables in 2026; two `createAp` calls at once for the fifth.
+
+- Output: `[ 'saved', "rejected: Ja ha fet servir els 5 dies que permet aquest tipus d'AP." ]` and `APs stored: 5` (same result on three more runs).
+- Expected: exactly one saved, the other rejected with "Ja ha fet servir els 5 dies que permet aquest tipus d'AP.", 5 APs stored.
