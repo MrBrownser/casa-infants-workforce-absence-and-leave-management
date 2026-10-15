@@ -9,7 +9,7 @@
 
 - [x] 2.1 Add the `ApKind` enum and the `Ap` model to `prisma/schema.prisma` (relations on `Person` and `House`) and a new migration with the hand-written CHECKs on year, date window and minutes (design D1); regenerate the client.
 - [x] 2.2 Apply the migration on a throwaway local Postgres; check by hand that the CHECKs reject a date outside the window, 0 and 1441 minutes, and record the results in `db-check.md`.
-- [ ] 2.3 Extend `prisma/seed.ts` with fictional 2026 APs (people under the limit, one person at 5 of 5 APNR, an APR that makes a surplus negative), added only when the database has no APs.
+- [x] 2.3 Extend `prisma/seed.ts` with fictional 2026 APs (people under the limit, one person at 5 of 5 APNR, an APR that makes a surplus negative), added only when the database has no APs.
 
 ## 3. Data layer
 
