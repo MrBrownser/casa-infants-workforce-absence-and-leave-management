@@ -15,7 +15,7 @@ The House context (SPEC-001) and the prototype foundation (SPEC-003, change
 `openspec/changes/archive/2026-10-14-prototype-foundation/`; specs in `openspec/specs/`) are in place: two Houses, House-scoped routes, the final
 navigation (Saldos, Vacances, El mes, Equip) and the Equip page, where the director manages who
 covers each post and each person's opening balances. Dated membership (SPEC-001) was replaced by
-people per post. Saldos (SPEC-004, change `openspec/changes/saldos/`) records APs and shows balances. El mes and Vacances (SPEC-005, SPEC-006) are next: **before working on
+people per post. Saldos (SPEC-004, change `openspec/changes/archive/2026-10-15-saldos/`) records APs and shows balances. El mes and Vacances (SPEC-005, SPEC-006) are next: **before working on
 them, read `docs/domain.md`, the prototypes in `public/prototypes/` and
 `docs/prototypes/director-feedback.md`.**
 

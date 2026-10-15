@@ -85,10 +85,10 @@ House-scoped navigation SHALL list, in this order, the sections Saldos (`saldos`
 
 #### Scenario: Sections in this release
 - **WHEN** the director opens any page of Paulo Freire
-- **THEN** the navigation shows Saldos, Vacances and El mes marked "aviat" and not clickable, and Equip as a link to `/paulo-freire/team`
+- **THEN** the navigation shows Saldos as a link to `/paulo-freire/saldos`, Vacances and El mes marked "aviat" and not clickable, and Equip as a link to `/paulo-freire/team`
 
 #### Scenario: Unavailable section URL
-- **WHEN** the director opens `/paulo-freire/saldos` before Saldos is available
+- **WHEN** the director opens `/paulo-freire/mes` before El mes is available
 - **THEN** the system responds with a not-found page
 
 ### Requirement: House home opens the first available section
@@ -96,5 +96,5 @@ Opening a House home (`/<house-slug>`) SHALL redirect to the first available sec
 
 #### Scenario: House home in this release
 - **WHEN** the director opens `/carme-aymerich`
-- **THEN** the browser is redirected to `/carme-aymerich/team`
+- **THEN** the browser is redirected to `/carme-aymerich/saldos`
 
