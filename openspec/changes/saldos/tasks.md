@@ -22,7 +22,7 @@
 ## 4. Overlays and feedback
 
 - [x] 4.1 Add the shadcn Dialog on Base UI (`src/components/ui/dialog.tsx`) and the app wrapper `src/components/dialog.tsx` (centred on desktop, bottom sheet on mobile, always titled); component tests (title, focus, Escape, over a `Sheet`).
-- [ ] 4.2 Add `src/components/undo-toast.tsx` ("Desfés", 6 seconds, `aria-live`, error state with an icon); component tests with fake timers.
+- [x] 4.2 Add `src/components/undo-toast.tsx` ("Desfés", 6 seconds, `aria-live`, error state with an icon); component tests with fake timers.
 
 ## 5. Saldos page
 
