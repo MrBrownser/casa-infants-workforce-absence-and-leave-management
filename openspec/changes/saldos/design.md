@@ -111,3 +111,5 @@
 ## Changed during implementation
 
 - `deleteAp` returns a boolean (true when it removed the row, false when the AP was already gone) so the delete action can tell a concurrent second delete that the AP is already gone, and only one of two concurrent deletes hands out an undo snapshot.
+- `deleteApAction` uses the boolean from `deleteAp`: when `findAp` finds the AP but `deleteAp` returns false (a concurrent delete won), it returns the same "Aquest AP ja no existeix." failure as when `findAp` returns null, hands out no undo snapshot and does not revalidate. A failure returned from inside the write helper skips `revalidatePath`.
+- Test plan fix: in "says so when the AP is already gone", `vi.mocked(aps.findAp).mockResolvedValue(null)` is set explicitly, because `vi.clearAllMocks()` (Vitest 4) keeps the return values set by earlier tests. The `deleteAp` mocks resolve `true` where a delete is expected to succeed, and one test covers `deleteAp` resolving false.

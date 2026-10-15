@@ -17,7 +17,7 @@
 - [x] 3.2 Check by hand on the local Postgres that two concurrent fifth APNRs for the same person save exactly one; record it in `db-check.md`.
 - [x] 3.3 Add `src/server/saldos.ts` with the director-gated `getSaldos(house, year)`; tests (non-director redirected, three reads, view built).
 - [x] 3.4 Make `ActionResult` generic (`ActionResult<T = void>`) without changing existing callers.
-- [ ] 3.5 Add `src/app/(app)/[house]/saldos/actions.ts` (`addApAction`, `deleteApAction`, `restoreApAction`) following design D7; tests (non-director, unknown House, person of the other House, rule error message, delete snapshot, restore over the limit, `revalidatePath`).
+- [x] 3.5 Add `src/app/(app)/[house]/saldos/actions.ts` (`addApAction`, `deleteApAction`, `restoreApAction`) following design D7; tests (non-director, unknown House, person of the other House, rule error message, delete snapshot, restore over the limit, `revalidatePath`).
 
 ## 4. Overlays and feedback
 
