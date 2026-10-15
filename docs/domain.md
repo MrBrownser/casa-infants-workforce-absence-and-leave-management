@@ -237,10 +237,9 @@ shifts to cover: the night before, the day and the night after. 2026:
 published. The holiday rota (who covers each holiday, fairly spread: "3 festius EN, 2 festius
 ET…") is not prototyped yet.
 
-2026 is coded in `src/lib/holidays.ts` (SPEC-004 warns when an AP falls on one). The code list has
-16 entries: the four the table above leaves out are Dilluns de Pasqua (06/04), Festa del Treball
-(01/05), Segona Pasqua (25/05) and Sant Joan (24/06). **(open)** FPOL32 §2 speaks of 14 annual
-holidays: confirm the exact list with the director.
+2026 is coded in `src/lib/holidays.ts` (SPEC-004 warns when an AP falls on one). The list has 16
+entries, while FPOL32 §2 speaks of 14 annual holidays. **(open)** Confirm the exact list with the
+director.
 
 ## 10. Conventions that come from the director
 
