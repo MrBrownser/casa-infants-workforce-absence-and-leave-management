@@ -25,6 +25,10 @@ prototypes do until the director says otherwise.
 - The product owner (developer) also has access.
 - Access is the Clerk `publicMetadata.role === 'director'` flag (`src/lib/auth.ts`).
 - She works **one House at a time** (her answer), switching with the House switcher.
+- She is new in the post: the current spreadsheet was filled in by the previous director, and
+  its 2026 balances cannot be fully explained. **She starts clean in the app on 1 January 2027**:
+  no 2026 data is imported; she enters her team in Equip and the 2027 opening balances (carried
+  days and surplus at the 2026 close) by hand. Until then she tests with fictional data.
 
 ## 2. Houses, posts and people
 
@@ -108,6 +112,11 @@ person).
   anuals" but also that whoever asks for an AP on a holiday they were scheduled to work gets
   another holiday assigned. The app warns and allows it.
 - **(built, SPEC-004)** Saldos records APs: rules in `src/lib/balances.ts`, table `aps`.
+- **Integralia**, FASI's official tool, is where the director records APs and reads each
+  person's remaining hours. Saldos duplicates it, so it gets no new work for now. The app still
+  needs to know **who is absent on which day** (El mes coverage, Vacances' rule that an AP
+  recuperable cannot be joined to vacations). **(open)** Whether the app records APs only as
+  dated absences and leaves the balances to Integralia: decide in the El mes design.
 - APs are also how people complete **loose days** that the vacation blocks do not allow (§7).
 - Durations are entered with **one standard field `H:MM`** (product owner decision) and shown as
   `3 h 45 min`. The prototypes still accept `3,75` too; the app does not.
@@ -172,8 +181,10 @@ person).
   12 + 19), which is looser than the table above. To confirm with the director (SPEC-006).
 
 ### The yearly plan ("negociació de vacances")
-- At the **end of the year**, House by House, the director enters what each person asks for
-  next year, resolves conflicts, and **locks the plan: it is fixed for the whole year**.
+- In **January**, House by House, the director enters what each person asks for that year,
+  resolves conflicts, and **locks the plan: it is fixed for the whole year**. FPOL32 §4: the
+  vacation calendar closes on **15 February** (the director mentioned 1 February; FPOL32 is the
+  reference). So Vacances must be in production, with the team entered, by early January.
 - A request is **demanada** (waiting for her decision: dashed honey) or **acceptada** (solid).
 - **Conflicts** (both editable per House, **(open)** real rules):
   - more people off at the same time than allowed (default 2);
@@ -274,6 +285,7 @@ leave) belong to the person; rota changes and day notes belong to a House.
   required, backups, rights of the people concerned), then a spec. Required before the first
   operational use with real data.
 - **Detailed review of El mes and Vacances** with the director before SPEC-005 and SPEC-006.
+  Priority: Vacances first (needed in January), then El mes, where most of the value is.
 - Open questions from §§3 to 9 (real schedules, conflicts between posts, who covers, holidays
   of 2027, returned hours).
 
