@@ -83,7 +83,8 @@ and after signing in the server still renders you signed out until a manual relo
 signed-in screens on a phone use an HTTPS address (a Vercel preview, or a tunnel such as
 `cloudflared tunnel --url http://localhost:3000` with its host added to `ALLOWED_DEV_ORIGINS`).
 
-Routes: `/` landing page, `/sign-in`, `/sign-up`, `/dashboard` (signed-in only, redirects to the
+Routes: `/` landing page, `/sign-in` (no sign-up: accounts are invited from the Clerk
+dashboard), `/api/health` (public health check), `/dashboard` (signed-in only, redirects to the
 last House), `/<house>` (redirects to Equip), `/<house>/team` (Equip).
 
 If you edit `prisma/schema.prisma`, re-run `npm run db:generate` to refresh the
@@ -99,7 +100,7 @@ Copy `.env.example` to `.env.local` and fill in:
   - `DATABASE_URL`: pooled connection (Supavisor, port `6543`, `pgbouncer=true`) for runtime.
   - `DIRECT_URL`: direct connection (port `5432`) for migrations.
 - **Clerk**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, plus the
-  sign-in/sign-up route and redirect variables. `clerk init --app <app-id>` (Clerk
+  sign-in route and redirect variables. `clerk init --app <app-id>` (Clerk
   CLI) writes these to `.env.local` for you.
 
 > Clerk keys are required for `npm run build` and `npm run dev` to run, since the
@@ -120,9 +121,11 @@ npm run db:studio     # browse data
 1. Apply migrations: `npm run db:migrate` (creates the two Houses). **After pulling SPEC-003**
    (`prototype-foundation`) reset the dev database instead: `npx prisma migrate reset --force`.
    It drops everything; the dev database only holds fictional data.
-2. Seed fictional people and APs (dev only): `npx prisma db seed` (20 people, 3 inactive, 15 APs of
+2. Seed fictional people and APs (dev only): `ALLOW_DEV_SEED=1 npx prisma db seed` (20 people, 3 inactive, 15 APs of
    2026). Re-running adds nothing once people (or APs) exist. After pulling SPEC-004 (`saldos`) run
-   `npm run db:migrate` and the seed again: it adds the APs.
+   `npm run db:migrate` and the seed again: it adds the APs. The seed refuses to run without
+   `ALLOW_DEV_SEED=1`; set it on the command line only, never in `.env.local`, so a database
+   URL pointed at production by mistake cannot get fictional people.
 3. In the Clerk dashboard, open your user → **Metadata** → **Public** and set:
 
    ```json
@@ -187,9 +190,9 @@ A preview deployment uses the Clerk **development** instance and the Supabase **
 - `DIRECT_URL`: not for Preview (previews never migrate). Set it for **Production** only, where
   the build runs `prisma migrate deploy` (see Migrations).
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`: the `pk_test_` / `sk_test_` keys.
-- `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`,
-  `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL`:
-  same values as `.env.example`.
+- `NEXT_PUBLIC_CLERK_SIGN_IN_URL` and `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL`: same
+  values as `.env.example`. The app has no sign-up route; the old `NEXT_PUBLIC_CLERK_SIGN_UP_*`
+  variables can be removed from Vercel.
 
 Do not set `ALLOWED_DEV_ORIGINS` (dev server only).
 
@@ -215,9 +218,7 @@ vercel env add DATABASE_URL preview
 vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY preview
 vercel env add CLERK_SECRET_KEY preview
 vercel env add NEXT_PUBLIC_CLERK_SIGN_IN_URL preview
-vercel env add NEXT_PUBLIC_CLERK_SIGN_UP_URL preview
 vercel env add NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL preview
-vercel env add NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL preview
 vercel deploy                     # no --prod: creates a preview and prints an https URL
 ```
 
@@ -230,14 +231,26 @@ Open the printed `https://...vercel.app` URL on the phone.
 role, and the dev database holds fictional data only. Vercel Deployment Protection (Vercel
 Authentication) can add a second gate if wanted.
 
-### Production (later)
+### Production
 
-- A separate Supabase EU project; its `DIRECT_URL` in the Production environment makes the first
-  production build apply all migrations. No data migration.
-- The Clerk production instance with its own custom domain (`*.vercel.app` is not allowed), its
-  `pk_live_` / `sk_live_` keys, set for the Production environment only.
-- Set `publicMetadata.role` to `director` on the director's production account.
-- Never point a local `.env.local` at production.
+The full checklist (providers, backups, monitoring, cutover) is issue #17. In short:
+
+- A separate Vercel project for production, a separate Supabase EU project (`eu-west-1`) and the
+  Clerk production instance: never the dev ones, which previews and the seed write to.
+- Production environment variables (names only): `DATABASE_URL`, `DIRECT_URL` (the build applies
+  migrations), `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` (`pk_live_` /
+  `sk_live_`), `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL`.
+- Clerk production needs its own custom domain (`*.vercel.app` is not allowed). Set sign-up to
+  **Restricted** (invitation only) and set `publicMetadata.role` to `director` on each invited
+  account.
+- Supabase: turn the **Data API off**. Every table also has Row Level Security on with no
+  policies (migration `enable_rls`), so the Data API could read nothing anyway; the app connects
+  as the table owner and is not affected. **A migration that creates a table must enable RLS on
+  it** (`src/lib/rls-migration.test.ts` fails otherwise).
+- Health check: `GET /api/health` answers `200 {"ok":true}` or `503 {"ok":false}` after a
+  `SELECT 1`, with no data. Point the uptime monitor at it; polling it also keeps a Supabase
+  Free project from pausing.
+- Never point a local `.env.local` at production, and never run the dev seed against it.
 
 ## GDPR
 

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 
 export const NO_ACCESS_PATH = '/no-access';
+export const SIGN_IN_PATH = '/sign-in';
 
 type ClerkUserLike = {
   id: string;
@@ -19,9 +20,20 @@ function displayName(user: ClerkUserLike): string | null {
 // One Clerk Backend API call per request, however many callers check auth.
 const getCurrentUser = cache(() => currentUser());
 
-export async function requireUser() {
+/**
+ * Without a signed-in user, redirect to sign in rather than throw: the proxy
+ * can let a non-browser request through (e.g. curl without Clerk's dev-browser
+ * cookie), and a thrown error would answer 500. A redirect still stops a Server
+ * Function before it reads or writes anything.
+ */
+async function signedInUser() {
   const user = await getCurrentUser();
-  if (!user) throw new Error('Not authorized');
+  if (!user) redirect(SIGN_IN_PATH);
+  return user;
+}
+
+export async function requireUser() {
+  const user = await signedInUser();
   return { userId: user.id, name: displayName(user) };
 }
 
@@ -37,8 +49,7 @@ export function isDirector(user: { publicMetadata?: Record<string, unknown> } | 
  * does not stop a page's queries.
  */
 export async function requireDirector() {
-  const user = await getCurrentUser();
-  if (!user) throw new Error('Not authorized');
+  const user = await signedInUser();
   if (!isDirector(user)) redirect(NO_ACCESS_PATH);
   return { userId: user.id, name: displayName(user) };
 }

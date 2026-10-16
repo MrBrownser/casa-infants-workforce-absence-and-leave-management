@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
+import { Show, SignInButton, UserButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { TopBar } from '@/components/top-bar';
 import { HouseMark } from '@/components/house-mark';
@@ -14,9 +14,6 @@ export default function HomePage() {
               Inicia la sessió
             </Button>
           </SignInButton>
-          <SignUpButton>
-            <Button size="sm">Crea un compte</Button>
-          </SignUpButton>
         </Show>
         <Show when="signed-in">
           <UserButton />
