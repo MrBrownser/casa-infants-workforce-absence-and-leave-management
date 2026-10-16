@@ -17,6 +17,11 @@ config({ path: ['.env.local', '.env'], quiet: true });
 if (process.env.NODE_ENV === 'production') {
   throw new Error('Refusing to run the dev seed in production.');
 }
+// Explicit opt-in on the command line, never in .env.local: an empty production
+// database pointed at by mistake would otherwise get the fictional people.
+if (process.env.ALLOW_DEV_SEED !== '1') {
+  throw new Error('The dev seed writes fictional people. Run it with ALLOW_DEV_SEED=1 npx prisma db seed, against the dev database only.');
+}
 
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DIRECT_URL ?? process.env.DATABASE_URL }),

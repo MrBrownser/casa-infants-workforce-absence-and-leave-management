@@ -51,6 +51,8 @@ See `README.md` for setup.
     that reads the request; `actions.ts` records, deletes and restores APs.
   - `dashboard/`: redirects to the last visited House (`active-house` cookie, set in `src/proxy.ts`).
   - `no-access/`: shown to signed-in users without the director flag.
+- `src/app/api/health/route.ts`: public health check for the uptime monitor (`SELECT 1`, no data).
+- No sign-up route: accounts are invited from the Clerk dashboard (Restricted mode in production).
 - `src/lib/houses.ts`: the two Houses (keep in sync with the `init` migration).
 - `src/lib/dates.ts`: `IsoDate` helpers; "today" is always `todayInMadrid()`. *Why:* the Houses
   are in Catalonia and the server runs on UTC, so around midnight the server's date is the wrong day.
@@ -78,6 +80,8 @@ See `README.md` for setup.
 
 ## Access and data rules
 
+- Signed-out requests reaching `requireUser()` / `requireDirector()` are redirected to `/sign-in`,
+  never thrown. *Why:* the proxy lets some non-browser requests through, and a throw answers 500.
 - Access is temporary: `requireDirector()` checks Clerk `publicMetadata.role === "director"`
   (set by hand in the Clerk dashboard; currently the director and the developer). **Call it in
   every page and data function**, not only in a layout: layouts and pages render in parallel.
@@ -92,6 +96,11 @@ See `README.md` for setup.
   active person per seat is enforced by two partial unique indexes written by hand in the `init`
   migration, with CHECKs on seats and balances. Prisma does not show them in `schema.prisma`.
   *Why:* the database itself refuses a second active person on a seat, even when two writes race.
+- **Every table has Row Level Security enabled, with no policies.** A migration that creates a
+  table must enable it (`src/lib/rls-migration.test.ts` checks). *Why:* Supabase's Data API
+  exposes the `public` schema to its anon key; the app connects as the table owner, which RLS
+  does not restrict.
+- The dev seed runs only with `ALLOW_DEV_SEED=1` on the command line (never in `.env.local`).
 - Posts, schedules and rules are code: changing them is a code change, not data. *Why:* the
   product owner decided posts are fixed and only the people change; a constant is testable and
   versioned, with no screens or migrations for data that does not change.
@@ -171,6 +180,20 @@ Drive non-trivial features through the workflow:
 ```
 
 Requires the Superpowers plugin and the `openspec` CLI (see README → Prerequisites).
+
+**Pick the weight of the process by the change, and keep `openspec/specs/` true either way:**
+
+- **Full workflow** (`/opsx:propose`): new screens or sections, domain rules, data model changes,
+  open questions for the director, anything that needs a design.
+- **Light change**: small, well-understood changes that still alter what the app does (fixes,
+  access rules, operations). `openspec new change <name> --schema spec-driven`, write only
+  `proposal.md` (why, what, non-goals), the spec deltas and a short `tasks.md`; implement with
+  tests; `openspec validate <name>`; archive it in the same PR (`openspec archive <name> -y`) so
+  the deltas merge into `openspec/specs/`. Example: `production-readiness`.
+- **No OpenSpec**: no behaviour change (refactors, docs, dependency bumps, test-only work).
+
+*Why:* the specs are the record of how the app behaves; a change that skips them leaves the next
+spec's author reading stale requirements.
 
 ## Commands
 

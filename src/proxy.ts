@@ -8,7 +8,9 @@ import {
 
 // Next.js 16 renamed the `middleware` file convention to `proxy`.
 // Clerk auto-detects this file and runs auth on matched routes.
-const isPublic = createRouteMatcher(['/', '/sign-in(.*)', '/sign-up(.*)']);
+// No sign-up route: access is by invitation from the Clerk dashboard.
+// /api/health is polled by the uptime monitor without a session.
+const isPublic = createRouteMatcher(['/', '/sign-in(.*)', '/api/health']);
 
 export default clerkMiddleware(async (auth, req) => {
   if (!isPublic(req)) {
