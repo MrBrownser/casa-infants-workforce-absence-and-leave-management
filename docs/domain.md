@@ -25,6 +25,11 @@ prototypes do until the director says otherwise.
 - The product owner (developer) also has access.
 - Access is the Clerk `publicMetadata.role === 'director'` flag (`src/lib/auth.ts`).
 - She works **one House at a time** (her answer), switching with the House switcher.
+- She is new in the post: the current spreadsheet was filled in by the previous director, and
+  its 2026 balances cannot be fully explained. **She starts clean in the app on 1 January 2027**:
+  no 2026 data is imported; she enters her team in Equip and the 2027 opening balances (carried
+  days and surplus at the 2026 close) by hand. Before that she tests on the dev deployment
+  (fictional data) and in production with her real team (FASI signed off GDPR, #16).
 
 ## 2. Houses, posts and people
 
@@ -108,6 +113,11 @@ person).
   anuals" but also that whoever asks for an AP on a holiday they were scheduled to work gets
   another holiday assigned. The app warns and allows it.
 - **(built, SPEC-004)** Saldos records APs: rules in `src/lib/balances.ts`, table `aps`.
+- **Integralia**, FASI's official tool, is where APs are recorded officially. Checking balances
+  there is too cumbersome, so **the director also tracks APs and balances in the app** (her
+  decision): Saldos stays, recording the same APs she enters in Integralia. The app also uses
+  them to know **who is absent on which day** (El mes coverage, Vacances' rule that an AP
+  recuperable cannot be joined to vacations).
 - APs are also how people complete **loose days** that the vacation blocks do not allow (§7).
 - Durations are entered with **one standard field `H:MM`** (product owner decision) and shown as
   `3 h 45 min`. The prototypes still accept `3,75` too; the app does not.
@@ -122,6 +132,12 @@ person).
 - Owed hours are given back "quan hi ha necessitat de treball": the director asks the person to
   work extra when there is a need. **(open)** Recording returned hours so the surplus goes up
   again (asked in the Saldos prototype).
+- **Lliurances** ("Lliurança" columns in the spreadsheet's `V I APS` tab): time a person works
+  **beyond their schedule for a specific need** (staying longer or coming earlier to cover a
+  colleague's short absence or sickness, an ad-hoc meeting outside working hours...). The person
+  can **recover it later as time off, like an AP no recuperable**. **(open, not built)** How it is
+  recorded (earned hours, then hours taken), whether it is its own balance or feeds the surplus,
+  and how it relates to returned hours above (#40).
 - FPOL32 §1 and §2: hours worked below the agreed year are regularised with occasional cover of
   holidays or other shifts, communicated with 5 days' notice; hours above it are compensated with
   rest. Neither is recorded in the app yet: the director adjusts the opening surplus on Equip.
@@ -172,8 +188,10 @@ person).
   12 + 19), which is looser than the table above. To confirm with the director (SPEC-006).
 
 ### The yearly plan ("negociació de vacances")
-- At the **end of the year**, House by House, the director enters what each person asks for
-  next year, resolves conflicts, and **locks the plan: it is fixed for the whole year**.
+- In **January**, House by House, the director enters what each person asks for that year,
+  resolves conflicts, and **locks the plan: it is fixed for the whole year**. FPOL32 §4: the
+  vacation calendar closes on **15 February** (the director mentioned 1 February; FPOL32 is the
+  reference). So Vacances must be in production, with the team entered, by early January.
 - A request is **demanada** (waiting for her decision: dashed honey) or **acceptada** (solid).
 - **Conflicts** (both editable per House, **(open)** real rules):
   - more people off at the same time than allowed (default 2);
@@ -274,6 +292,7 @@ leave) belong to the person; rota changes and day notes belong to a House.
   required, backups, rights of the people concerned), then a spec. Required before the first
   operational use with real data.
 - **Detailed review of El mes and Vacances** with the director before SPEC-005 and SPEC-006.
+  Priority: Vacances first (needed in January), then El mes, where most of the value is.
 - Open questions from §§3 to 9 (real schedules, conflicts between posts, who covers, holidays
   of 2027, returned hours).
 

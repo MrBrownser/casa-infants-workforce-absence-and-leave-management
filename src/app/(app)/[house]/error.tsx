@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import Link from 'next/link';
 import { TriangleAlert } from 'lucide-react';
 import { HouseMark } from '@/components/house-mark';
@@ -19,6 +20,8 @@ export default function HouseError({
 }) {
   useEffect(() => {
     console.error(error);
+    // Caught by this boundary, so not reported on its own (no-op without a DSN).
+    Sentry.captureException(error);
   }, [error]);
 
   return (

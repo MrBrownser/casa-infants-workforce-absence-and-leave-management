@@ -58,3 +58,56 @@ jobs:
         run: npx prisma migrate deploy
       - name: Check schema.prisma matches the migrations
         run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+
+  backup-restore:
+    name: Backup and restore
+    runs-on: ubuntu-latest
+    # The restore drill on every PR: seed a throwaway database, back it up with
+    # scripts/backup/backup.sh, restore it into an empty one and compare.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SOURCE_URL: postgresql://postgres:postgres@localhost:5432/source
+      TARGET_URL: postgresql://postgres:postgres@localhost:5432/target
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install PostgreSQL 17 client and age
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-client-17 age
+      - name: Seed a source database
+        run: |
+          psql postgresql://postgres:postgres@localhost:5432/postgres -c 'CREATE DATABASE source' -c 'CREATE DATABASE target'
+          DIRECT_URL="$SOURCE_URL" npx prisma migrate deploy
+          DIRECT_URL="$SOURCE_URL" ALLOW_DEV_SEED=1 npx prisma db seed
+      - name: Back up, restore and compare
+        env:
+          PG_BIN: /usr/lib/postgresql/17/bin
+        run: |
+          age-keygen -o "$RUNNER_TEMP/key.txt"
+          file="$(BACKUP_DATABASE_URL="$SOURCE_URL" BACKUP_AGE_RECIPIENT="$(age-keygen -y "$RUNNER_TEMP/key.txt")" scripts/backup/backup.sh "$RUNNER_TEMP")"
+          RESTORE_DATABASE_URL="$TARGET_URL" AGE_IDENTITY_FILE="$RUNNER_TEMP/key.txt" scripts/backup/restore.sh "$file"
+          q="SELECT (SELECT count(*) FROM people), (SELECT count(*) FROM person_years), (SELECT count(*) FROM aps), (SELECT count(*) FROM _prisma_migrations), (SELECT bool_and(relrowsecurity) FROM pg_class WHERE relname IN ('houses', 'people', 'person_years', 'aps', '_prisma_migrations'))"
+          source="$("$PG_BIN/psql" "$SOURCE_URL" -Atc "$q")"
+          target="$("$PG_BIN/psql" "$TARGET_URL" -Atc "$q")"
+          echo "source: $source / target: $target"
+          test "$source" = "$target"
