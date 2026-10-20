@@ -10,10 +10,10 @@ issue #17. This repository is public: no secrets, hostnames or real data here or
 | Code, CI | GitHub, this repository | CI: lint, typecheck, tests, migrations, backup and restore drill |
 | Hosting | Vercel project `casa-infants` (Hobby), Functions in `dub1` | Previews live on `casa-infants-dev` (fictional data) |
 | Database | Supabase production project, `eu-west-1` (Free) | Data API off; RLS on every table |
-| Sign-in | Clerk production instance, Restricted (invitation only) | Director flag: `publicMetadata.role = "director"` |
+| Sign-in | Separate Clerk application (development instance) for the trial, Restricted (invitation only); a production instance once there is a domain (#17) | Director flag: `publicMetadata.role = "director"`. Dev instances cap emails at about 100 a month: if sign-in codes stop arriving, that is the first thing to check |
 | Backups | Private repository, nightly workflow (`scripts/backup/backup-workflow.example.yml`) | Encrypted with `age`; private key offline |
 | Uptime | External monitor on `GET /api/health` every 5 min | Email alert; also keeps Supabase Free awake |
-| Errors | Sentry (EU region), if set up | No personal data sent |
+| Errors | Sentry (EU region), `NEXT_PUBLIC_SENTRY_DSN` in Production | Errors only; user, cookies, headers, bodies, query strings scrubbed (`src/lib/sentry.ts`) |
 
 Owners and who has access to each account are kept outside this repository (password manager).
 2FA is on for every account.

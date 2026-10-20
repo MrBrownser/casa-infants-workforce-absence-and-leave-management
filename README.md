@@ -248,6 +248,8 @@ it up and restore it is `docs/operations.md`. In short:
   policies (migration `enable_rls`), so the Data API could read nothing anyway; the app connects
   as the table owner and is not affected. **A migration that creates a table must enable RLS on
   it** (`src/lib/rls-migration.test.ts` fails otherwise).
+- Errors: `NEXT_PUBLIC_SENTRY_DSN` (Production only) turns on Sentry (EU region), errors only,
+  with no personal data (`src/lib/sentry.ts`). Without it nothing is reported.
 - Health check: `GET /api/health` answers `200 {"ok":true}` or `503 {"ok":false}` after a
   `SELECT 1`, with no data. Point the uptime monitor at it; polling it also keeps a Supabase
   Free project from pausing.

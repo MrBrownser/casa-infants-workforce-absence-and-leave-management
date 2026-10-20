@@ -51,6 +51,7 @@ See `README.md` for setup.
     that reads the request; `actions.ts` records, deletes and restores APs.
   - `dashboard/`: redirects to the last visited House (`active-house` cookie, set in `src/proxy.ts`).
   - `no-access/`: shown to signed-in users without the director flag.
+- `src/instrumentation.ts`, `src/instrumentation-client.ts`, `src/lib/sentry.ts`: Sentry error tracking, on only with `NEXT_PUBLIC_SENTRY_DSN`; never send personal data (the scrub filter is tested).
 - `src/app/api/health/route.ts`: public health check for the uptime monitor (`SELECT 1`, no data).
 - No sign-up route: accounts are invited from the Clerk dashboard (Restricted mode in production).
 - `src/lib/houses.ts`: the two Houses (keep in sync with the `init` migration).
