@@ -1,5 +1,6 @@
 import 'server-only';
 import { currentUser } from '@clerk/nextjs/server';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 
@@ -20,13 +21,21 @@ function displayName(user: ClerkUserLike): string | null {
 // One Clerk Backend API call per request, however many callers check auth.
 const getCurrentUser = cache(() => currentUser());
 
+/** Set by Clerk's middleware in src/proxy.ts on every request it handles. */
+const CLERK_AUTH_STATUS_HEADER = 'x-clerk-auth-status';
+
 /**
  * Without a signed-in user, redirect to sign in rather than throw: the proxy
  * can let a non-browser request through (e.g. curl without Clerk's dev-browser
  * cookie), and a thrown error would answer 500. A redirect still stops a Server
  * Function before it reads or writes anything.
+ *
+ * The proxy's matcher also skips file-like paths, so a request such as
+ * /apple-touch-icon.png (Safari asks for it on its own) reaches /[house] without
+ * Clerk's headers, and Clerk would throw. Treat it as signed out.
  */
 async function signedInUser() {
+  if (!(await headers()).get(CLERK_AUTH_STATUS_HEADER)) redirect(SIGN_IN_PATH);
   const user = await getCurrentUser();
   if (!user) redirect(SIGN_IN_PATH);
   return user;

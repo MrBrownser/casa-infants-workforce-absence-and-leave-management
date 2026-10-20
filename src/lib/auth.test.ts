@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { NO_ACCESS_PATH, SIGN_IN_PATH, isDirector, requireDirector, requireUser } from './auth';
 
 // React's per-request cache would memoize across tests outside RSC: pass it through.
 vi.mock('react', async (orig) => ({ ...(await orig<typeof import('react')>()), cache: <T,>(fn: T) => fn }));
 vi.mock('@clerk/nextjs/server', () => ({ currentUser: vi.fn() }));
+// By default the request went through the proxy (src/proxy.ts), which sets Clerk's auth status header.
+vi.mock('next/headers', () => ({ headers: vi.fn() }));
 vi.mock('next/navigation', () => ({
   redirect: vi.fn(() => {
     throw new Error('NEXT_REDIRECT');
@@ -16,7 +19,14 @@ function user(publicMetadata: Record<string, unknown>) {
   return { id: 'user_1', firstName: 'Marta', lastName: 'Soler', publicMetadata } as never;
 }
 
-beforeEach(() => vi.clearAllMocks());
+function requestHeaders(values: Record<string, string>) {
+  return new Headers(values) as never;
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(headers).mockResolvedValue(requestHeaders({ 'x-clerk-auth-status': 'signed-in' }));
+});
 
 describe('isDirector', () => {
   it('is true only for role director', () => {
@@ -58,5 +68,17 @@ describe('requireUser', () => {
     vi.mocked(currentUser).mockResolvedValue(null);
     await expect(requireUser()).rejects.toThrow('NEXT_REDIRECT');
     expect(redirect).toHaveBeenCalledWith(SIGN_IN_PATH);
+  });
+});
+
+describe('a request the proxy did not see', () => {
+  // The proxy skips file-like paths such as /apple-touch-icon.png (Safari asks for it on its own),
+  // which still match /[house]. Clerk would throw there instead of returning null.
+  it('is sent to sign in without asking Clerk', async () => {
+    vi.mocked(headers).mockResolvedValue(requestHeaders({}));
+    await expect(requireDirector()).rejects.toThrow('NEXT_REDIRECT');
+    await expect(requireUser()).rejects.toThrow('NEXT_REDIRECT');
+    expect(redirect).toHaveBeenCalledWith(SIGN_IN_PATH);
+    expect(currentUser).not.toHaveBeenCalled();
   });
 });
