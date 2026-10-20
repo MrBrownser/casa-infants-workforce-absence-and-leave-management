@@ -28,7 +28,8 @@ prototypes do until the director says otherwise.
 - She is new in the post: the current spreadsheet was filled in by the previous director, and
   its 2026 balances cannot be fully explained. **She starts clean in the app on 1 January 2027**:
   no 2026 data is imported; she enters her team in Equip and the 2027 opening balances (carried
-  days and surplus at the 2026 close) by hand. Until then she tests with fictional data.
+  days and surplus at the 2026 close) by hand. Before that she tests on the dev deployment
+  (fictional data) and in production with her real team (FASI signed off GDPR, #16).
 
 ## 2. Houses, posts and people
 
@@ -112,11 +113,11 @@ person).
   anuals" but also that whoever asks for an AP on a holiday they were scheduled to work gets
   another holiday assigned. The app warns and allows it.
 - **(built, SPEC-004)** Saldos records APs: rules in `src/lib/balances.ts`, table `aps`.
-- **Integralia**, FASI's official tool, is where the director records APs and reads each
-  person's remaining hours. Saldos duplicates it, so it gets no new work for now. The app still
-  needs to know **who is absent on which day** (El mes coverage, Vacances' rule that an AP
-  recuperable cannot be joined to vacations). **(open)** Whether the app records APs only as
-  dated absences and leaves the balances to Integralia: decide in the El mes design.
+- **Integralia**, FASI's official tool, is where APs are recorded officially. Checking balances
+  there is too cumbersome, so **the director also tracks APs and balances in the app** (her
+  decision): Saldos stays, recording the same APs she enters in Integralia. The app also uses
+  them to know **who is absent on which day** (El mes coverage, Vacances' rule that an AP
+  recuperable cannot be joined to vacations).
 - APs are also how people complete **loose days** that the vacation blocks do not allow (§7).
 - Durations are entered with **one standard field `H:MM`** (product owner decision) and shown as
   `3 h 45 min`. The prototypes still accept `3,75` too; the app does not.
@@ -131,6 +132,12 @@ person).
 - Owed hours are given back "quan hi ha necessitat de treball": the director asks the person to
   work extra when there is a need. **(open)** Recording returned hours so the surplus goes up
   again (asked in the Saldos prototype).
+- **Lliurances** ("Lliurança" columns in the spreadsheet's `V I APS` tab): time a person works
+  **beyond their schedule for a specific need** (staying longer or coming earlier to cover a
+  colleague's short absence or sickness, an ad-hoc meeting outside working hours...). The person
+  can **recover it later as time off, like an AP no recuperable**. **(open, not built)** How it is
+  recorded (earned hours, then hours taken), whether it is its own balance or feeds the surplus,
+  and how it relates to returned hours above (#40).
 - FPOL32 §1 and §2: hours worked below the agreed year are regularised with occasional cover of
   holidays or other shifts, communicated with 5 days' notice; hours above it are compensated with
   rest. Neither is recorded in the app yet: the director adjusts the opening surplus on Equip.
