@@ -233,7 +233,8 @@ Authentication) can add a second gate if wanted.
 
 ### Production
 
-The full checklist (providers, backups, monitoring, cutover) is issue #17. In short:
+The full checklist (providers, backups, monitoring, cutover) is issue #17; how to run it, back
+it up and restore it is `docs/operations.md`. In short:
 
 - A separate Vercel project for production, a separate Supabase EU project (`eu-west-1`) and the
   Clerk production instance: never the dev ones, which previews and the seed write to.

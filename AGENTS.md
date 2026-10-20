@@ -68,6 +68,7 @@ See `README.md` for setup.
   `src/server/people-store.ts`, `src/server/aps-store.ts`: Prisma persistence without auth
   (`createAp` checks the AP limits under a lock on the person row; used by the Server Functions and
   the seed only).
+- `scripts/backup/`: encrypted backup and restore of the database (`docs/operations.md`); CI runs the drill.
 - `public/prototypes/`: static HTML prototypes with fictional data for the director's feedback
   (not part of the app; see its README).
 - `src/components/team/`: Equip UI. `src/components/saldos/`: Saldos UI. `src/components/callout.tsx`: error, warning and success messages with an icon. `src/components/undo-toast.tsx`: "Desfés" toast (portalled, so it stays reachable over an open Sheet). `src/components/field.tsx`, `duration-input.tsx`,
