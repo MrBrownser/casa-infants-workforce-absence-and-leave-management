@@ -1,9 +1,9 @@
-# Nightly encrypted backup of the production database.
+# Nightly encrypted backup of the staging database (the one with real data).
 #
 # Copy to .github/workflows/backup.yml in a separate PRIVATE repository (never
 # this public one: workflow artifacts of a public repository can be downloaded by
 # anyone signed in to GitHub). In that repository set:
-#   - secret   BACKUP_DATABASE_URL: production session pooler URL (Supabase, :5432)
+#   - secret   BACKUP_DATABASE_URL: staging session pooler URL (Supabase, :5432)
 #   - variable BACKUP_AGE_RECIPIENT: age public key (age1...); keep the private
 #     key offline (password manager), it is the only way to read a backup
 # GitHub emails the repository owner when a scheduled run fails.

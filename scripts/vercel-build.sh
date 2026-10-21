@@ -2,7 +2,8 @@
 # Vercel build command (see vercel.json). Builds first, then applies pending
 # migrations on Production deployments only, so a failed build never touches the
 # database and a failed migration fails the deployment (the previous one stays live).
-# Previews share the dev database and never migrate it: only merges to main do.
+# Previews share the dev database and never migrate it: only a deploy of the project's
+# production branch does (dev for casa-infants-dev, main for casa-infants-staging).
 set -euo pipefail
 
 npm run build
