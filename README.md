@@ -125,7 +125,7 @@ npm run db:studio     # browse data
    2026). Re-running adds nothing once people (or APs) exist. After pulling SPEC-004 (`saldos`) run
    `npm run db:migrate` and the seed again: it adds the APs. The seed refuses to run without
    `ALLOW_DEV_SEED=1`; set it on the command line only, never in `.env.local`, so a database
-   URL pointed at production by mistake cannot get fictional people.
+   URL pointed at staging by mistake cannot get fictional people.
 3. In the Clerk dashboard, open your user → **Metadata** → **Public** and set:
 
    ```json
@@ -149,24 +149,40 @@ This repo is configured for OpenSpec with the **superpowers-bridge** schema
 (GDPR: EU only). `postinstall` runs `prisma generate`, which works without `DIRECT_URL` or
 `DATABASE_URL`, and `next build` needs only the Clerk keys.
 
-The GitHub repo is connected to the Vercel project: every merge to `main` deploys to
-Production, every other branch gets a preview URL.
+Two Vercel projects build this repository, and two long-lived branches feed them:
+
+| Branch | Vercel project | Data | Gets |
+|---|---|---|---|
+| `dev` (default branch) | `casa-infants-dev` | fictional (dev Supabase, dev Clerk) | every merged PR; previews of every branch |
+| `main` | `casa-infants-staging` | **real** (staging Supabase and Clerk) | only what is promoted from `dev` |
+
+- **PRs target `dev`** and are squash-merged. `casa-infants-dev` deploys it to its Production
+  environment and applies new migrations to the dev database first.
+- **Promote** with a PR from `dev` to `main`, merged with **"Create a merge commit"** (never squash:
+  the branches would drift and every promotion would show old commits again).
+  `casa-infants-staging` deploys `main` and applies the migrations to the real database.
+- `casa-infants-staging` builds no previews: its Ignored Build Step is
+  `if [ "$VERCEL_ENV" = "production" ]; then exit 1; else exit 0; fi`.
+
+"Staging" is our name for the environment with real data; in Vercel it is the Production
+environment of `casa-infants-staging`, so `VERCEL_ENV=production` there.
 
 ### CI
 
-`.github/workflows/ci.yml` runs on every PR and on `main`: lint, typecheck and tests, plus a
-migrations job that applies all migrations to a throwaway Postgres and fails if
-`schema.prisma` has changes no migration covers. Make both jobs required checks on `main`
-(GitHub, Settings, Branches) so a red PR cannot be merged.
+`.github/workflows/ci.yml` runs on every PR and on pushes to `dev` and `main`: lint, typecheck
+and tests; a migrations job that applies all migrations to a throwaway Postgres and fails if
+`schema.prisma` has changes no migration covers; and the backup and restore drill. Make the jobs
+required checks on `dev` and `main` (GitHub, Settings, Branches) so a red PR cannot be merged.
 
 ### Migrations
 
 `vercel.json` runs `scripts/vercel-build.sh`: it builds, then on **Production** deployments
-only runs `prisma migrate deploy`. A failed build never touches the database; a failed migration
-fails the deployment and the previous one stays live. Previews never migrate (they share the
-dev database with Production), so a preview of a PR that adds a migration may break until it
-is merged. Production needs `DIRECT_URL` (session pooler, `:5432`) set for the Production
-environment only; without it the production build fails on purpose.
+only runs `prisma migrate deploy`: the dev database on a merge to `dev`, the staging database on a
+promotion to `main`. A failed build never touches the database; a failed migration fails the
+deployment and the previous one stays live. Previews never migrate (they share the dev
+database), so a preview of a PR that adds a migration may break until it is merged. Each
+project needs `DIRECT_URL` (session pooler, `:5432`) set for its Production environment only;
+without it the build fails on purpose.
 
 Rules for migrations:
 
@@ -196,9 +212,8 @@ A preview deployment uses the Clerk **development** instance and the Supabase **
 
 Do not set `ALLOWED_DEV_ORIGINS` (dev server only).
 
-**A dev-only Vercel project** (for example `casa-infants-dev`): its main URL and every
-`vercel deploy --prod` or push to the production branch use Vercel's **Production**
-environment, not Preview. Add the same variables (dev keys, dev database) to Production too,
+**The dev project** (`casa-infants-dev`, production branch `dev`): its main URL and every
+`vercel deploy --prod` or push to `dev` use Vercel's **Production** environment, not Preview. Add the same variables (dev keys, dev database) to Production too,
 plus `DIRECT_URL` for the dev database, then redeploy; variables only apply to new deployments. Without them the proxy fails with
 "Clerk keys are missing from your environment" and every page returns 500.
 
@@ -231,29 +246,31 @@ Open the printed `https://...vercel.app` URL on the phone.
 role, and the dev database holds fictional data only. Vercel Deployment Protection (Vercel
 Authentication) can add a second gate if wanted.
 
-### Production
+### Staging (real data)
 
-The full checklist (providers, backups, monitoring, cutover) is issue #17; how to run it, back
-it up and restore it is `docs/operations.md`. In short:
+The full checklist (providers, backups, monitoring) is issue #17; how to run it, back it up and
+restore it is `docs/operations.md`. In short:
 
-- A separate Vercel project for production, a separate Supabase EU project (`eu-west-1`) and the
-  Clerk production instance: never the dev ones, which previews and the seed write to.
-- Production environment variables (names only): `DATABASE_URL`, `DIRECT_URL` (the build applies
-  migrations), `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` (`pk_live_` /
-  `sk_live_`), `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL`.
-- Clerk production needs its own custom domain (`*.vercel.app` is not allowed). Set sign-up to
-  **Restricted** (invitation only) and set `publicMetadata.role` to `director` on each invited
-  account.
+- Its own Vercel project (`casa-infants-staging`), Supabase EU project (`eu-west-1`) and Clerk
+  application: never the dev ones, which previews and the seed write to.
+- Environment variables, Production environment only (names only): `DATABASE_URL`, `DIRECT_URL`
+  (the build applies migrations), `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
+  `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL`,
+  `NEXT_PUBLIC_SENTRY_DSN`.
+- Clerk: for now a **separate application on a development instance** (no domain yet; a
+  production instance needs one, `*.vercel.app` is not allowed). Sign-in with **email code**, no
+  passwords; sign-up **Restricted** (invitation only); `publicMetadata.role = "director"` on each
+  invited account.
 - Supabase: turn the **Data API off**. Every table also has Row Level Security on with no
   policies (migration `enable_rls`), so the Data API could read nothing anyway; the app connects
   as the table owner and is not affected. **A migration that creates a table must enable RLS on
   it** (`src/lib/rls-migration.test.ts` fails otherwise).
-- Errors: `NEXT_PUBLIC_SENTRY_DSN` (Production only) turns on Sentry (EU region), errors only,
+- Errors: `NEXT_PUBLIC_SENTRY_DSN` (staging only) turns on Sentry (EU region), errors only,
   with no personal data (`src/lib/sentry.ts`). Without it nothing is reported.
 - Health check: `GET /api/health` answers `200 {"ok":true}` or `503 {"ok":false}` after a
   `SELECT 1`, with no data. Point the uptime monitor at it; polling it also keeps a Supabase
   Free project from pausing.
-- Never point a local `.env.local` at production, and never run the dev seed against it.
+- Never point a local `.env.local` at staging, and never run the dev seed against it.
 
 ## GDPR
 
