@@ -1,6 +1,6 @@
 # Operations runbook
 
-How production runs, and what to do when something goes wrong. Setup checklist and decisions:
+How staging (the environment with real data) runs, and what to do when something goes wrong. Setup checklist and decisions:
 issue #17. This repository is public: no secrets, hostnames or real data here or in issues.
 
 ## Where everything lives
@@ -8,20 +8,55 @@ issue #17. This repository is public: no secrets, hostnames or real data here or
 | What | Where | Notes |
 |---|---|---|
 | Code, CI | GitHub, this repository | CI: lint, typecheck, tests, migrations, backup and restore drill |
-| Hosting | Vercel project `casa-infants` (Hobby), Functions in `dub1` | Previews live on `casa-infants-dev` (fictional data) |
-| Database | Supabase production project, `eu-west-1` (Free) | Data API off; RLS on every table |
-| Sign-in | Separate Clerk application (development instance) for the trial, Restricted (invitation only); a production instance once there is a domain (#17) | Director flag: `publicMetadata.role = "director"`. Dev instances cap emails at about 100 a month: if sign-in codes stop arriving, that is the first thing to check |
+| Hosting | Vercel project `casa-infants-staging` (Hobby), Functions in `dub1`, deploys `main` | No previews (Ignored Build Step); previews and `dev` live on `casa-infants-dev` (fictional data) |
+| Database | Supabase staging project, `eu-west-1` (Free) | Data API off; RLS on every table |
+| Sign-in | Separate Clerk application (development instance), email code sign-in, Restricted (invitation only); a production instance once there is a domain (#17) | Director flag: `publicMetadata.role = "director"`. Dev instances cap emails at about 100 a month: if sign-in codes stop arriving, that is the first thing to check |
 | Backups | Private repository, nightly workflow (`scripts/backup/backup-workflow.example.yml`) | Encrypted with `age`; private key offline |
 | Uptime | External monitor on `GET /api/health` every 5 min | Email alert; also keeps Supabase Free awake |
-| Errors | Sentry (EU region), `NEXT_PUBLIC_SENTRY_DSN` in Production | Errors only; user, cookies, headers, bodies, query strings scrubbed (`src/lib/sentry.ts`) |
+| Errors | Sentry (EU region), `NEXT_PUBLIC_SENTRY_DSN` on staging only | Errors only; user, cookies, headers, bodies, query strings scrubbed (`src/lib/sentry.ts`) |
 
 Owners and who has access to each account are kept outside this repository (password manager).
 2FA is on for every account.
 
+## One-time setup
+
+### Uptime monitor
+
+Sentry → Alerts → Create Alert → **Uptime Monitor** (or a free UptimeRobot monitor): URL
+`https://<staging URL>/api/health`, method GET, shortest interval offered, email notifications.
+It fails on a `503` (database unreachable) as well as on downtime, and each check keeps the
+Supabase Free project from pausing. Vercel only protects previews by default; if the monitor gets
+a `401`, check Settings → Deployment Protection of `casa-infants-staging`.
+
+### Nightly backups
+
+1. **Key**, on your machine (`brew install age` or `apt install age`):
+   `age-keygen -o casa-infants-backup.key`. It prints `Public key: age1...`. Store the whole key
+   file in the password manager and delete the local copy: without it nobody can read a backup.
+2. **Database URL**: Supabase → Connect → **Session pooler** (`:5432`), with the password filled
+   in (same value as staging's `DIRECT_URL`).
+3. **Private repository** (never this public one), Settings → Secrets and variables → Actions:
+   secret `BACKUP_DATABASE_URL` (step 2) and variable `BACKUP_AGE_RECIPIENT` (the `age1...` key).
+4. Copy `scripts/backup/backup-workflow.example.yml` to `.github/workflows/backup.yml` in the
+   private repository. Nothing to edit: it checks out the script from this repository and
+   installs the PostgreSQL 17 client (check the server version in Supabase → Settings →
+   Infrastructure; 17 or older is fine).
+5. Actions → **Nightly backup** → **Run workflow**. The run shows an artifact
+   `backup-<id>` with a `casa-infants-<timestamp>.dump.age`. From then on it runs at 02:17 UTC.
+6. **Prove it can be read**: download and unzip the artifact, then restore it into a throwaway
+   Postgres (see Restore below), e.g. `docker run -d --name restore-test -e POSTGRES_PASSWORD=x
+   -p 5433:5432 postgres:17` and `RESTORE_DATABASE_URL=postgresql://postgres:x@localhost:5433/postgres`.
+   Repeat once the director has entered her team.
+7. GitHub → Settings → Notifications → Actions: notify on failed workflows only.
+
 ## Deploy
 
-Merge to `main`. Vercel builds and, on Production only, applies pending migrations
-(`scripts/vercel-build.sh`). A failed build or migration leaves the previous deployment live.
+Merge PRs into `dev`: `casa-infants-dev` deploys them and migrates the dev database. Check the
+change there, then **promote**: open a PR from `dev` to `main` and merge it with **"Create a merge
+commit"** (never squash). `casa-infants-staging` builds `main` and applies pending migrations to
+the real database (`scripts/vercel-build.sh`). A failed build or migration leaves the previous
+deployment live. Take a manual backup first when the promotion carries a migration that changes
+or moves existing data.
 Migrations must be backward compatible (README → Migrations).
 
 ## Roll back
@@ -37,7 +72,7 @@ still runs on the newer schema. Then fix forward with a PR.
 - By hand, before a migration that changes or moves existing data:
 
   ```bash
-  BACKUP_DATABASE_URL="<production session pooler URL, :5432>" \
+  BACKUP_DATABASE_URL="<staging session pooler URL, :5432>" \
   BACKUP_AGE_RECIPIENT="age1..." \
   scripts/backup/backup.sh <output-dir>
   ```

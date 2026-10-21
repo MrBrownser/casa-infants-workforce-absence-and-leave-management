@@ -30,7 +30,7 @@ See `README.md` for setup.
 - **Prisma 7 + Supabase Postgres (EU)**, data. Pooled connection (`:6543`,
   `pgbouncer=true`) at runtime via `DATABASE_URL`; direct connection (`:5432`) for
   migrations via `DIRECT_URL`. Models: `House`, `Person`, `PersonYear`, `Ap`. The current Supabase
-  project (`eu-west-1`) is the **dev** database; production will get its own project.
+  project (`eu-west-1`) is the **dev** database; staging (real data) has its own project.
 - **Clerk**, auth, with the Catalan localization (`caES` from `@clerk/localizations`)
   and the shadcn theme (`@clerk/ui/themes`, mapped to our tokens in `globals.css`).
   `src/lib/auth.ts` exposes `requireUser()` and the temporary `requireDirector()`; roles arrive with SPEC-002.
@@ -53,7 +53,7 @@ See `README.md` for setup.
   - `no-access/`: shown to signed-in users without the director flag.
 - `src/instrumentation.ts`, `src/instrumentation-client.ts`, `src/lib/sentry.ts`: Sentry error tracking, on only with `NEXT_PUBLIC_SENTRY_DSN`; never send personal data (the scrub filter is tested).
 - `src/app/api/health/route.ts`: public health check for the uptime monitor (`SELECT 1`, no data).
-- No sign-up route: accounts are invited from the Clerk dashboard (Restricted mode in production).
+- No sign-up route: accounts are invited from the Clerk dashboard (Restricted mode on staging).
 - `src/lib/houses.ts`: the two Houses (keep in sync with the `init` migration).
 - `src/lib/dates.ts`: `IsoDate` helpers; "today" is always `todayInMadrid()`. *Why:* the Houses
   are in Catalonia and the server runs on UTC, so around midnight the server's date is the wrong day.
@@ -202,7 +202,11 @@ spec's author reading stale requirements.
 - `npm run dev` — dev server. `npm run build` — production build (needs env vars).
 - `npm run lint` — ESLint. `npm run typecheck` — `tsc --noEmit`. `npm test` — Vitest.
 - `npm run db:generate | db:push | db:migrate | db:studio` — Prisma.
-- CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and a migrations check on every PR.
-  Merging to `main` deploys to Vercel Production, whose build (`scripts/vercel-build.sh`) applies
-  pending migrations. **Migrations must be backward compatible** (expand, then contract in a later
+- **Branches: PRs target `dev`** (the default branch, deployed to `casa-infants-dev` with fictional
+  data). `main` is **staging, with real data**: it only receives promotions from `dev` (a PR
+  `dev` → `main`, merged with a merge commit, never squashed). Each deploy's build
+  (`scripts/vercel-build.sh`) applies pending migrations to that environment's database. See
+  README → Deployment.
+- CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests, a migrations check and the backup
+  and restore drill on every PR. **Migrations must be backward compatible** (expand, then contract in a later
   PR); see README → Migrations.
