@@ -12,7 +12,6 @@ They are static HTML pages, not part of the Next.js app, and use **fictional dat
 - To share it: deploy this folder as a separate static Vercel project (Framework preset "Other",
   Root Directory `public/prototypes`, no build command), or run `npx vercel deploy --prod`
   from this folder. No environment variables are needed.
-- The clay-house image belongs to FASI and its use is still pending permission (see `DESIGN.md`).
 - Look and feel follow `DESIGN.md`: tokens copied from `src/app/globals.css` into
   `shared/theme.js`, shadcn-style button and input classes.
 - Libraries are vendored in `vendor/` (no CDN): Tailwind v4 browser build, Alpine.js,

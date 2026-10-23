@@ -156,10 +156,6 @@ rules enforced without asking:
   `rounded-md` in dense contexts. Cards use `shadow-clay`.
 - 150–200ms transitions, purposeful only; filled buttons "press in" on click.
 
-> **TODO before launch: confirm FASI's permission** to use their clay-house image
-> (`public/brand/`, rendered by `src/components/house-mark.tsx`), or replace it with a
-> commissioned one. See `DESIGN.md` → Illustration.
-
 ## Conventions
 
 - **Language:** all user-facing UI copy is in **Catalan** (`<html lang="ca">`).
